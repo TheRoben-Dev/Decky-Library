@@ -1,4 +1,7 @@
-"""Minimal client for Handheld Daemon's local API (root-only UNIX socket).
+"""LEGACY: Handheld Daemon was retired in Bazzite 44 (replaced by InputPlumber,
+steamos-manager and PowerStation). Kept only as an opt-in path for older images.
+
+Minimal client for Handheld Daemon's local API (root-only UNIX socket).
 
 Same transport hhdctl uses: HTTP over /run/hhd/api, POST /api/v1/state with
 flat dotted keys. We only touch TDP and GPU-frequency keys.

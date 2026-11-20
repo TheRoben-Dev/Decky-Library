@@ -6,10 +6,14 @@ import {
   PanelSectionRow,
   SliderField,
   ToggleField,
+  Navigation,
   staticClasses,
 } from "@decky/ui";
-import { definePlugin } from "@decky/api";
-import { useEffect, useReducer } from "react";
+import { definePlugin, toaster } from "@decky/api";
+import { useEffect, useReducer, useState } from "react";
+import { lsfgInstall } from "./backend";
+
+declare const SteamClient: any;
 import { FaTachometerAlt } from "react-icons/fa";
 import { controller } from "./controller";
 import { getLimits, steamPerfAvailable } from "./steam";
@@ -36,6 +40,76 @@ function Note({ children, warning }: { children: any; warning?: boolean }) {
   );
 }
 
+const LS_APPID = 993090;
+
+function openLosslessStore() {
+  try {
+    SteamClient.URL.ExecuteSteamURL(`steam://store/${LS_APPID}`);
+  } catch {
+    Navigation.NavigateToExternalWeb(`https://store.steampowered.com/app/${LS_APPID}/`);
+  }
+  Navigation.CloseSideMenus();
+}
+
+function openLosslessLibrary() {
+  Navigation.Navigate(`/library/app/${LS_APPID}`);
+  Navigation.CloseSideMenus();
+}
+
+/** Lossless Scaling + lsfg-vk layer status, with one-tap fixes. */
+function FrameGenStatus() {
+  const c = useController();
+  const [busy, setBusy] = useState(false);
+  const l = c.env?.lsfg;
+  if (!l) return null;
+  const ls = l.lossless;
+  const install = async () => {
+    setBusy(true);
+    const r = await lsfgInstall(true).catch((e) => ({ ok: false, error: String(e) }));
+    setBusy(false);
+    toaster.toast({ title: "Vex: frame gen", body: r.ok ? `lsfg-vk ${l.bundledVersion} installed` : `Install failed: ${r.error}` });
+    c.refreshEnv();
+  };
+  return (
+    <>
+      {!ls.installed ? (
+        <>
+          <Note warning>Frame gen needs Lossless Scaling (paid Steam app). Its frame-gen engine can't be bundled, so buy/install it once on Steam.</Note>
+          <PanelSectionRow>
+            <ButtonItem layout="below" onClick={openLosslessStore}>Get Lossless Scaling on Steam</ButtonItem>
+          </PanelSectionRow>
+        </>
+      ) : !ls.dll ? (
+        <>
+          <Note warning>
+            Lossless Scaling is installed{ls.branch ? ` (branch: ${ls.branch})` : ""}, but lsfg-vk.dll isn't there yet. Open it, then Properties → Game Versions & Betas → pick "lsfg-vk" and let it update.
+          </Note>
+          <PanelSectionRow>
+            <ButtonItem layout="below" onClick={openLosslessLibrary}>Open Lossless Scaling</ButtonItem>
+          </PanelSectionRow>
+        </>
+      ) : (
+        <Note>Lossless Scaling found ✓</Note>
+      )}
+      {l.legacyV1 && <Note warning>An old lsfg-vk 1.x layer is installed. Vex installs 2.x alongside; remove the old one if games misbehave.</Note>}
+      {l.installed ? (
+        <Note>
+          {l.ownedByVex ? `Using Vex's bundled lsfg-vk ${l.bundledVersion}.` : l.otherPlugin ? `Using lsfg-vk installed by ${l.otherPlugin}. Vex shares its config and won't touch its files.` : "Using the lsfg-vk already installed on this system."}
+        </Note>
+      ) : l.bundled ? (
+        <>
+          <Note>lsfg-vk {l.bundledVersion} is bundled. It installs automatically the first time you enable frame gen.</Note>
+          <PanelSectionRow>
+            <ButtonItem layout="below" disabled={busy} onClick={install}>{busy ? "Installing…" : "Install lsfg-vk now"}</ButtonItem>
+          </PanelSectionRow>
+        </>
+      ) : (
+        <Note warning>This build has no bundled lsfg-vk. Use the release zip, or install lsfg-vk another way.</Note>
+      )}
+    </>
+  );
+}
+
 function Content() {
   const c = useController();
   useEffect(() => { c.refreshEnv(); }, []);
@@ -49,7 +123,7 @@ function Content() {
   const edit = (m: (p: Profile) => void) => c.editActive(m);
   const tdpMin = limits.tdpMax > 0 ? limits.tdpMin : env?.power.tdpMin ?? 5;
   const tdpMax = limits.tdpMax > 0 ? limits.tdpMax : env?.power.tdpMax ?? 30;
-  const gpuRange = env?.power.gpuRange ?? [800, 2700];
+  const gpuRange = env?.powerstation.gpuRange ?? env?.power.gpuRange ?? [800, 2700];
   const autoHz = matchRefresh(p.frame.fps, limits.refreshMin, limits.refreshMax);
   const tdpPlugins = env?.conflicts.plugins.filter((x) => /TDP/.test(x.controls)) ?? [];
 
@@ -146,13 +220,17 @@ function Content() {
 
       <PanelSection title="Power (TDP / GPU)">
         <Note>
-          Path: <b>{backend === "steam" ? "Steam TDP slider (Handheld Daemon follows it)" : backend === "hhd" ? "Handheld Daemon API" : backend === "sysfs" ? "Direct (asus-armoury)" : "Off"}</b>
+          TDP via: <b>{backend === "steam" ? "Steam's TDP slider" : backend === "powerstation" ? "PowerStation" : backend === "hhd" ? "Handheld Daemon (legacy)" : backend === "sysfs" ? "Direct (asus-armoury)" : "Off"}</b>
+          {backend !== "off" && <> · GPU via: <b>{env?.powerstation.running ? "PowerStation" : backend === "hhd" ? "Handheld Daemon" : "amdgpu sysfs"}</b></>}
         </Note>
         {tdpPlugins.length > 0 && (
           <Note warning>{tdpPlugins.map((x) => x.name).join(", ")} also controls TDP. Auto mode stays off to avoid fighting it. Pick a path below to override.</Note>
         )}
-        {env?.hhd.running && !env.hhd.tdpEnabled && backend !== "steam" && (
-          <Note warning>Handheld Daemon is running with its TDP controls off. Turn on "TDP Controls" in HHD to let Vex set TDP.</Note>
+        {env?.hhd.running && c.settings.powerBackend === "auto" && backend === "off" && (
+          <Note warning>Handheld Daemon (retired in Bazzite 44) is still running, so auto mode leaves TDP alone. Update Bazzite, or pick "Handheld Daemon (legacy)" below.</Note>
+        )}
+        {c.settings.powerBackend === "auto" && backend !== "steam" && env?.powerstation.running && (
+          <Note>Steam's TDP slider isn't showing, so Vex talks to PowerStation directly. If you want Steam to own it, enable the TDP slider in Steam's Performance settings.</Note>
         )}
         {backend !== "off" && (
           <>
@@ -189,11 +267,8 @@ function Content() {
       </PanelSection>
 
       <PanelSection title="Frame generation (lsfg-vk)">
-        {!env?.lsfg.installed ? (
-          <Note warning>
-            {env?.lsfg.legacyV1 ? "Old lsfg-vk 1.x found. Update to lsfg-vk 2.x (e.g. with the Decky LSFG-VK plugin)." : "lsfg-vk 2.x isn't installed. Install it (e.g. with the Decky LSFG-VK plugin) and own Lossless Scaling on Steam, lsfg-vk branch."}
-          </Note>
-        ) : !isGame ? (
+        <FrameGenStatus />
+        {!isGame ? (
           <Note>Frame gen is set per game. Create a game profile above to enable it.</Note>
         ) : (
           <>
@@ -205,9 +280,6 @@ function Content() {
               <>
                 {p.frame.enabled && p.frame.fps > 0 && p.frame.fps < 40 && (
                   <Note warning>Base frame cap is under 40 fps. Expect noticeable latency and artifacts.</Note>
-                )}
-                {!env.lsfg.dll && !env.lsfg.dllFound && (
-                  <Note warning>Lossless.dll not found. Install Lossless Scaling on Steam and switch it to the lsfg-vk beta branch.</Note>
                 )}
                 <PanelSectionRow>
                   <SliderField label="Multiplier" value={p.fg.multiplier} min={2} max={4} step={1} showValue valueSuffix="x"
@@ -240,9 +312,10 @@ function Content() {
           <DropdownItem label="Power control path"
             rgOptions={[
               { data: "auto", label: "Auto (recommended)" },
-              { data: "steam", label: "Steam slider (HHD)" },
-              { data: "hhd", label: "Handheld Daemon API" },
+              { data: "steam", label: "Steam TDP slider" },
+              { data: "powerstation", label: "PowerStation" },
               { data: "sysfs", label: "Direct sysfs" },
+              { data: "hhd", label: "Handheld Daemon (legacy)" },
               { data: "off", label: "Off" },
             ]}
             selectedOption={c.settings.powerBackend}
