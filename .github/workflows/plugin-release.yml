@@ -1,0 +1,108 @@
+# Publishes every Decky plugin in this repo as a GitHub release that Library Hub installs.
+#
+# A plugin is any top-level folder with plugin.json + package.json + package.sh.
+# Push a commit that changes a plugin's package.json "version" (on main, a claude/* branch or an
+# add-* branch) and this creates the tag `<folder>-v<version>` on that commit and publishes the
+# release with the zip from package.sh plus `<zip>.sha256`. Versions that already have a release
+# are skipped, so a published zip is never rebuilt from different code.
+# The release title is "<plugin.json name> v<version>"; Library Hub reads the name from it.
+# Run it by hand (Actions → Plugin release → Run workflow) to publish anything not yet released.
+# The Nightgrid CSS theme has its own workflow (nightgrid-release.yml).
+name: Plugin release
+
+on:
+  push:
+    branches:
+      - main
+      - "claude/**"
+      - "add-*"
+    paths:
+      - "*/package.json"
+      - "*/plugin.json"
+      - ".github/workflows/plugin-release.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: plugin-release-${{ github.ref_name }}
+
+permissions:
+  contents: write   # create tags/releases and upload their assets; nothing else
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      any: ${{ steps.plan.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find plugins without a release for their version
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, re, subprocess
+          out = []
+          for d in sorted(os.listdir(".")):
+              if not all(os.path.isfile(os.path.join(d, f)) for f in ("plugin.json", "package.json", "package.sh")):
+                  continue
+              ver = json.load(open(os.path.join(d, "package.json")))["version"]
+              name = json.load(open(os.path.join(d, "plugin.json")))["name"]
+              if not re.fullmatch(r"\d+\.\d+\.\d+", ver):
+                  raise SystemExit(f"::error::{d}/package.json version {ver!r} is not X.Y.Z")
+              if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", d):
+                  raise SystemExit(f"::error::folder {d!r} must be lowercase kebab-case")
+              tag = f"{d}-v{ver}"
+              exists = subprocess.run(["gh", "release", "view", tag], capture_output=True).returncode == 0
+              print(f"{tag}: {'already released' if exists else 'to publish'}")
+              if not exists:
+                  out.append({"dir": d, "tag": tag, "name": name, "version": ver})
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"matrix={json.dumps({'include': out})}\n")
+              f.write(f"any={'true' if out else 'false'}\n")
+          EOF
+
+  release:
+    needs: plan
+    if: needs.plan.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    defaults:
+      run:
+        working-directory: ${{ matrix.dir }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable && corepack prepare pnpm@10.28.0 --activate
+      - name: Python tests (if the plugin has any)
+        run: |
+          if [ -d tests ]; then python3 -m unittest discover -s tests -v; else echo "no tests/"; fi
+      - run: pnpm install --frozen-lockfile && pnpm build
+      - name: Build zip and checksum
+        id: zip
+        run: |
+          ./package.sh
+          zips=(out/*.zip)
+          [ ${#zips[@]} -eq 1 ] && [ -f "${zips[0]}" ] || { echo "::error::package.sh must leave exactly one out/*.zip"; exit 1; }
+          zip="${zips[0]}"
+          (cd out && sha256sum "$(basename "$zip")" > "$(basename "$zip").sha256" && cat "$(basename "$zip").sha256")
+          echo "zip=$zip" >> "$GITHUB_OUTPUT"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ matrix.tag }}
+          TITLE: ${{ matrix.name }} v${{ matrix.version }}
+          ZIP: ${{ steps.zip.outputs.zip }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "$TAG appeared meanwhile; leaving it alone"; exit 0
+          fi
+          gh release create "$TAG" "$ZIP" "$ZIP.sha256" \
+            --target "$GITHUB_SHA" \
+            --title "$TITLE" \
+            --notes "Install or update from Library Hub in Quick Access, or Decky → Developer → Install Plugin from Zip."
