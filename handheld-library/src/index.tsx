@@ -6,7 +6,7 @@ import { definePlugin, toaster } from "@decky/api";
 import { useEffect, useMemo, useState } from "react";
 import { FaEyeSlash, FaFilter } from "react-icons/fa";
 import { HiddenTab } from "./hiddenTab";
-import { knownPinSet, openPinFlow, refreshPinSet } from "./pin";
+import { knownPinSet, openPinFlow, refreshPinSet, startSleepWatch, stopSleepWatch } from "./pin";
 import { installLibrary, LIBRARY_TABS, libraryActive, seenLibraryTabs, setLibraryConfig, tabMasterInstalled, uninstallLibrary } from "./library";
 import { deckyPlugins, installQam, onSeenTabs, qamActive, seenTabs, setHiddenTabs, setPluginTabs, uninstallQam } from "./qam";
 import { GameRow, note, warn } from "./ui";
@@ -265,7 +265,7 @@ function PinSection() {
     <PanelSection title="Hidden games lock">
       <PanelSectionRow>
         <div style={note}>
-          {set ? "The Hidden games tab asks for your PIN. It locks again when Quick Access closes or after 5 minutes."
+          {set ? "The Hidden games tab asks for your PIN. Once unlocked it stays open for 15 minutes, or until the device sleeps."
             : "Lock the Hidden games tab with a 4–8 digit PIN."}
           {" "}This is a privacy lock, not real security: hidden games are still reachable in Steam itself (Library → Collections → Hidden, search, store pages). Turning off the Collections Library tab above removes the easiest route; the "Handheld Ready" Library tab can replace it.
         </div>
@@ -295,6 +295,7 @@ function Content() {
 
 export default definePlugin(() => {
   start();
+  startSleepWatch();
   const qamOk = installQam({
     title: <div className={staticClasses.Title}>Hidden games</div>,
     icon: <FaEyeSlash />,
@@ -317,6 +318,6 @@ export default definePlugin(() => {
     titleView: <div className={staticClasses.Title}>Handheld Library</div>,
     content: <Content />,
     icon: <FaFilter />,
-    onDismount() { uninstallLibrary(); uninstallQam(); stop(); },
+    onDismount() { stopSleepWatch(); uninstallLibrary(); uninstallQam(); stop(); },
   };
 });

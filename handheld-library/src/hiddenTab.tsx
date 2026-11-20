@@ -3,7 +3,7 @@ import { toaster, useQuickAccessVisible } from "@decky/api";
 import { useEffect, useState } from "react";
 import { GameRow, note } from "./ui";
 import { Game, hiddenGames, launch, unhide } from "./steam";
-import { isUnlocked, lock, LockScreen, refreshPinSet } from "./pin";
+import { isUnlocked, LockScreen, refreshPinSet } from "./pin";
 
 const installedHidden = () => hiddenGames().filter((g) => g.installed);
 
@@ -15,7 +15,7 @@ export function HiddenTab() {
   const refresh = () => setGames(installedHidden());
 
   useEffect(() => {
-    if (!visible) { lock(); setLocked(null); setGames([]); return; }   // re-lock whenever Quick Access closes
+    if (!visible) { setLocked(null); setGames([]); return; }   // stays unlocked for 15 min unless the device sleeps
     let gone = false;
     refreshPinSet().then((set) => {
       if (gone) return;
@@ -46,9 +46,9 @@ export function HiddenTab() {
       {games.map((g) => (
         <GameRow key={g.appid} g={g} desc=""
           actions={[
-            { label: "Play", onClick: () => { lock(); Navigation.CloseSideMenus(); launch(g); } },
+            { label: "Play", onClick: () => { Navigation.CloseSideMenus(); launch(g); } },
             { label: "Unhide", onClick: () => doUnhide([g.appid]) },
-            { label: "Page", onClick: () => { lock(); Navigation.CloseSideMenus(); Navigation.Navigate(`/library/app/${g.appid}`); } },
+            { label: "Page", onClick: () => { Navigation.CloseSideMenus(); Navigation.Navigate(`/library/app/${g.appid}`); } },
           ]} />
       ))}
       {games.length > 1 && (

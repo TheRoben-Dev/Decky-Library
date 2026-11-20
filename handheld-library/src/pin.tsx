@@ -7,13 +7,45 @@ import { DialogButton, Focusable, ModalRoot, showModal } from "@decky/ui";
 import { useEffect, useState } from "react";
 import { pinSet, pinStatus, pinVerify, pinClear, PinResult } from "./backend";
 
-export const RELOCK_MS = 5 * 60 * 1000;
+export const RELOCK_MS = 15 * 60 * 1000;
 let unlockedAt = 0;
 let pinIsSet: boolean | null = null;
 
 export function isUnlocked(): boolean { return unlockedAt > 0 && Date.now() - unlockedAt < RELOCK_MS; }
 export function lock() { unlockedAt = 0; }
 function markUnlocked() { unlockedAt = Date.now(); }
+
+/*
+ * Re-lock when the device sleeps. Primary: Steam's own suspend notification
+ * (SteamClient.User.RegisterForPrepareForSystemSuspendProgress, used by Steam's power code, Nov 2026).
+ * Backup: JS timers stop while suspended, so a heartbeat that sees a big wall-clock jump means we slept.
+ */
+let suspendReg: any = null;
+let heartbeat: number | undefined;
+let lastBeat = 0;
+const BEAT_MS = 10_000;
+const SLEPT_MS = 60_000;
+
+export function startSleepWatch() {
+  try {
+    suspendReg = (window as any).SteamClient?.User?.RegisterForPrepareForSystemSuspendProgress?.(() => lock()) ?? null;
+  } catch (e) {
+    console.warn("[Handheld Library] suspend hook unavailable; using the clock check only", e);
+  }
+  lastBeat = Date.now();
+  heartbeat = window.setInterval(() => {
+    const now = Date.now();
+    if (now - lastBeat > SLEPT_MS) lock();
+    lastBeat = now;
+  }, BEAT_MS) as unknown as number;
+}
+
+export function stopSleepWatch() {
+  try { suspendReg?.unregister?.(); } catch { /* ignore */ }
+  suspendReg = null;
+  if (heartbeat !== undefined) clearInterval(heartbeat);
+  heartbeat = undefined;
+}
 
 export async function refreshPinSet(): Promise<boolean> {
   try { pinIsSet = (await pinStatus()).set; } catch { pinIsSet = false; }

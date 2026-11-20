@@ -7,8 +7,8 @@
    listing the hidden games that are installed on this device (with their square Steam icons), with **Play**, **Unhide**, **Page** and
    **Unhide all**.
    Optional **PIN lock** (4–8 digits, on-screen number pad): set, change or remove it in the plugin's
-   panel (changing/removing needs the current PIN). The tab locks again when Quick Access closes or
-   after 5 minutes; after 5 wrong tries there's a cooldown (30 s, doubling up to 5 min). Only a salted
+   panel (changing/removing needs the current PIN). Once unlocked it stays unlocked for 15 minutes (through
+   Quick Access closing, Play, etc.) and locks again when that runs out or the device sleeps. A wrong PIN just shows an error (no lockout timer). Only a salted
    PBKDF2-SHA256 hash is stored, in `~/homebrew/settings/Handheld Library/pin.json`.
    **Forgot the PIN?** Delete that file from Desktop Mode (or over SSH); the lock is gone at once.
    **This is a privacy lock, not real security**: hidden games are still reachable through Steam itself

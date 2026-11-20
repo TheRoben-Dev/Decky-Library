@@ -2,7 +2,7 @@
 
 Privacy lock, not security: it keeps casual eyes off the tab. The PIN is stored only as a salted
 PBKDF2-HMAC-SHA256 hash in pin.json in the plugin's settings folder; deleting that file (e.g. from
-Desktop Mode) removes the lock. Wrong tries trigger a growing cooldown.
+Desktop Mode) removes the lock. A wrong PIN just fails; there is no lockout (user's choice).
 """
 import hashlib
 import hmac
@@ -10,12 +10,8 @@ import json
 import os
 import re
 import secrets
-import time
 
 ITERATIONS = 200_000
-FREE_TRIES = 5            # wrong tries before the first cooldown
-BASE_COOLDOWN = 30        # seconds; doubles each further wrong try
-MAX_COOLDOWN = 300
 _PIN = re.compile(r"^\d{4,8}$")
 
 
@@ -28,11 +24,8 @@ def _hash(pin: str, salt: bytes, iterations: int) -> bytes:
 
 
 class PinStore:
-    def __init__(self, path: str, clock=time.time):
+    def __init__(self, path: str):
         self.path = path
-        self.clock = clock
-        self.fails = 0
-        self.locked_until = 0.0
 
     def _load(self):
         try:
@@ -55,20 +48,14 @@ class PinStore:
     def is_set(self) -> bool:
         return self._load() is not None
 
-    def retry_in(self) -> int:
-        return max(0, int(self.locked_until - self.clock() + 0.999))
-
     def status(self) -> dict:
-        return {"set": self.is_set(), "retryIn": self.retry_in()}
+        return {"set": self.is_set(), "retryIn": 0}
 
     def verify(self, pin) -> dict:
         """{"ok": bool, "retryIn": seconds}. No PIN set → always ok."""
         d = self._load()
         if d is None:
             return {"ok": True, "retryIn": 0}
-        wait = self.retry_in()
-        if wait:
-            return {"ok": False, "retryIn": wait}
         ok = False
         if isinstance(pin, str):
             try:
@@ -77,15 +64,7 @@ class PinStore:
                 ok = hmac.compare_digest(want, got)
             except (ValueError, TypeError):
                 ok = False
-        if ok:
-            self.fails = 0
-            self.locked_until = 0.0
-            return {"ok": True, "retryIn": 0}
-        self.fails += 1
-        if self.fails >= FREE_TRIES:
-            cool = min(MAX_COOLDOWN, BASE_COOLDOWN * 2 ** (self.fails - FREE_TRIES))
-            self.locked_until = self.clock() + cool
-        return {"ok": False, "retryIn": self.retry_in()}
+        return {"ok": ok, "retryIn": 0}
 
     def set(self, new, current=None) -> dict:
         if not valid_pin(new):

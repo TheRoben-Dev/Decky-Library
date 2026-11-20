@@ -65,12 +65,11 @@ if __name__ == "__main__":
 
 
 class PinTest(unittest.TestCase):
-    def test_set_verify_change_clear_and_cooldown(self):
+    def test_set_verify_change_clear_no_lockout(self):
         from hhlib import pin
-        now = [1000.0]
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "pin.json")
-            st = pin.PinStore(path, clock=lambda: now[0])
+            st = pin.PinStore(path)
             self.assertEqual(st.status(), {"set": False, "retryIn": 0})
             self.assertTrue(st.verify("x")["ok"])                 # no PIN → open
             self.assertFalse(st.set("12a4")["ok"])
@@ -80,13 +79,9 @@ class PinTest(unittest.TestCase):
             self.assertTrue(st.verify("1234")["ok"])
             self.assertFalse(st.set("5678", "0000")["ok"])        # change needs current
             self.assertTrue(st.set("5678", "1234")["ok"])
-            for _ in range(pin.FREE_TRIES - 1):
+            for _ in range(10):
                 self.assertEqual(st.verify("0000"), {"ok": False, "retryIn": 0})
-            r = st.verify("0000")
-            self.assertEqual(r["retryIn"], pin.BASE_COOLDOWN)
-            self.assertFalse(st.verify("5678")["ok"])             # right PIN refused during cooldown
-            now[0] += pin.BASE_COOLDOWN
-            self.assertTrue(st.verify("5678")["ok"])
+            self.assertTrue(st.verify("5678")["ok"])              # no lockout after wrong tries
             self.assertFalse(st.clear("1111")["ok"])
             self.assertTrue(st.clear("5678")["ok"])
             self.assertFalse(os.path.exists(path))
