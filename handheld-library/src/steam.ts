@@ -199,3 +199,19 @@ export async function deleteCollection(id: string): Promise<boolean> {
   await col.Delete();
   return true;
 }
+
+/**
+ * Square (1x1) icon URLs for a game, best first: Steam's local library-asset cache (works offline),
+ * then the community CDN copy. Same methods Steam's own library uses (appStore.GetCachedIconURLsForApp /
+ * GetIconURLForApp, Nov 2026 client).
+ */
+export function iconUrls(g: Game): string[] {
+  const store = w.appStore;
+  const out: string[] = [];
+  try { out.push(...(store?.GetCachedIconURLsForApp?.(g.ov) ?? [])); } catch { /* ignore */ }
+  try { const u = store?.GetIconURLForApp?.(g.ov); if (u) out.push(u); } catch { /* ignore */ }
+  if (!out.length && g.ov?.icon_hash) {
+    out.push(`https://cdn.cloudflare.steamstatic.com/steamcommunity/public/images/apps/${g.appid}/${g.ov.icon_hash}.jpg`);
+  }
+  return [...new Set(out.filter((u) => typeof u === "string" && u))];
+}

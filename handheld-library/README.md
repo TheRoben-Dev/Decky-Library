@@ -4,7 +4,7 @@
    in your library that are known to work on SteamOS **and** have full or partial controller support.
    The same list is in the plugin's panel with **Play** and **Page** buttons.
 2. **Hidden games tab** – its own Quick Access tab (eye icon, next to Notifications/Friends/Settings)
-   listing the hidden games that are installed on this device, with **Play**, **Unhide**, **Page** and
+   listing the hidden games that are installed on this device (with their square Steam icons), with **Play**, **Unhide**, **Page** and
    **Unhide all**.
 3. **Quick Access tab hiding** – in the plugin's panel, switch off any Quick Access tab you don't use
    (Steam's own, the Hidden games tab, or tabs other plugins add). Decky's own tab can't be hidden, so
