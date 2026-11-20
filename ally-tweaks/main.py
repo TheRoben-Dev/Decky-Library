@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "py
 
 import decky  # noqa: E402
 
-from ally import armoury, battery, buttons, device, hhd, rgb  # noqa: E402
+from ally import armoury, backlight, battery, buttons, device, hhd, rgb  # noqa: E402
 from ally.engine import Engine  # noqa: E402
 
 
@@ -42,6 +42,7 @@ class Plugin:
             "panel": armoury.read_all(),
             "settings": e.conf,
             "lightReason": e.reason,
+            "screen": backlight.fraction(),
             "game": e.game,
         }
         st = None

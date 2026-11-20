@@ -75,6 +75,7 @@ const LIMITS = [70, 80, 85, 90, 95, 100];
 
 function LightEditor({ light }: { light: Light }) {
   const c = controller;
+  const follow = !!c.settings?.rgb.followScreen;
   const colored = ["solid", "pulse", "duality"].includes(light.mode);
   return (
     <>
@@ -119,13 +120,16 @@ function LightEditor({ light }: { light: Light }) {
       {light.mode !== "off" && (
         <PanelSectionRow>
           <SliderField
-            label="Brightness"
+            label={follow ? "Max brightness" : "Brightness"}
             value={light.brightness}
             min={10}
             max={100}
             step={10}
             showValue
-            description={colored ? undefined : "Rainbow and spiral have three hardware levels: low, medium, high."}
+            description={[
+              follow ? "Rings run at this level when the screen is at 100%." : "",
+              colored ? "" : "Rainbow and spiral only have three hardware levels: low, medium, high.",
+            ].filter(Boolean).join(" ") || undefined}
             onChange={(v) => c.editLight((l) => { l.brightness = v; })}
           />
         </PanelSectionRow>
@@ -183,6 +187,11 @@ function Lighting() {
                 onChange={(o) => c.setRgb({ reactive: o.data })} />
             </PanelSectionRow>
           )}
+          <PanelSectionRow>
+            <ToggleField label="Follow screen brightness" checked={s.followScreen}
+              description={`Scales the rings with the screen's real backlight level in 1% steps, and turns them off when the screen turns off.${s.followScreen && st.screen != null ? ` Screen now: ${Math.round(st.screen * 100)}%.` : ""}`}
+              onChange={(v) => c.setRgb(v ? { followScreen: v, base: { ...s.base, brightness: 100 } } : { followScreen: v })} />
+          </PanelSectionRow>
           <PanelSectionRow>
             <ToggleField label="Pulse red on low battery" checked={s.lowBattery}
               onChange={(v) => c.setRgb({ lowBattery: v })} />

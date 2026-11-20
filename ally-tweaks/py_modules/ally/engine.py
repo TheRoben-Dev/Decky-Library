@@ -13,7 +13,7 @@ import time
 
 import decky
 
-from . import battery, buttons, hhd, rgb, sensors, settings
+from . import backlight, battery, buttons, hhd, rgb, sensors, settings
 
 DEFAULTS = {
     "rgb": {
@@ -24,6 +24,7 @@ DEFAULTS = {
         "lowBattery": True,
         "lowBatteryAt": 15,
         "offOnBattery": False,
+        "followScreen": False,       # scale ring brightness with the panel backlight
         "perGame": {},               # appid -> {"name", "light"}
     },
     "charge": {"limit": 100, "travel": False},
@@ -59,6 +60,8 @@ class Engine:
         self.last_ac = None
         self.reason = ""
         self.temp_bin = None
+        self.screen = None          # debounced backlight fraction
+        self._screen_seen = None
 
     # ---------- settings ----------
     def save(self):
@@ -71,7 +74,26 @@ class Engine:
         self.tick(force=True)
 
     # ---------- lighting ----------
+    def _scaled(self, light: dict) -> dict:
+        """Follow screen brightness: ring brightness = your chosen brightness x
+        the panel's real backlight level, in 1 % steps. Never drops below 3 %
+        while the screen is on; off when the panel backlight is off."""
+        if not self.conf["rgb"].get("followScreen") or light.get("mode") == "off":
+            return light
+        f = self.screen
+        if f is None:
+            return light
+        if f <= 0:
+            return {"mode": "off"}
+        out = dict(light)
+        b = int(light.get("brightness", 50)) * f
+        out["brightness"] = max(3, min(100, int(round(b))))
+        return out
+
     def _target(self, snap: dict, state: dict | None):
+        return self._scaled(self._pick(snap, state))
+
+    def _pick(self, snap: dict, state: dict | None):
         r = self.conf["rgb"]
         base = r["base"]
         on_battery = snap.get("present") and not snap.get("ac")
@@ -205,7 +227,30 @@ class Engine:
             self._apply_buttons()
 
     # ---------- loop ----------
-    def run(self, stop: threading.Event, interval=5.0):
+    def _poll_screen(self) -> bool:
+        """Debounced backlight read: a new level must hold for two reads
+        (~1 s) before it's used, so dragging the slider doesn't spam HHD.
+        Returns True when the effective level changed."""
+        if not self.conf["rgb"].get("followScreen"):
+            return False
+        f = backlight.fraction()
+        if f is None:
+            return False
+        f = round(f, 3)
+        if f != self._screen_seen:
+            self._screen_seen = f
+            return False
+        if f != self.screen:
+            self.screen = f
+            return True
+        return False
+
+    def run(self, stop: threading.Event, interval=5.0, fast=0.5):
+        last = 0.0
         while not stop.is_set():
-            self.tick()
-            stop.wait(interval)
+            now = time.monotonic()
+            changed = self._poll_screen()
+            if changed or now - last >= interval:
+                last = now
+                self.tick()
+            stop.wait(fast)

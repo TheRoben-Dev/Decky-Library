@@ -43,7 +43,10 @@ def to_state(light: dict) -> dict:
     hue = _step(light.get("hue", 0), 5, 0, 360)
     hue2 = _step(light.get("hue2", 180), 5, 0, 360)
     sat = _step(light.get("saturation", 100), 10, 0, 100)
-    bri = _step(light.get("brightness", 50), 10, 0, 100)
+    # HHD's slider uses 10 % steps but its validator only clamps to 0-100
+    # (hhd/plugins/settings.py validate_config), so 1 % steps are accepted.
+    # Follow-screen mode uses that to track the backlight closely.
+    bri = _step(light.get("brightness", 50), 1, 0, 100)
     speed = light.get("speed", "medium")
     speed = speed if speed in SPEEDS else "medium"
     direction = light.get("direction", "left")

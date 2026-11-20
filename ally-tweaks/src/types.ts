@@ -23,6 +23,7 @@ export interface Settings {
     lowBattery: boolean;
     lowBatteryAt: number;
     offOnBattery: boolean;
+    followScreen: boolean;
     perGame: Record<string, GameLight>;
   };
   charge: { limit: number; travel: boolean };
@@ -64,6 +65,7 @@ export interface AppState {
   chargeBackend: "hhd" | "sysfs" | "none";
   settings: Settings;
   lightReason: string;
+  screen: number | null;
   game: { appid: string; name: string } | null;
 }
 

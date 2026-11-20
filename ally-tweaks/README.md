@@ -15,6 +15,7 @@ Power and TDP stay in [Vex Performance](../vex-performance/) and Proton in
 | **Lights during boot / while charging asleep** | HHD's own `controllers.rog_ally.rgb_boot` / `rgb_charging` options, which tell the controller MCU to keep the rings lit before HHD starts | **Yes** |
 | **Per-game lighting** | Switches when a game starts, back to default when it closes | Last color stays; switching needs the plugin |
 | **Reactive color**: battery level (red→green), APU temperature (cyan→red), TDP mode (HHD's colors: Silent blue, Performance white, Turbo red, Custom purple) | Backend loop every 5 s, writes to HHD only when the color actually changes (temperature has hysteresis) | Last color stays |
+| **Follow screen brightness**: ring brightness tracks the panel's real backlight level (`/sys/class/backlight/amdgpu_bl*/actual_brightness` ÷ `max_brightness`) in 1% steps, scaled by your max brightness; rings go off when the backlight is off | Backlight polled every 0.5 s, a new level must hold for ~1 s before it's sent to HHD, so dragging the slider doesn't spam it. Rainbow/Spiral only have 3 hardware levels | Last level stays |
 | **Low-battery pulse**: pulses red below a threshold (default 15%) on battery | Same loop, top priority | No |
 | **Lights off on battery** | Same loop | No |
 | **Charge limit** 70/80/85/90/95% or off | HHD's `gamemode.battery.charge_limit` when HHD exposes it (HHD re-applies it each boot). Otherwise the kernel's `charge_control_end_threshold` (asus-wmi), re-applied when Decky starts | **Yes** with HHD |
