@@ -23,6 +23,8 @@ class SettingsTest(unittest.TestCase):
             self.assertIs(s["steamOS"], True)          # wrong type ignored
             self.assertEqual(s["collectionName"], "Handheld Ready")
             self.assertNotIn("unknown", s)
+            s = settings.save(p, {"hiddenQamTabs": [3, "999", "48151", 3, {"x": 1}]})
+            self.assertEqual(s["hiddenQamTabs"], ["3", "48151"])
             self.assertEqual(settings.load(p), s)
 
 

@@ -13,6 +13,7 @@ DEFAULTS = {
     "excludeUnsupported": True,      # never include games Valve rates Unsupported on Deck
     "installedOnly": False,          # QAM list only
     "collectionId": "",              # id of the collection this plugin created (so renames follow it)
+    "hiddenQamTabs": [],             # Quick Access tab keys to hide (strings; Decky's "999" is never hidden)
 }
 
 
@@ -27,6 +28,8 @@ def _coerce(d: dict) -> dict:
         out["protonDB"] = DEFAULTS["protonDB"]
     if out["controller"] not in ("partial", "full"):
         out["controller"] = DEFAULTS["controller"]
+    out["hiddenQamTabs"] = sorted({str(k)[:32] for k in out["hiddenQamTabs"]
+                                   if isinstance(k, (str, int)) and str(k) != "999"})[:64]
     name = out["collectionName"].strip()[:64]
     out["collectionName"] = name or DEFAULTS["collectionName"]
     return out

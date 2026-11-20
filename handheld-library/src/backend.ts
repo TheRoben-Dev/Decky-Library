@@ -13,6 +13,7 @@ export interface Settings {
   excludeUnsupported: boolean;
   installedOnly: boolean;
   collectionId: string;
+  hiddenQamTabs: string[];
 }
 
 export const getSettings = callable<[], Settings>("get_settings");

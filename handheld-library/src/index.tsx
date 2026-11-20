@@ -1,15 +1,16 @@
 import {
-  ButtonItem, ConfirmModal, DialogButton, DropdownItem, Field, Focusable, Navigation, PanelSection,
+  ButtonItem, ConfirmModal, DropdownItem, Navigation, PanelSection,
   PanelSectionRow, showModal, staticClasses, TextField, ToggleField,
 } from "@decky/ui";
 import { definePlugin, toaster } from "@decky/api";
 import { useEffect, useMemo, useState } from "react";
-import { FaFilter } from "react-icons/fa";
-import { deleteCollection, Game, hiddenGames, isHidden, launch, unhide } from "./steam";
-import { snapshot, start, stop, subscribe, sync, updateSettings } from "./engine";
+import { FaEyeSlash, FaFilter } from "react-icons/fa";
+import { HiddenTab } from "./hiddenTab";
+import { installQam, onSeenTabs, qamActive, seenTabs, setHiddenTabs, uninstallQam } from "./qam";
+import { GameRow, note, warn } from "./ui";
+import { deleteCollection, Game, isHidden, launch } from "./steam";
+import { loadSettings, snapshot, start, stop, subscribe, sync, updateSettings } from "./engine";
 
-const note = { fontSize: "12px", lineHeight: "16px", opacity: 0.75, whiteSpace: "normal" as const };
-const warn = { ...note, color: "#FF9F1C", opacity: 1 };
 const PAGE = 25;
 
 function useEngine() {
@@ -36,22 +37,6 @@ function ago(t: number): string {
 }
 
 const ctrlLabel = (g: Game) => (g.controller === 2 ? "Full controller" : "Partial controller");
-
-function GameRow({ g, desc, actions }: { g: Game; desc: string; actions: { label: string; onClick: () => void }[] }) {
-  return (
-    <PanelSectionRow>
-      <Field label={g.name} description={desc} bottomSeparator="standard" padding="none"
-        childrenLayout="below" focusable={false}>
-        <Focusable style={{ display: "flex", gap: "6px", marginTop: "4px" }} flow-children="horizontal">
-          {actions.map((a) => (
-            <DialogButton key={a.label} style={{ minWidth: 0, flex: 1, padding: "6px 8px", fontSize: "13px" }}
-              onClick={a.onClick}>{a.label}</DialogButton>
-          ))}
-        </Focusable>
-      </Field>
-    </PanelSectionRow>
-  );
-}
 
 function FilterView() {
   const st = useEngine();
@@ -170,72 +155,61 @@ function FilterView() {
   );
 }
 
-function HiddenView() {
-  const [games, setGames] = useState<Game[]>(() => hiddenGames());
-  const refresh = () => setGames(hiddenGames());
-
-  const doUnhide = (ids: number[]) => {
-    try { unhide(ids); } catch (e) { toaster.toast({ title: "Handheld Library", body: `Couldn't unhide: ${e}` }); }
-    // Steam updates the hidden collection asynchronously.
-    setTimeout(refresh, 300);
-  };
-
+function QamTabsSection() {
+  const st = useEngine();
+  const [tabs, setTabs] = useState(seenTabs());
+  useEffect(() => onSeenTabs(() => setTabs(seenTabs())), []);
+  const s = st.settings;
+  if (!s) return null;
+  const hiddenSet = new Set(s.hiddenQamTabs);
   return (
-    <PanelSection title={`Hidden games (${games.length})`}>
-      {games.length === 0 && <PanelSectionRow><div style={note}>Nothing is hidden.</div></PanelSectionRow>}
-      {games.map((g) => (
-        <GameRow key={g.appid} g={g} desc={g.installed ? "Installed" : "Not installed"}
-          actions={[
-            { label: g.installed ? "Play" : "Install", onClick: () => { Navigation.CloseSideMenus(); launch(g); } },
-            { label: "Unhide", onClick: () => doUnhide([g.appid]) },
-            { label: "Page", onClick: () => openPage(g.appid) },
-          ]} />
-      ))}
-      {games.length > 1 && (
-        <PanelSectionRow>
-          <ButtonItem layout="below" onClick={async () => {
-            if (await confirm("Unhide all?", `Shows all ${games.length} hidden games in your library again.`, "Unhide all")) {
-              doUnhide(games.map((g) => g.appid));
-            }
-          }}>Unhide all</ButtonItem>
-        </PanelSectionRow>
+    <PanelSection title="Quick Access tabs">
+      {!qamActive() && (
+        <PanelSectionRow><div style={warn}>Decky's Quick Access hook wasn't found, so the Hidden games tab and tab hiding are off. Quick Access is unchanged.</div></PanelSectionRow>
       )}
+      <PanelSectionRow>
+        <div style={note}>Turn a tab off to remove its icon from Quick Access. Takes effect the next time Quick Access opens. Decky's own tab always stays.</div>
+      </PanelSectionRow>
+      {tabs.map((t) => (
+        <PanelSectionRow key={t.key}>
+          <ToggleField label={t.label} checked={t.locked || !hiddenSet.has(t.key)} disabled={t.locked}
+            onChange={(on) => {
+              const next = new Set(hiddenSet);
+              if (on) next.delete(t.key); else next.add(t.key);
+              updateSettings({ hiddenQamTabs: [...next] }, false);
+            }} />
+        </PanelSectionRow>
+      ))}
     </PanelSection>
   );
 }
 
-let lastTab: "filter" | "hidden" = "filter";
-
 function Content() {
-  const [tab, setTab] = useState(lastTab);
-  const pick = (t: typeof tab) => { lastTab = t; setTab(t); };
-  const tabBtn = (t: typeof tab, label: string) => (
-    <DialogButton style={{ minWidth: 0, flex: 1, padding: "6px", opacity: tab === t ? 1 : 0.55,
-      borderBottom: tab === t ? "2px solid currentColor" : "2px solid transparent" }}
-      onClick={() => pick(t)}>{label}</DialogButton>
-  );
   return (
     <>
-      <PanelSection>
-        <PanelSectionRow>
-          <Focusable style={{ display: "flex", gap: "6px" }} flow-children="horizontal">
-            {tabBtn("filter", "Handheld Ready")}
-            {tabBtn("hidden", "Hidden")}
-          </Focusable>
-        </PanelSectionRow>
-      </PanelSection>
-      {tab === "filter" ? <FilterView /> : <HiddenView />}
+      <FilterView />
+      <QamTabsSection />
     </>
   );
 }
 
 export default definePlugin(() => {
   start();
+  const qamOk = installQam({
+    title: <div className={staticClasses.Title}>Hidden games</div>,
+    icon: <FaEyeSlash />,
+    content: <HiddenTab />,
+  });
+  if (qamOk) {
+    const apply = () => { const s = snapshot().settings; if (s) setHiddenTabs(s.hiddenQamTabs); };
+    subscribe(apply);
+    loadSettings().then(apply).catch(() => {});
+  }
   return {
     name: "Handheld Library",
     titleView: <div className={staticClasses.Title}>Handheld Library</div>,
     content: <Content />,
     icon: <FaFilter />,
-    onDismount() { stop(); },
+    onDismount() { uninstallQam(); stop(); },
   };
 });
