@@ -4,7 +4,7 @@ Decky Loader plugins for Bazzite / SteamOS handhelds. Each plugin lives in its o
 
 | Plugin | What it does |
 |---|---|
-| [vex-performance](vex-performance/) | Per-game smart profiles: gamescope FSR, frame cap + matched refresh, TDP/GPU (Handheld Daemon aware) and lsfg-vk frame gen, applied automatically on game launch. |
+| [vex-performance](vex-performance/) | Per-game smart profiles: gamescope FSR, frame cap + matched refresh, TDP/GPU (Steam slider / PowerStation) and lsfg-vk frame gen, applied automatically on game launch. |
 
 ## Building a plugin
 ```

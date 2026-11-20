@@ -49,7 +49,7 @@ function Content() {
   const edit = (m: (p: Profile) => void) => c.editActive(m);
   const tdpMin = limits.tdpMax > 0 ? limits.tdpMin : env?.power.tdpMin ?? 5;
   const tdpMax = limits.tdpMax > 0 ? limits.tdpMax : env?.power.tdpMax ?? 30;
-  const gpuRange = env?.power.gpuRange ?? [800, 2700];
+  const gpuRange = env?.powerstation.gpuRange ?? env?.power.gpuRange ?? [800, 2700];
   const autoHz = matchRefresh(p.frame.fps, limits.refreshMin, limits.refreshMax);
   const tdpPlugins = env?.conflicts.plugins.filter((x) => /TDP/.test(x.controls)) ?? [];
 
@@ -146,13 +146,17 @@ function Content() {
 
       <PanelSection title="Power (TDP / GPU)">
         <Note>
-          Path: <b>{backend === "steam" ? "Steam TDP slider (Handheld Daemon follows it)" : backend === "hhd" ? "Handheld Daemon API" : backend === "sysfs" ? "Direct (asus-armoury)" : "Off"}</b>
+          TDP via: <b>{backend === "steam" ? "Steam's TDP slider" : backend === "powerstation" ? "PowerStation" : backend === "hhd" ? "Handheld Daemon (legacy)" : backend === "sysfs" ? "Direct (asus-armoury)" : "Off"}</b>
+          {backend !== "off" && <> · GPU via: <b>{env?.powerstation.running ? "PowerStation" : backend === "hhd" ? "Handheld Daemon" : "amdgpu sysfs"}</b></>}
         </Note>
         {tdpPlugins.length > 0 && (
           <Note warning>{tdpPlugins.map((x) => x.name).join(", ")} also controls TDP. Auto mode stays off to avoid fighting it. Pick a path below to override.</Note>
         )}
-        {env?.hhd.running && !env.hhd.tdpEnabled && backend !== "steam" && (
-          <Note warning>Handheld Daemon is running with its TDP controls off. Turn on "TDP Controls" in HHD to let Vex set TDP.</Note>
+        {env?.hhd.running && c.settings.powerBackend === "auto" && backend === "off" && (
+          <Note warning>Handheld Daemon (retired in Bazzite 44) is still running, so auto mode leaves TDP alone. Update Bazzite, or pick "Handheld Daemon (legacy)" below.</Note>
+        )}
+        {c.settings.powerBackend === "auto" && backend !== "steam" && env?.powerstation.running && (
+          <Note>Steam's TDP slider isn't showing, so Vex talks to PowerStation directly. If you want Steam to own it, enable the TDP slider in Steam's Performance settings.</Note>
         )}
         {backend !== "off" && (
           <>
@@ -240,9 +244,10 @@ function Content() {
           <DropdownItem label="Power control path"
             rgOptions={[
               { data: "auto", label: "Auto (recommended)" },
-              { data: "steam", label: "Steam slider (HHD)" },
-              { data: "hhd", label: "Handheld Daemon API" },
+              { data: "steam", label: "Steam TDP slider" },
+              { data: "powerstation", label: "PowerStation" },
               { data: "sysfs", label: "Direct sysfs" },
+              { data: "hhd", label: "Handheld Daemon (legacy)" },
               { data: "off", label: "Off" },
             ]}
             selectedOption={c.settings.powerBackend}
