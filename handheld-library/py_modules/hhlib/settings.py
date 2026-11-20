@@ -16,6 +16,7 @@ DEFAULTS = {
     "hiddenQamTabs": [],             # Quick Access tab keys to hide (strings; Decky's "999" is never hidden)
     "hiddenLibraryTabs": [],         # Steam Library tab ids to hide (e.g. "Soundtracks")
     "readyLibraryTab": False,        # show the Handheld Ready collection as a Library tab
+    "pluginTabs": [],                # Decky plugin names that also get their own QAM tab
 }
 
 
@@ -34,6 +35,7 @@ def _coerce(d: dict) -> dict:
                                    if isinstance(k, (str, int)) and str(k) != "999"})[:64]
     out["hiddenLibraryTabs"] = sorted({str(k)[:64] for k in out["hiddenLibraryTabs"]
                                        if isinstance(k, str) and k})[:64]
+    out["pluginTabs"] = sorted({k[:128] for k in out["pluginTabs"] if isinstance(k, str) and k.strip()})[:32]
     name = out["collectionName"].strip()[:64]
     out["collectionName"] = name or DEFAULTS["collectionName"]
     return out

@@ -28,6 +28,8 @@ class SettingsTest(unittest.TestCase):
             s = settings.save(p, {"hiddenLibraryTabs": ["Soundtracks", 5, "", "Soundtracks"], "readyLibraryTab": True})
             self.assertEqual(s["hiddenLibraryTabs"], ["Soundtracks"])
             self.assertIs(s["readyLibraryTab"], True)
+            s = settings.save(p, {"pluginTabs": ["Vex Performance", 3, " ", "Ally Tweaks"]})
+            self.assertEqual(s["pluginTabs"], ["Ally Tweaks", "Vex Performance"])
             self.assertEqual(settings.load(p), s)
 
 

@@ -9,7 +9,11 @@
 3. **Quick Access tab hiding** – in the plugin's panel, switch off any Quick Access tab you don't use
    (Steam's own, the Hidden games tab, or tabs other plugins add). Decky's own tab can't be hidden, so
    you can always get back to the setting. Applies the next time Quick Access opens.
-4. **Library tab hiding** – switch off Steam Library tabs (Great on Deck / SteamOS Compatible,
+4. **Plugin tabs** – give any installed Decky plugin (e.g. Vex Performance, Ally Tweaks) its own
+   Quick Access tab with the plugin's icon; the tab shows the plugin's panel directly. The plugin stays
+   in Decky's list too. Off for every plugin by default; added through Decky's tabs hook like the
+   Hidden games tab, and a plugin that isn't loaded just shows a note instead of its panel.
+5. **Library tab hiding** – switch off Steam Library tabs (Great on Deck / SteamOS Compatible,
    All games, Installed, Favorites, Collections, Non-Steam, Soundtracks, …), and optionally show the
    Handheld Ready collection as its own Library tab. Steam has no built-in setting for this. If every
    tab is off, Steam's tabs come back. If **TabMaster** is installed, this section turns itself off

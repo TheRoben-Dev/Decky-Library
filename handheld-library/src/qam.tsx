@@ -15,6 +15,7 @@
  * (it counts its tabs to decide whether to push them again). Anything unexpected → we stop
  * filtering and Steam/Decky render exactly as they would without this plugin.
  */
+import { staticClasses } from "@decky/ui";
 import { ReactNode } from "react";
 
 const DECKY_KEY = "999";
@@ -68,11 +69,15 @@ function record(list: any[]) {
   if (changed) seenListeners.forEach((f) => f());
 }
 
-/** Decky pushes all its tabs again when its count doesn't match; keep only the newest of each key. */
+/**
+ * Decky pushes all its tabs again when its count doesn't match; keep only the newest of each key, and
+ * drop Decky tabs that were removed from the hook (e.g. a plugin tab the user switched off).
+ */
 function dedupeDecky(list: any[]): any[] {
+  const registered = new Set((hook?.tabs ?? []).map((t: any) => String(t?.id)));
   const last = new Map<string, any>();
   for (const t of list) if (t?.decky) last.set(keyOf(t), t);
-  return list.filter((t) => !t?.decky || last.get(keyOf(t)) === t);
+  return list.filter((t) => !t?.decky || (last.get(keyOf(t)) === t && registered.has(keyOf(t))));
 }
 
 function render(this: any, tabs: any[], visible: boolean) {
@@ -120,12 +125,15 @@ export function uninstallQam() {
   if (!hook) return;
   try {
     restoreArrays();
-    // Take our tab out of Steam's array as well, or Decky would count a tab it no longer has.
+    // Take our tabs out of Steam's array as well, or Decky would count tabs it no longer has.
+    const ours = new Set([String(HIDDEN_TAB_ID), ...[...pluginTabIds.values()].map(String)]);
     full.forEach((_all, arr) => {
-      const i = arr.findIndex((t: any) => t?.decky && keyOf(t) === String(HIDDEN_TAB_ID));
-      if (i >= 0) arr.splice(i, 1);
+      for (let i = arr.length - 1; i >= 0; i--) if (arr[i]?.decky && ours.has(keyOf(arr[i]))) arr.splice(i, 1);
     });
     hook.removeById?.(HIDDEN_TAB_ID);
+    pluginTabIds.forEach((id) => hook.removeById?.(id));
+    pluginTabIds.clear();
+    if (pluginTimer !== undefined) clearInterval(pluginTimer);
     if (hook.render === wrapper) hook.render = origRender;
     else broken = true;   // someone wrapped after us: become a pass-through
   } catch (e) {
@@ -144,7 +152,11 @@ export function qamActive(): boolean {
 }
 
 export function seenTabs(): SeenTab[] {
-  const out = new Map(seen);
+  const active = new Set([...pluginTabIds.values()].map(String));
+  const out = new Map([...seen].filter(([k]) => {
+    const n = Number(k);
+    return !(n >= 49000 && n < 59000) || active.has(k);
+  }));
   hidden.forEach((k) => { if (!out.has(k)) out.set(k, { key: k, label: STEAM_TABS[k] ?? `Tab ${k}`, locked: false }); });
   return [...out.values()];
 }
@@ -152,4 +164,64 @@ export function seenTabs(): SeenTab[] {
 export function onSeenTabs(f: () => void): () => void {
   seenListeners.add(f);
   return () => seenListeners.delete(f);
+}
+
+/* ---------- Decky plugins as their own QAM tabs ---------- */
+
+const pluginTabIds = new Map<string, number>();   // plugin name → our QAM tab id
+let wantedPlugins: string[] = [];
+let pluginTimer: number | undefined;
+
+export function deckyPlugins(): any[] {
+  try {
+    const list: any[] = (window as any).DeckyPluginLoader?.plugins ?? [];
+    return list.filter((p) => p && typeof p.name === "string" && p.content);
+  } catch { return []; }
+}
+
+/** Stable id per plugin name (FNV-1a into 49000..58999), so hidden-tab settings survive restarts. */
+export function pluginTabId(name: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < name.length; i++) { h ^= name.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return 49000 + (h % 10000);
+}
+
+/** Renders the plugin's own panel, looked up on every render so updates/reloads are picked up. */
+function HostedPlugin({ name }: { name: string }) {
+  const p = deckyPlugins().find((x) => x.name === name);
+  if (!p) return <div style={{ padding: "16px", fontSize: "13px", opacity: 0.7 }}>{name} isn't loaded right now.</div>;
+  return <div style={{ paddingTop: "8px" }}>{p.content}</div>;
+}
+
+function syncPluginTabs() {
+  if (!hook || broken) return;
+  const loaded = new Map(deckyPlugins().map((p) => [p.name, p]));
+  for (const [name, id] of [...pluginTabIds]) {
+    if (!wantedPlugins.includes(name) || !loaded.has(name)) { hook.removeById?.(id); pluginTabIds.delete(name); }
+  }
+  for (const name of wantedPlugins) {
+    const p = loaded.get(name);
+    if (!p || pluginTabIds.has(name)) continue;
+    const id = pluginTabId(name);
+    try {
+      hook.add({
+        id,
+        title: p.titleView ?? <div className={staticClasses.Title}>{name}</div>,
+        icon: p.icon ?? <span>{name.slice(0, 2)}</span>,
+        content: <HostedPlugin name={name} />,
+      });
+      pluginTabIds.set(name, id);
+      STEAM_TABS[String(id)] = `${name} (plugin tab)`;
+    } catch (e) {
+      console.error(`[Handheld Library] couldn't add a QAM tab for ${name}`, e);
+    }
+  }
+}
+
+
+/** Gives each named plugin its own QAM tab (it stays in Decky's list too). Re-checks every 5 s for plugins that load later or reload. */
+export function setPluginTabs(names: string[]) {
+  wantedPlugins = names.filter((n) => n !== "Handheld Library");
+  syncPluginTabs();
+  if (pluginTimer === undefined && hook) pluginTimer = window.setInterval(syncPluginTabs, 5000) as unknown as number;
 }

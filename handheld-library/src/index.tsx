@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FaEyeSlash, FaFilter } from "react-icons/fa";
 import { HiddenTab } from "./hiddenTab";
 import { installLibrary, LIBRARY_TABS, libraryActive, seenLibraryTabs, setLibraryConfig, tabMasterInstalled, uninstallLibrary } from "./library";
-import { installQam, onSeenTabs, qamActive, seenTabs, setHiddenTabs, uninstallQam } from "./qam";
+import { deckyPlugins, installQam, onSeenTabs, qamActive, seenTabs, setHiddenTabs, setPluginTabs, uninstallQam } from "./qam";
 import { GameRow, note, warn } from "./ui";
 import { deleteCollection, Game, isHidden, launch } from "./steam";
 import { loadSettings, snapshot, start, stop, subscribe, sync, updateSettings } from "./engine";
@@ -163,6 +163,9 @@ function QamTabsSection() {
   const s = st.settings;
   if (!s) return null;
   const hiddenSet = new Set(s.hiddenQamTabs);
+  const pluginSet = new Set(s.pluginTabs);
+  const plugins = [...new Set([...deckyPlugins().map((p) => p.name as string), ...s.pluginTabs])]
+    .filter((n) => n !== "Handheld Library").sort((a, b) => a.localeCompare(b));
   return (
     <PanelSection title="Quick Access tabs">
       {!qamActive() && (
@@ -171,6 +174,26 @@ function QamTabsSection() {
       <PanelSectionRow>
         <div style={note}>Turn a tab off to remove its icon from Quick Access. Takes effect the next time Quick Access opens. Decky's own tab always stays.</div>
       </PanelSectionRow>
+      {plugins.length > 0 && (
+        <>
+          <PanelSectionRow>
+            <div style={{ ...note, marginTop: "8px" }}>Give a Decky plugin its own Quick Access tab (it stays in Decky's list too):</div>
+          </PanelSectionRow>
+          {plugins.map((name) => (
+            <PanelSectionRow key={`p-${name}`}>
+              <ToggleField label={`${name} tab`} checked={pluginSet.has(name)} disabled={!qamActive()}
+                onChange={(on) => {
+                  const next = new Set(pluginSet);
+                  if (on) next.add(name); else next.delete(name);
+                  updateSettings({ pluginTabs: [...next] }, false);
+                }} />
+            </PanelSectionRow>
+          ))}
+          <PanelSectionRow>
+            <div style={{ ...note, marginTop: "8px" }}>Show or hide tabs:</div>
+          </PanelSectionRow>
+        </>
+      )}
       {tabs.map((t) => (
         <PanelSectionRow key={t.key}>
           <ToggleField label={t.label} checked={t.locked || !hiddenSet.has(t.key)} disabled={t.locked}
@@ -247,7 +270,7 @@ export default definePlugin(() => {
   const apply = () => {
     const s = snapshot().settings;
     if (!s) return;
-    if (qamOk) setHiddenTabs(s.hiddenQamTabs);
+    if (qamOk) { setHiddenTabs(s.hiddenQamTabs); setPluginTabs(s.pluginTabs); }
     setLibraryConfig({
       hidden: new Set(s.hiddenLibraryTabs),
       readyTab: s.readyLibraryTab && s.collectionId && s.enabled ? { name: s.collectionName, collectionId: s.collectionId } : null,

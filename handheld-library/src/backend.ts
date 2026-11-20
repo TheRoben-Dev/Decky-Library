@@ -16,6 +16,7 @@ export interface Settings {
   hiddenQamTabs: string[];
   hiddenLibraryTabs: string[];
   readyLibraryTab: boolean;
+  pluginTabs: string[];
 }
 
 export const getSettings = callable<[], Settings>("get_settings");
