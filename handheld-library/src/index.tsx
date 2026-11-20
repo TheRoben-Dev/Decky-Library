@@ -6,6 +6,7 @@ import { definePlugin, toaster } from "@decky/api";
 import { useEffect, useMemo, useState } from "react";
 import { FaEyeSlash, FaFilter } from "react-icons/fa";
 import { HiddenTab } from "./hiddenTab";
+import { knownPinSet, openPinFlow, refreshPinSet } from "./pin";
 import { installLibrary, LIBRARY_TABS, libraryActive, seenLibraryTabs, setLibraryConfig, tabMasterInstalled, uninstallLibrary } from "./library";
 import { deckyPlugins, installQam, onSeenTabs, qamActive, seenTabs, setHiddenTabs, setPluginTabs, uninstallQam } from "./qam";
 import { GameRow, note, warn } from "./ui";
@@ -256,10 +257,36 @@ function LibraryTabsSection() {
   );
 }
 
+function PinSection() {
+  const [set, setSet] = useState<boolean | null>(knownPinSet());
+  useEffect(() => { refreshPinSet().then(setSet); }, []);
+  const done = (msg: string) => { refreshPinSet().then(setSet); toaster.toast({ title: "Hidden games lock", body: msg }); };
+  return (
+    <PanelSection title="Hidden games lock">
+      <PanelSectionRow>
+        <div style={note}>
+          {set ? "The Hidden games tab asks for your PIN. It locks again when Quick Access closes or after 5 minutes."
+            : "Lock the Hidden games tab with a 4–8 digit PIN."}
+          {" "}This is a privacy lock, not real security: hidden games are still reachable in Steam itself (Library → Collections → Hidden, search, store pages). Turning off the Collections Library tab above removes the easiest route; the "Handheld Ready" Library tab can replace it.
+        </div>
+      </PanelSectionRow>
+      {set === false && <PanelSectionRow><ButtonItem layout="below" onClick={() => openPinFlow("set", done)}>Set PIN</ButtonItem></PanelSectionRow>}
+      {set && (
+        <>
+          <PanelSectionRow><ButtonItem layout="below" onClick={() => openPinFlow("change", done)}>Change PIN</ButtonItem></PanelSectionRow>
+          <PanelSectionRow><ButtonItem layout="below" onClick={() => openPinFlow("remove", done)}>Remove PIN</ButtonItem></PanelSectionRow>
+          <PanelSectionRow><div style={note}>Forgot it? In Desktop Mode delete ~/homebrew/settings/Handheld Library/pin.json. The lock is gone right away.</div></PanelSectionRow>
+        </>
+      )}
+    </PanelSection>
+  );
+}
+
 function Content() {
   return (
     <>
       <FilterView />
+      <PinSection />
       <LibraryTabsSection />
       <QamTabsSection />
     </>

@@ -6,6 +6,14 @@
 2. **Hidden games tab** – its own Quick Access tab (eye icon, next to Notifications/Friends/Settings)
    listing the hidden games that are installed on this device (with their square Steam icons), with **Play**, **Unhide**, **Page** and
    **Unhide all**.
+   Optional **PIN lock** (4–8 digits, on-screen number pad): set, change or remove it in the plugin's
+   panel (changing/removing needs the current PIN). The tab locks again when Quick Access closes or
+   after 5 minutes; after 5 wrong tries there's a cooldown (30 s, doubling up to 5 min). Only a salted
+   PBKDF2-SHA256 hash is stored, in `~/homebrew/settings/Handheld Library/pin.json`.
+   **Forgot the PIN?** Delete that file from Desktop Mode (or over SSH); the lock is gone at once.
+   **This is a privacy lock, not real security**: hidden games are still reachable through Steam itself
+   (Library → Collections → Hidden, search, store pages). Turning off the Collections Library tab
+   removes the easiest route; the Handheld Ready Library tab can stand in for it.
 3. **Quick Access tab hiding** – in the plugin's panel, switch off any Quick Access tab you don't use
    (Steam's own, the Hidden games tab, or tabs other plugins add). Decky's own tab can't be hidden, so
    you can always get back to the setting. Applies the next time Quick Access opens.
