@@ -1,0 +1,97 @@
+/* Nightgrid — options/glyphs-ally.css  (Button prompts: "Ally 2023")
+ * Steam draws Steam Input button prompts as <img src=".../steaminputglyphs/<name>.svg">
+ * (Xbox: xbox_*, neutral letters: shared_button_*, Steam Deck: sd_*). Each prompt we know is
+ * swapped for an original Nightgrid-style glyph shaped after the ROG Ally 2023's controls:
+ * monochrome A/B/X/Y caps instead of Xbox's colored ones, View/Menu, the two system buttons,
+ * squared bumpers/triggers. Matching is by substrings of the file name, so a name Steam doesn't
+ * use simply doesn't match (nothing breaks). Anything left over from the Xbox set is shown
+ * desaturated, so no colored Xbox letter survives.
+ * Prompts Steam draws as inline SVG (not files) can't be swapped by CSS; they get the same
+ * desaturation.
+ */
+
+/* A */
+img:is([src*="/steaminputglyphs/xbox_"], [src*="/steaminputglyphs/shared_button_"], [src*="/steaminputglyphs/sd_button_"]):is([src*="xbox_button_a."], [src*="xbox_button_a_"], [src*="xbox_button_color_a"], [src*="shared_button_a."], [src*="shared_button_a_"], [src*="sd_button_a."], [src*="sd_button_a_"]) {
+  content: url(/themes_custom/Nightgrid/glyphs/ally_a.svg) !important;
+  filter: none !important;
+}
+
+/* B */
+img:is([src*="/steaminputglyphs/xbox_"], [src*="/steaminputglyphs/shared_button_"], [src*="/steaminputglyphs/sd_button_"]):is([src*="xbox_button_b."], [src*="xbox_button_b_"], [src*="xbox_button_color_b"], [src*="shared_button_b."], [src*="shared_button_b_"], [src*="sd_button_b."], [src*="sd_button_b_"]) {
+  content: url(/themes_custom/Nightgrid/glyphs/ally_b.svg) !important;
+  filter: none !important;
+}
+
+/* X */
+img:is([src*="/steaminputglyphs/xbox_"], [src*="/steaminputglyphs/shared_button_"], [src*="/steaminputglyphs/sd_button_"]):is([src*="xbox_button_x."], [src*="xbox_button_x_"], [src*="xbox_button_color_x"], [src*="shared_button_x."], [src*="shared_button_x_"], [src*="sd_button_x."], [src*="sd_button_x_"]) {
+  content: url(/themes_custom/Nightgrid/glyphs/ally_x.svg) !important;
+  filter: none !important;
+}
+
+/* Y */
+img:is([src*="/steaminputglyphs/xbox_"], [src*="/steaminputglyphs/shared_button_"], [src*="/steaminputglyphs/sd_button_"]):is([src*="xbox_button_y."], [src*="xbox_button_y_"], [src*="xbox_button_color_y"], [src*="shared_button_y."], [src*="shared_button_y_"], [src*="sd_button_y."], [src*="sd_button_y_"]) {
+  content: url(/themes_custom/Nightgrid/glyphs/ally_y.svg) !important;
+  filter: none !important;
+}
+
+/* View */
+img[src*="/steaminputglyphs/xbox_"]:is([src*="xbox_button_select"], [src*="xbox_button_view"], [src*="xbox_button_back"], [src*="xbox_select"], [src*="xbox_view"]) {
+  content: url(/themes_custom/Nightgrid/glyphs/ally_view.svg) !important;
+  filter: none !important;
+}
+
+/* Menu */
+img[src*="/steaminputglyphs/xbox_"]:is([src*="xbox_button_start"], [src*="xbox_button_menu"], [src*="xbox_start"], [src*="xbox_menu"]) {
+  content: url(/themes_custom/Nightgrid/glyphs/ally_menu.svg) !important;
+  filter: none !important;
+}
+
+/* Guide → Command Center (opens the Steam menu) */
+img[src*="/steaminputglyphs/xbox_"]:is([src*="xbox_button_logo"], [src*="xbox_button_guide"], [src*="xbox_logo"], [src*="xbox_guide"]) {
+  content: url(/themes_custom/Nightgrid/glyphs/ally_command.svg) !important;
+  filter: none !important;
+}
+
+/* LB */
+img[src*="/steaminputglyphs/xbox_"]:is([src*="xbox_lb."], [src*="xbox_button_lb"], [src*="xbox_bumper_l"], [src*="xbox_shoulder_l"]) {
+  content: url(/themes_custom/Nightgrid/glyphs/ally_lb.svg) !important;
+  filter: none !important;
+}
+
+/* RB */
+img[src*="/steaminputglyphs/xbox_"]:is([src*="xbox_rb."], [src*="xbox_button_rb"], [src*="xbox_bumper_r"], [src*="xbox_shoulder_r"]) {
+  content: url(/themes_custom/Nightgrid/glyphs/ally_rb.svg) !important;
+  filter: none !important;
+}
+
+/* LT */
+img[src*="/steaminputglyphs/xbox_"]:is([src*="xbox_lt."], [src*="xbox_button_lt"], [src*="xbox_trigger_l"]) {
+  content: url(/themes_custom/Nightgrid/glyphs/ally_lt.svg) !important;
+  filter: none !important;
+}
+
+/* RT */
+img[src*="/steaminputglyphs/xbox_"]:is([src*="xbox_rt."], [src*="xbox_button_rt"], [src*="xbox_trigger_r"]) {
+  content: url(/themes_custom/Nightgrid/glyphs/ally_rt.svg) !important;
+  filter: none !important;
+}
+
+/* L3 */
+img:is([src*="/steaminputglyphs/xbox_"], [src*="/steaminputglyphs/shared_"]):is([src*="shared_l3."], [src*="xbox_l3."], [src*="shared_lstick_click"], [src*="xbox_lstick_click"], [src*="shared_stick_l_click"], [src*="xbox_ls_click"]) {
+  content: url(/themes_custom/Nightgrid/glyphs/ally_ls.svg) !important;
+  filter: none !important;
+}
+
+/* R3 */
+img:is([src*="/steaminputglyphs/xbox_"], [src*="/steaminputglyphs/shared_"]):is([src*="shared_r3."], [src*="xbox_r3."], [src*="shared_rstick_click"], [src*="xbox_rstick_click"], [src*="shared_stick_r_click"], [src*="xbox_rs_click"]) {
+  content: url(/themes_custom/Nightgrid/glyphs/ally_rs.svg) !important;
+  filter: none !important;
+}
+
+/* Leftover Xbox-set prompts (D-pad, sticks, anything not matched above): monochrome. */
+img[src*="/steaminputglyphs/xbox_"] {
+  filter: grayscale(1) brightness(1.15);
+}
+.BasicUI :is(.footer_BasicFooter, .footer_QuickAccessFooter, .footer_FooterLegend) svg {
+  filter: grayscale(1) brightness(1.15);
+}
