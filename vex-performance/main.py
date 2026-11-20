@@ -1,6 +1,6 @@
 """Vex Performance - Decky backend.
 
-Runs as root (plugin flag "_root") so it can reach PowerStation on the system
+Runs as root (plugin flag "root") so it can reach PowerStation on the system
 bus, sysfs power/GPU knobs, the user's lsfg-vk config and (legacy, pre-Bazzite
 44) Handheld Daemon's root-only socket.
 

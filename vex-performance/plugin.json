@@ -1,7 +1,7 @@
 {
   "name": "Vex Performance",
   "author": "Roben",
-  "flags": ["_root"],
+  "flags": ["root"],
   "api_version": 1,
   "publish": {
     "tags": ["performance", "tdp", "fsr", "lsfg-vk", "root"],
