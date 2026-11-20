@@ -75,17 +75,17 @@ Install / primary buttons) use dark text, since white on cyan or green fails con
 | | Subtle (default) | Full adds |
 |---|---|---|
 | Focus | focus ring fades in; tabs, buttons, menu rows "lock on" with a tiny scale | soft magenta pulse on the focus ring |
-| Tabs | magenta bar grows in on the newly selected tab | |
-| Panels | dialogs slide up, context/power menus scale in, settings pages fade, Quick Access title slides in, toasts slide in from the right, keyboard rises | settings and Quick Access rows cascade in |
-| Headers | blinking `_` cursor after the big `// TITLE`s; section headers wipe in | typewriter-style reveal |
-| Progress | | moving stripes on download bars |
+| Tabs | newly selected tab fades up with its magenta bar | |
+| Panels | dialogs slide up, context/power menus scale in, settings pages fade, Quick Access title slides in, toasts slide in from the right, keyboard rises | |
+| Headers | blinking `_` cursor after the Quick Access and Downloads titles; section headers wipe in | typewriter-style reveal |
+| Progress | | moving stripes on running download bars (the bar's box isn't touched) |
 
 Everything animates only `opacity`/`transform` (the header wipe uses `clip-path` on a few short
 labels, once). One-shot effects run when focus moves or a panel opens, so an idle screen does nothing
 but blink one cursor. Loops stop while a game is running (detected from Steam's in-game overlay
 background and the running-game column in the STEAM menu), `prefers-reduced-motion` turns all of it off,
 and so does Steam's own LowPerfMode. CSS can't animate the page change itself (Steam swaps the whole
-page), and tabs are separate elements, so the selected-tab bar grows in place rather than sliding over.
+page), and tabs are separate elements, so the selected tab fades up in place rather than the bar sliding over.
 
 ## Performance
 Without animations everything is static: the grid is a background on the page containers (one paint, no fixed overlay),

@@ -20,7 +20,6 @@
   @keyframes ng-in-scale  { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
   @keyframes ng-focus-pop { from { transform: scale(.97); } to { transform: none; } }
   @keyframes ng-ring-in   { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: none; } }
-  @keyframes ng-bar-grow  { from { transform: scaleX(0); } to { transform: scaleX(1); } }
   @keyframes ng-blink     { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
 
   /* ── Focus ────────────────────────────────────────────── */
@@ -36,18 +35,11 @@
     animation: ng-focus-pop var(--ng-dur-fast) var(--ng-ease);
   }
 
-  /* ── Selected tab: the magenta bar grows in on the newly selected tab ── */
-  .BasicUI .gamepadtabbedpage_Tab { position: relative; }
-  .BasicUI .gamepadtabbedpage_Tab.gamepadtabbedpage_Selected:not(.gpfocus) { box-shadow: none; }
-  .BasicUI .gamepadtabbedpage_Tab.gamepadtabbedpage_Selected::after {
-    content: "";
-    position: absolute;
-    left: 0; right: 0; top: 0;
-    height: 2px;
-    background: var(--ng-active);
-    transform-origin: 50% 50%;
-    animation: ng-bar-grow var(--ng-dur-slow) var(--ng-ease);
-    pointer-events: none;
+  /* ── Selected tab: the label and its magenta bar fade up on the newly selected tab ──
+   * (animates the tab's own opacity; no pseudo-element or position change on Steam's tab) */
+  @keyframes ng-tab-select { from { opacity: .55; } to { opacity: 1; } }
+  .BasicUI .gamepadtabbedpage_Tab.gamepadtabbedpage_Selected {
+    animation: ng-tab-select var(--ng-dur-slow) var(--ng-ease);
   }
 
   /* ── Panels opening ───────────────────────────────────── */
@@ -76,10 +68,14 @@
   }
 
   /* ── Terminal cursor after the big "// TITLE" headers ── */
-  .BasicUI :is(.quickaccessmenu_Title, .downloads_Title)::after,
-  .BasicUI .gamepaddialog_GamepadDialogContent .DialogHeader::after {
+  /* Only on the two headers Nightgrid fully owns; Steam's DialogHeader keeps its own ::after. */
+  .BasicUI :is(.quickaccessmenu_Title, .downloads_Title)::after {
     content: "_";
+    position: static;
     display: inline-block;
+    width: auto;
+    height: auto;
+    background: none;
     margin-left: .2em;
     color: var(--ng-active);
     animation: ng-blink 1.1s steps(1, end) infinite;
@@ -94,8 +90,8 @@
   /* ── While a game is running: no loops ───────────────── */
   /* bigpicture: the in-game overlay uses Steam's transparent page background.
    * MainMenu: the running-game column (no stable name; hash substring, fails safe). */
-  :root:has(.gamepadui_BasicHome.gamepadui_TransparentBackground) :is(.quickaccessmenu_Title, .downloads_Title, .DialogHeader)::after,
-  :root:has([class*="RAI0lLN8sCtqCMI36rLiB"]) :is(.quickaccessmenu_Title, .DialogHeader)::after {
+  :root:has(.gamepadui_BasicHome.gamepadui_TransparentBackground) :is(.quickaccessmenu_Title, .downloads_Title)::after,
+  :root:has([class*="RAI0lLN8sCtqCMI36rLiB"]) .quickaccessmenu_Title::after {
     animation: none;
   }
 }

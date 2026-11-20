@@ -168,6 +168,13 @@
   animation-name: ng-row-focus;
   box-shadow: inset 2px 0 0 var(--ng-active);
 }
+/* Rows nested inside rows (Decky panels, Game Properties): only the outer one gets the focus
+ * fill and bar, otherwise the inner row draws a second, offset highlight. */
+.BasicUI .gamepaddialog_Field.gamepaddialog_HighlightOnFocus .gamepaddialog_Field.gamepaddialog_Field.gamepaddialog_HighlightOnFocus:is(.gpfocus, .gpfocuswithin) {
+  background: transparent;
+  box-shadow: none;
+  animation-name: none;
+}
 .BasicUI .gamepaddialog_BasicTextInput {
   background: var(--ng-bg-0);
   border: 1px solid var(--ng-line);
@@ -193,17 +200,21 @@
 .BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem {
   color: var(--ng-text-1);
 }
-/* Active page: like Nightgrid's active module row (outlined magenta, faint fill) */
+/* Active page: Nightgrid's active module row (magenta bar on the left, faint fill).
+ * Focus gets a stronger fill only: Steam's focus ring already draws the magenta outline,
+ * a second inset outline inside it read as a doubled frame. */
 .BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem.gamepadpagedsettings_Active {
   background: color-mix(in srgb, var(--ng-active) 10%, transparent);
   color: var(--ng-text-0);
-  border-left-color: var(--ng-active);
+  box-shadow: inset 3px 0 0 var(--ng-active);
 }
-.BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem:focus {
-  background: color-mix(in srgb, var(--ng-active) 18%, var(--ng-bg-1));
+.BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem:is(:focus, .gpfocus) {
+  background: color-mix(in srgb, var(--ng-active) 18%, var(--ng-bg-1)) !important;
   color: var(--ng-text-0) !important;
-  border-left-color: var(--ng-active);
-  box-shadow: inset 0 0 0 1px var(--ng-active);
+  box-shadow: inset 3px 0 0 var(--ng-active) !important;
+}
+.BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem:is(:focus, .gpfocus) svg {
+  color: var(--ng-text-0) !important;
 }
 
 /* Storage bars */

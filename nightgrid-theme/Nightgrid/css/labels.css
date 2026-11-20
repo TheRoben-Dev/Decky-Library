@@ -16,6 +16,12 @@
   text-transform: uppercase;
   letter-spacing: var(--ng-tracking);
 }
+/* Long labels in narrow places (Settings sidebar, buttons): uppercase mono is already wide,
+ * full tracking pushed words like NOTIFICATIONS / COMPATIBILITY past the column edge. */
+.BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem,
+.BasicUI button.DialogButton {
+  letter-spacing: var(--ng-tracking-tight);
+}
 /* Big headers get the "// SECTION" marker: magenta for page titles, cyan for sections */
 .BasicUI .quickaccessmenu_Title::before,
 .BasicUI .gamepaddialog_GamepadDialogContent .DialogHeader::before {
@@ -32,4 +38,20 @@
   content: "> ";
   color: var(--ng-data);
   letter-spacing: 0;
+}
+/* Steam may already use these pseudo-elements for its own decoration (absolute strips,
+ * gradients). Pin ours to plain inline text so they can't inherit that box. */
+.BasicUI .quickaccessmenu_Title::before,
+.BasicUI .gamepaddialog_GamepadDialogContent .DialogHeader::before,
+.BasicUI .DialogControlsSectionHeader::before,
+.BasicUI .homestorecarousel_Header::before {
+  position: static !important;
+  display: inline !important;
+  width: auto !important;
+  height: auto !important;
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  transform: none !important;
 }

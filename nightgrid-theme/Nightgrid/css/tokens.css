@@ -42,6 +42,7 @@
   /* Type */
   --ng-font-mono: "Nightgrid Mono", "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
   --ng-tracking: 0.14em;
+  --ng-tracking-tight: 0.05em;  /* long labels in narrow columns */
 
   /* Motion (Nightgrid: --dur-fast / --dur / --dur-slow / --ease) */
   --ng-dur-fast: 120ms;
