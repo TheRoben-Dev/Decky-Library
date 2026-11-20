@@ -208,6 +208,9 @@ function QamTabsSection() {
   );
 }
 
+const BASE_LIBRARY_TABS = ["GreatOnDeck", "SteamOSCompatible", "AllGames", "Installed", "Favorites", "RemotePlay", "Collections", "DesktopApps", "Soundtracks"];
+const libOrder = (id: string) => { const i = Object.keys(LIBRARY_TABS).indexOf(id); return i < 0 ? 999 : i; };
+
 function LibraryTabsSection() {
   const st = useEngine();
   const s = st.settings;
@@ -220,8 +223,11 @@ function LibraryTabsSection() {
     );
   }
   const hiddenSet = new Set(s.hiddenLibraryTabs);
-  const ids = [...new Set([...seenLibraryTabs(), ...s.hiddenLibraryTabs])];
-  if (!ids.length) ids.push(...Object.keys(LIBRARY_TABS).filter((k) => ["AllGames", "Installed", "Favorites", "Collections", "DesktopApps", "Soundtracks"].includes(k)));
+  // Stable list: the common tabs, plus every tab Steam has actually shown, plus anything hidden.
+  // (Built from the setting + a fixed catalog, never from the filtered tab list.)
+  const seenIds = seenLibraryTabs();
+  const ids = [...new Set([...BASE_LIBRARY_TABS, ...seenIds, ...s.hiddenLibraryTabs])]
+    .sort((a, b) => libOrder(a) - libOrder(b));
   const toggle = (id: string, on: boolean) => {
     const next = new Set(hiddenSet);
     if (on) next.delete(id); else next.add(id);
@@ -233,7 +239,8 @@ function LibraryTabsSection() {
         <PanelSectionRow><div style={warn}>The Library patch isn't active, so Steam shows its normal tabs.</div></PanelSectionRow>
       )}
       <PanelSectionRow>
-        <div style={note}>Turn a tab off to remove it from the Library. Applies the next time the Library opens. If every tab is off, Steam's tabs come back.</div>
+        <div style={note}>Turn a tab off to remove it from the Library. Applies the next time the Library opens. If every tab is off, Steam's tabs come back.
+          {seenIds.length ? "" : " Open the Library once to list any extra tabs Steam shows on this device."}</div>
       </PanelSectionRow>
       <PanelSectionRow>
         <ToggleField label={`"${s.collectionName}" tab`} checked={s.readyLibraryTab} disabled={!s.collectionId}
