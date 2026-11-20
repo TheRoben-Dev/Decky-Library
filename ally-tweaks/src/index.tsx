@@ -1,6 +1,7 @@
 import {
   DropdownItem,
   Field,
+  Focusable,
   PanelSection,
   PanelSectionRow,
   SliderField,
@@ -8,7 +9,7 @@ import {
   staticClasses,
 } from "@decky/ui";
 import { definePlugin, toaster } from "@decky/api";
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { FaGamepad } from "react-icons/fa";
 import * as be from "./backend";
 import { controller } from "./controller";
@@ -43,6 +44,7 @@ function Swatch({ h, s }: { h: number; s: number }) {
 const MODES_SYSFS: { data: LightMode; label: string }[] = [
   { data: "solid", label: "Solid" },
   { data: "split", label: "Left / right colors" },
+  { data: "zones", label: "Four zones" },
   { data: "off", label: "Off" },
 ];
 const MODES_HHD: { data: LightMode; label: string }[] = [
@@ -65,9 +67,15 @@ const REACTIVE: { data: Reactive; label: string }[] = [
   { data: "tdp", label: "TDP mode (HHD colors)" },
 ];
 const QUICK = [
-  { label: "ROG red", hue: 0, saturation: 100 },
-  { label: "Cyan", hue: 190, saturation: 100 },
-  { label: "Purple", hue: 280, saturation: 100 },
+  { label: "Red", hue: 0, saturation: 100 },
+  { label: "Orange", hue: 25, saturation: 100 },
+  { label: "Yellow", hue: 55, saturation: 100 },
+  { label: "Green", hue: 120, saturation: 100 },
+  { label: "Cyan", hue: 185, saturation: 100 },
+  { label: "Blue", hue: 225, saturation: 100 },
+  { label: "Purple", hue: 275, saturation: 100 },
+  { label: "Pink", hue: 320, saturation: 80 },
+  { label: "Warm white", hue: 30, saturation: 30 },
   { label: "White", hue: 0, saturation: 0 },
 ];
 const PADDLES: Record<string, string> = {
@@ -78,50 +86,113 @@ const PADDLES: Record<string, string> = {
 };
 const LIMITS = [70, 80, 85, 90, 95, 100];
 
+function Swatches({ onPick }: { onPick: (hue: number, sat: number) => void }) {
+  return (
+    <PanelSectionRow>
+      <Focusable style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "4px 0" }} flow-children="horizontal">
+        {QUICK.map((q) => (
+          <Focusable key={q.label} onActivate={() => onPick(q.hue, q.saturation)} onClick={() => onPick(q.hue, q.saturation)}
+            focusClassName="gpfocus" style={{ borderRadius: 14, padding: 2 }}>
+            <Swatch h={q.hue} s={q.saturation} />
+          </Focusable>
+        ))}
+      </Focusable>
+    </PanelSectionRow>
+  );
+}
+
+const ZONE_LABELS = ["Zone 1", "Zone 2", "Zone 3", "Zone 4"];
+
 function LightEditor({ light }: { light: Light }) {
   const c = controller;
+  const st = c.state;
   const follow = !!c.settings?.rgb.followScreen;
-  const hhdMode = c.state?.rgbBackend === "hhd";
-  const modes = hhdMode ? MODES_HHD : MODES_SYSFS;
+  const hhdMode = st?.rgbBackend === "hhd";
+  const hwEffects = !hhdMode ? st?.leds.effects ?? [] : [];
+  const modes = hhdMode ? MODES_HHD : [
+    ...MODES_SYSFS.filter((m) => m.data !== "off"),
+    ...(hwEffects.length ? [{ data: "hw" as LightMode, label: "Animated (controller effect)" }] : []),
+    { data: "off" as LightMode, label: "Off" },
+  ];
+  const [zone, setZone] = useState(0);
   // A light saved under the other backend falls back to Solid here.
   const shown = modes.some((m) => m.data === light.mode) ? light.mode : "solid";
-  const colored = ["solid", "pulse", "duality", "split"].includes(shown);
+  const colored = ["solid", "pulse", "duality", "split", "zones"].includes(shown) ||
+    (shown === "hw" && !["rainbow", "chroma"].includes(light.hwEffect ?? ""));
+  const zh = (light.zoneHues ?? [light.hue, light.hue, light.hue, light.hue]).slice(0, 4);
+  const zs = (light.zoneSats ?? [light.saturation, light.saturation, light.saturation, light.saturation]).slice(0, 4);
+  const editHue = shown === "zones" ? zh[zone] : light.hue;
+  const editSat = shown === "zones" ? zs[zone] : light.saturation;
+  const setColor = (h: number | null, sat: number | null) => c.editLight((l) => {
+    if (shown === "zones") {
+      const hs = [...zh]; const ss = [...zs];
+      if (h != null) hs[zone] = h;
+      if (sat != null) ss[zone] = sat;
+      l.zoneHues = hs; l.zoneSats = ss;
+    } else {
+      if (h != null) l.hue = h;
+      if (sat != null) l.saturation = sat;
+    }
+  });
   return (
     <>
       <PanelSectionRow>
-        <DropdownItem
-          label="Effect"
-          rgOptions={modes}
-          selectedOption={shown}
-          onChange={(o) => c.editLight((l) => { l.mode = o.data; })}
-        />
+        <DropdownItem label="Effect" rgOptions={modes} selectedOption={shown}
+          onChange={(o) => c.editLight((l) => {
+            l.mode = o.data;
+            if (o.data === "zones" && !l.zoneHues) { l.zoneHues = [l.hue, l.hue, l.hue2, l.hue2]; l.zoneSats = [l.saturation, l.saturation, l.saturation, l.saturation]; }
+            if (o.data === "hw" && !l.hwEffect) l.hwEffect = hwEffects.find((e) => e !== "monocolor") ?? hwEffects[0];
+          })} />
       </PanelSectionRow>
-      {colored && (
+      {shown === "hw" && (
         <>
           <PanelSectionRow>
-            <Field label="Color" bottomSeparator="none">
-              <div style={{ display: "flex", gap: 10 }}>
-                {QUICK.map((q) => (
-                  <div key={q.label} onClick={() => c.editLight((l) => { l.hue = q.hue; l.saturation = q.saturation; })}>
-                    <Swatch h={q.hue} s={q.saturation} />
-                  </div>
-                ))}
-                <span style={{ marginLeft: 8 }}><Swatch h={light.hue} s={light.saturation} /></span>
+            <DropdownItem label="Controller effect" rgOptions={hwEffects.map((e) => ({ data: e, label: e[0].toUpperCase() + e.slice(1) }))}
+              selectedOption={light.hwEffect} onChange={(o) => c.editLight((l) => { l.hwEffect = o.data; })} />
+          </PanelSectionRow>
+          <PanelSectionRow>
+            <SliderField label="Speed" value={light.hwSpeed ?? 50} min={0} max={100} step={10} showValue
+              onChange={(v) => c.editLight((l) => { l.hwSpeed = v; })} />
+          </PanelSectionRow>
+        </>
+      )}
+      {shown === "zones" && (
+        <>
+          <PanelSectionRow>
+            <Field label="Zones" bottomSeparator="none">
+              <div style={{ display: "flex", gap: 8 }}>
+                {zh.map((h, i) => <Swatch key={i} h={h} s={zs[i]} />)}
               </div>
             </Field>
           </PanelSectionRow>
           <PanelSectionRow>
-            <SliderField label="Hue" value={light.hue} min={0} max={360} step={5} showValue
-              onChange={(v) => c.editLight((l) => { l.hue = v; })} />
+            <DropdownItem label="Editing" rgOptions={ZONE_LABELS.map((l, i) => ({ data: i, label: l }))}
+              selectedOption={zone} onChange={(o) => setZone(o.data)} />
+          </PanelSectionRow>
+        </>
+      )}
+      {colored && (
+        <>
+          <Swatches onPick={(h, sat) => setColor(h, sat)} />
+          <PanelSectionRow>
+            <SliderField label={shown === "split" ? "Left ring hue" : "Hue"} value={editHue} min={0} max={360} step={5} showValue
+              onChange={(v) => setColor(v, null)} />
           </PanelSectionRow>
           <PanelSectionRow>
-            <SliderField label="Saturation" value={light.saturation} min={0} max={100} step={10} showValue
-              onChange={(v) => c.editLight((l) => { l.saturation = v; })} />
+            <SliderField label="Saturation" value={editSat} min={0} max={100} step={5} showValue
+              onChange={(v) => setColor(null, v)} />
           </PanelSectionRow>
           {(shown === "duality" || shown === "split") && (
             <PanelSectionRow>
               <SliderField label={shown === "split" ? "Right ring hue" : "Second hue"} value={light.hue2} min={0} max={360} step={5} showValue
                 onChange={(v) => c.editLight((l) => { l.hue2 = v; })} />
+            </PanelSectionRow>
+          )}
+          {shown === "split" && (
+            <PanelSectionRow>
+              <ToggleField label="Swap sides" checked={!!light.swapSides}
+                description="Use this if the colors land on the wrong rings."
+                onChange={(v) => c.editLight((l) => { l.swapSides = v; })} />
             </PanelSectionRow>
           )}
         </>
@@ -131,13 +202,13 @@ function LightEditor({ light }: { light: Light }) {
           <SliderField
             label={follow ? "Max brightness" : "Brightness"}
             value={light.brightness}
-            min={10}
+            min={hhdMode ? 10 : 5}
             max={100}
-            step={10}
+            step={hhdMode ? 10 : 5}
             showValue
             description={[
               follow ? "Rings run at this level when the screen is at 100%." : "",
-              colored ? "" : "Rainbow and spiral only have three hardware levels: low, medium, high.",
+              hhdMode && !colored ? "Rainbow and spiral only have three hardware levels: low, medium, high." : "",
             ].filter(Boolean).join(" ") || undefined}
             onChange={(v) => c.editLight((l) => { l.brightness = v; })}
           />
@@ -396,7 +467,137 @@ function SystemTweaks() {
             onChange={(v) => set("usbAutosuspendOff", v)} />
         </PanelSectionRow>
       )}
-      <Note>Already handled by Bazzite, so not duplicated here: split-lock mitigation off, zram + swappiness, low-latency Bluetooth, the audio pop fix, and PCIe power (ujust manage-pcie-power).</Note>
+      {st.cpu.audioPowerSave != null && (
+        <PanelSectionRow>
+          <ToggleField label="Audio codec power saving off" checked={sys.audioPowersaveOff}
+            description="Keeps the sound chip awake, so there's no pop or cut-off first syllable when sound starts after silence. Bazzite already keeps PipeWire outputs awake; this also covers the codec itself. About 0.1–0.3 W."
+            onChange={(v) => set("audioPowersaveOff", v)} />
+        </PanelSectionRow>
+      )}
+      {st.cpu.splitLockMitigation != null && (
+        <PanelSectionRow>
+          <ToggleField label="Split-lock mitigation" checked={!!st.cpu.splitLockMitigation}
+            description="Off by default on Bazzite (recommended for gaming): when on, the kernel deliberately slows programs that do split-lock memory accesses, which hurts some games badly. Only turn it on if you want strict isolation between programs."
+            onChange={(v) => set("splitLockMitigation", v)} />
+        </PanelSectionRow>
+      )}
+      {st.cpu.touch && (
+        <PanelSectionRow>
+          <DropdownItem label="Touchscreen"
+            rgOptions={[
+              { data: "on", label: "On" },
+              { data: "games", label: "Off while a game runs" },
+              { data: "off", label: "Off" },
+            ]}
+            selectedOption={sys.touch ?? "on"}
+            description="Stops accidental touches (e.g. palms on the screen edge). Turns back on instantly."
+            onChange={(o) => set("touch", o.data)} />
+        </PanelSectionRow>
+      )}
+      {st.cpu.pcie.supported && <PcieToggle />}
+    </PanelSection>
+  );
+}
+
+const EPP_LABELS: Record<string, string> = {
+  "": "Follow power profile (default)",
+  performance: "Performance",
+  balance_performance: "Balanced performance",
+  balance_power: "Balanced power",
+  power: "Power saving",
+};
+
+function CpuTweaks() {
+  const c = useController();
+  const st = c.state!;
+  const sys = st.settings.system;
+  const cpu = st.cpu;
+  if (cpu.boost == null && cpu.smt == null && !cpu.epp) return null;
+  const set = async (key: string, v: boolean | string) => {
+    const r = await be.setSystem(key, v);
+    if (!r.ok) toaster.toast({ title: "Ally Tweaks", body: `Couldn't change setting${r.error ? `: ${r.error}` : ""}` });
+    c.refresh();
+  };
+  return (
+    <PanelSection title="CPU">
+      {cpu.boost != null && (
+        <PanelSectionRow>
+          <ToggleField label="CPU boost" checked={!sys.cpuBoostOff}
+            description="Turning boost off caps the CPU at its base clock: cooler, quieter and longer battery, at some cost in CPU-heavy games. Stays off across power-profile changes, sleep and reboot."
+            onChange={(v) => set("cpuBoostOff", !v)} />
+        </PanelSectionRow>
+      )}
+      {cpu.smt != null && (
+        <PanelSectionRow>
+          <ToggleField label="SMT (16 threads)" checked={!sys.smtOff}
+            description="Turning SMT off leaves 8 cores / 8 threads. Saves a little power and helps a few older games; hurts games and emulators that use many threads."
+            onChange={(v) => set("smtOff", !v)} />
+        </PanelSectionRow>
+      )}
+      {cpu.epp && cpu.epp.available.length > 0 && (
+        <PanelSectionRow>
+          <DropdownItem label="CPU energy preference (EPP)"
+            description={`How eagerly the CPU clocks up. "Follow power profile" lets Steam's power mode decide. Now: ${EPP_LABELS[cpu.epp.current ?? ""] ?? cpu.epp.current}.`}
+            rgOptions={["", ...cpu.epp.available].map((v) => ({ data: v, label: EPP_LABELS[v] ?? v }))}
+            selectedOption={sys.epp}
+            onChange={(o) => set("epp", o.data)} />
+        </PanelSectionRow>
+      )}
+      <Note>All within ASUS stock limits. TDP and GPU clocks stay in Vex Performance.</Note>
+    </PanelSection>
+  );
+}
+
+function PcieToggle() {
+  const c = useController();
+  const p = c.state!.cpu.pcie;
+  const [busy, setBusy] = useState(false);
+  return (
+    <>
+      <PanelSectionRow>
+        <ToggleField label="PCIe power management off" checked={p.next} disabled={busy}
+          description={busy ? "Applying… this takes up to a minute."
+            : `Same as "ujust manage-pcie-power": stops the PCIe bus from napping, which can remove micro-stutters and SSD latency spikes. Costs some battery and can raise sleep drain. Needs a reboot.${p.rebootNeeded ? " Reboot to apply." : ""}`}
+          onChange={async (v) => {
+            setBusy(true);
+            const r = await be.setPcie(v);
+            setBusy(false);
+            if (!r.ok) toaster.toast({ title: "Ally Tweaks", body: `PCIe change failed: ${r.error}` });
+            else toaster.toast({ title: "Ally Tweaks", body: "Reboot to apply the PCIe change." });
+            c.refresh();
+          }} />
+      </PanelSectionRow>
+    </>
+  );
+}
+
+const APU_LABELS: Record<number, string> = { 0: "Auto (ASUS default)", 1: "2 GB", 2: "3 GB", 3: "4 GB", 5: "6 GB", 7: "8 GB" };
+
+function GpuMemory() {
+  const c = useController();
+  const a = c.state!.apuMem;
+  if (!a) return null;
+  return (
+    <PanelSection title="GPU memory (VRAM)">
+      <PanelSectionRow>
+        <DropdownItem label="Memory reserved for the GPU"
+          rgOptions={a.choices.map((i) => ({ data: i, label: APU_LABELS[i] ?? `${i + 1} GB` }))}
+          selectedOption={a.current ?? 0}
+          description="Armoury Crate's 'Memory assigned to GPU'. More helps games that check VRAM size (and some UE5 titles); it's taken from system RAM, so 6 GB leaves 10 GB for everything else. Needs a reboot."
+          onChange={async (o) => {
+            const r = await be.setApuMem(o.data);
+            toaster.toast({ title: "Ally Tweaks", body: r.ok ? "Reboot to apply the new GPU memory size." : `Couldn't change it${r.error ? `: ${r.error}` : ""}` });
+            c.refresh();
+          }} />
+      </PanelSectionRow>
+    </PanelSection>
+  );
+}
+
+function BazziteDefaults() {
+  return (
+    <PanelSection title="Already set by Bazzite">
+      <Note>zram swap (zstd, half of RAM) with swappiness 180, low-latency Bluetooth for controllers, and PipeWire outputs that never sleep. Nothing to change here.</Note>
     </PanelSection>
   );
 }
@@ -417,6 +618,9 @@ function Content() {
       <Buttons />
       <Panel />
       <SystemTweaks />
+      <CpuTweaks />
+      <GpuMemory />
+      <BazziteDefaults />
       <PanelSection title="About">
         <Note>
           {st.device.isAlly2023 ? `ROG Ally ${st.device.chip} · BIOS ${st.device.bios}. ` : ""}

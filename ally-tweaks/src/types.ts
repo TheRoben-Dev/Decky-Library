@@ -1,4 +1,4 @@
-export type LightMode = "off" | "solid" | "split" | "pulse" | "duality" | "rainbow" | "spiral";
+export type LightMode = "off" | "solid" | "split" | "zones" | "hw" | "pulse" | "duality" | "rainbow" | "spiral";
 export type Speed = "low" | "medium" | "high";
 export type Reactive = "none" | "battery" | "temperature" | "tdp";
 
@@ -10,6 +10,11 @@ export interface Light {
   brightness: number;
   speed: Speed;
   direction: "left" | "right";
+  zoneHues?: number[];
+  zoneSats?: number[];
+  swapSides?: boolean;
+  hwEffect?: string;
+  hwSpeed?: number;
 }
 
 export interface GameLight { name: string; light: Light }
@@ -29,7 +34,12 @@ export interface Settings {
   charge: { limit: number; travel: boolean };
   buttons: { perGame: Record<string, GameButtons>; default: { paddles: string; nintendo: boolean } | null };
   panel: Record<string, boolean>;
-  system: { wifiPowersaveOff: boolean; usbAutosuspendOff: boolean };
+  system: {
+    wifiPowersaveOff: boolean; usbAutosuspendOff: boolean;
+    cpuBoostOff: boolean; smtOff: boolean; epp: string;
+    audioPowersaveOff: boolean; splitLockMitigation: boolean;
+    touch: "on" | "off" | "games";
+  };
 }
 
 export interface AppState {
@@ -65,11 +75,21 @@ export interface AppState {
   };
   chargeBackend: "hhd" | "sysfs" | "none";
   rgbBackend: "hhd" | "sysfs" | "none";
-  leds: { supported: boolean; name?: string; zones?: number; layout?: string };
+  leds: { supported: boolean; name?: string; zones?: number; layout?: string; effects?: string[] };
+  apuMem: { current: number | null; choices: number[] } | null;
   inputplumber: boolean;
   restoreUnit: boolean;
   wifi: { supported: boolean; ifaces: string[]; powerSaveOn: boolean; dropin: boolean };
   usb: { supported: boolean; delay?: string; disabled?: boolean };
+  cpu: {
+    boost: boolean | null;
+    smt: boolean | null;
+    epp: { current: string | null; available: string[] } | null;
+    splitLockMitigation: boolean | null;
+    audioPowerSave: boolean | null;
+    pcie: { supported: boolean; active: boolean; next: boolean; rebootNeeded: boolean };
+    touch: { enabled: boolean; names: string[] } | null;
+  };
   settings: Settings;
   lightReason: string;
   screen: number | null;

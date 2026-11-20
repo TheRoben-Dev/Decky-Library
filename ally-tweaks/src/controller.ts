@@ -15,6 +15,8 @@ class Controller {
   private stateTimer?: number;
   private saveTimer?: number;
   private pending: Partial<Settings> = {};
+  private saving = 0;   // saves in flight
+  private editGen = 0;  // bumps on every local edit
 
   subscribe(l: Listener) {
     this.listeners.add(l);
@@ -51,9 +53,13 @@ class Controller {
 
   async refresh() {
     try {
+      const gen = this.editGen;
       const s = await be.getState();
-      // Keep unsaved local edits visible while a save is pending.
-      if (Object.keys(this.pending).length) s.settings = { ...s.settings, ...this.pending } as Settings;
+      // Never let a poll that started before (or during) an edit/save roll the
+      // sliders back: keep local settings until the backend has caught up.
+      if (gen !== this.editGen || this.saving || Object.keys(this.pending).length) {
+        if (this.state) s.settings = this.state.settings;
+      }
       this.state = s;
       this.emit();
     } catch (e) {
@@ -70,14 +76,17 @@ class Controller {
     if (!this.state) return;
     this.state = { ...this.state, settings: { ...this.state.settings, ...p } };
     this.pending = { ...this.pending, ...p };
+    this.editGen++;
     this.emit();
     clearTimeout(this.saveTimer);
     this.saveTimer = window.setTimeout(async () => {
       const send = this.pending;
       this.pending = {};
+      this.saving++;
       await be.saveSettings(send).catch((e) => be.log(`save ${e}`));
+      this.saving--;
       this.refresh();
-    }, 350);
+    }, 250);
   }
 
   // ---------- lighting ----------

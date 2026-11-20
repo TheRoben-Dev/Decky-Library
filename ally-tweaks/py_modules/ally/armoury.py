@@ -62,3 +62,34 @@ def write(key: str, on: bool) -> bool:
     with open(p, "w") as f:
         f.write("1" if on else "0")
     return True
+
+
+# ---- GPU memory (UMA frame buffer), the "Memory assigned to GPU" option in
+# Armoury Crate. asus-armoury apu_mem: value N = (N + 1) GB, 0 = Auto.
+# Takes effect after a reboot (the kernel asks for one itself). It's a stock
+# BIOS option; it only moves the RAM split between CPU and GPU.
+APU_MEM = f"{ARMOURY}/apu_mem/current_value"
+APU_CHOICES = [0, 1, 2, 3, 5, 7]   # Auto, 2, 3, 4, 6, 8 GB (Armoury Crate's set)
+
+
+def apu_mem_status():
+    if not os.path.exists(APU_MEM):
+        return None
+    try:
+        with open(APU_MEM) as f:
+            cur = int(f.read().strip())
+    except Exception:
+        cur = None
+    return {"current": cur, "choices": APU_CHOICES}
+
+
+def set_apu_mem(index: int) -> bool:
+    index = int(index)
+    if index not in APU_CHOICES or not os.path.exists(APU_MEM):
+        return False
+    with open(APU_MEM) as f:
+        if f.read().strip() == str(index):
+            return True
+    with open(APU_MEM, "w") as f:
+        f.write(str(index))
+    return True

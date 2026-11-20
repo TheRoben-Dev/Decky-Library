@@ -7,7 +7,8 @@ small root oneshot unit:
 
   /etc/ally-tweaks/restore.env   last applied values (plain integers only)
   /etc/ally-tweaks/restore.sh    writes them back: ring LED, charge limit,
-                                 Wi-Fi power save off (iw), USB autosuspend off
+                                 Wi-Fi power save off (iw), USB autosuspend off,
+                                 CPU boost / SMT / EPP, HDA codec power save
   /etc/systemd/system/ally-tweaks-restore.service
                                  runs at boot and after every resume
 
@@ -36,6 +37,25 @@ CONF=/etc/ally-tweaks/restore.env
 get() { sed -n "s/^$1=\([0-9 ]*\)$/\1/p" "$CONF" | head -n1; }
 INTENSITY=$(get RGB_INTENSITY); BRIGHT=$(get RGB_BRIGHTNESS); KBD=$(get KBD_LEVEL); LIMIT=$(get CHARGE_LIMIT)
 WIFI_PS_OFF=$(get WIFI_PS_OFF); USB_AS_OFF=$(get USB_AS_OFF)
+BOOST_OFF=$(get BOOST_OFF); SMT_OFF=$(get SMT_OFF); EPP_IDX=$(get EPP_IDX); AUDIO_PS_OFF=$(get AUDIO_PS_OFF)
+
+if [ "$BOOST_OFF" = "1" ]; then
+  for f in /sys/devices/system/cpu/cpufreq/boost /sys/devices/system/cpu/cpufreq/policy*/boost; do
+    [ -w "$f" ] && echo 0 > "$f"
+  done
+fi
+[ "$SMT_OFF" = "1" ] && [ -w /sys/devices/system/cpu/smt/control ] && echo off > /sys/devices/system/cpu/smt/control
+if [ -n "$EPP_IDX" ]; then
+  case "$EPP_IDX" in
+    0) EPP=performance ;; 1) EPP=balance_performance ;; 2) EPP=balance_power ;; 3) EPP=power ;; *) EPP="" ;;
+  esac
+  if [ -n "$EPP" ]; then
+    for f in /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference; do
+      [ -w "$f" ] && echo "$EPP" > "$f" 2>/dev/null
+    done
+  fi
+fi
+[ "$AUDIO_PS_OFF" = "1" ] && [ -w /sys/module/snd_hda_intel/parameters/power_save ] && echo 0 > /sys/module/snd_hda_intel/parameters/power_save
 
 if [ "$USB_AS_OFF" = "1" ] && [ -w /sys/module/usbcore/parameters/autosuspend ]; then
   echo -1 > /sys/module/usbcore/parameters/autosuspend

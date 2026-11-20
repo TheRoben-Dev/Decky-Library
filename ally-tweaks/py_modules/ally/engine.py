@@ -31,7 +31,12 @@ DEFAULTS = {
     "charge": {"limit": 100, "travel": False},
     "buttons": {"perGame": {}, "default": None},  # appid -> {"name", "paddles", "nintendo"}
     "panel": {},                     # desired armoury toggles, only keys the user changed
-    "system": {"wifiPowersaveOff": False, "usbAutosuspendOff": False},
+    "system": {
+        "wifiPowersaveOff": False, "usbAutosuspendOff": False,
+        "cpuBoostOff": False, "smtOff": False, "epp": "",      # "" = follow power profile
+        "audioPowersaveOff": False, "splitLockMitigation": False,
+        "touch": "on",                                          # on | off | games
+    },
 }
 
 # Colours that match HHD's own TDP-mode flash (hhd/plugins/rgb/__init__.py)
@@ -63,6 +68,7 @@ class Engine:
         self.reason = ""
         self.temp_bin = None
         self.persist = Persist()
+        self.readback_ok = False
         self.screen = None          # debounced backlight fraction
         self._screen_seen = None
 
@@ -173,17 +179,44 @@ class Engine:
         elif be == "sysfs":
             vals = leds.to_values(target)
             key = ("sysfs", tuple(sorted((vals or {}).items())))
+            # Re-assert when the LED doesn't show what we set: the driver can
+            # reset it after resume or re-probe, or another program wrote it.
+            if vals and not force and key == self.last_light and self.readback_ok and not leds.matches(vals):
+                decky.logger.info("Ring LED drifted from the set colour; re-applying")
+                force = True
             if force or key != self.last_light:
                 leds.apply(target)
                 self.last_light = key
+                # If this driver reports values in another format, a readback
+                # never matches; don't keep rewriting the LED because of that.
+                self.readback_ok = bool(vals) and leds.matches(vals)
                 # Same values come back at boot / after resume via the unit.
+                if not vals:
+                    return
                 self.persist.update(RGB_INTENSITY=vals.get("intensity"),
                                     RGB_BRIGHTNESS=vals.get("brightness"),
                                     KBD_LEVEL=vals.get("kbd"))
 
     # ---------- system tweaks ----------
-    def set_system(self, key: str, on: bool):
+    def set_system(self, key: str, on):
+        """on is a bool, except for "epp" (a preference name or "" for default).
+        Every tweak is written live, persisted (restore unit / drop-in) and
+        undone by setting it back to its default (False / "")."""
         with self.lock:
+            if key == "touch":
+                val = on if on in ("on", "off", "games") else "on"
+                self.conf["system"]["touch"] = val
+                self.save()
+                self._apply_touch()
+                return
+            if key == "epp":
+                val = on if on in tweaks.EPP_VALUES else ""
+                if val:
+                    tweaks.set_epp(val)
+                self.persist.update(EPP_IDX=tweaks.EPP_VALUES.index(val) if val else None)
+                self.conf["system"]["epp"] = val
+                self.save()
+                return
             on = bool(on)
             if key == "wifiPowersaveOff":
                 tweaks.set_wifi_powersave_off(on)
@@ -191,13 +224,33 @@ class Engine:
             elif key == "usbAutosuspendOff":
                 tweaks.set_usb_autosuspend_off(on)
                 self.persist.update(USB_AS_OFF=1 if on else None)
+            elif key == "cpuBoostOff":
+                tweaks.set_boost(not on)
+                self.persist.update(BOOST_OFF=1 if on else None)
+            elif key == "smtOff":
+                tweaks.set_smt(not on)
+                self.persist.update(SMT_OFF=1 if on else None)
+            elif key == "audioPowersaveOff":
+                tweaks.set_audio_ps(not on)
+                self.persist.update(AUDIO_PS_OFF=1 if on else None)
+            elif key == "splitLockMitigation":
+                tweaks.set_splitlock(on)   # persisted by its sysctl.d drop-in
             else:
                 raise ValueError(f"unknown tweak {key}")
             self.conf["system"][key] = on
             self.save()
 
+    def _apply_touch(self):
+        mode = self.conf["system"].get("touch", "on")
+        want = mode == "on" or (mode == "games" and not self.game)
+        st = tweaks.touch_status()
+        if st is not None and st["enabled"] != want:
+            tweaks.set_touch(want)
+
     def apply_system(self):
         for k, on in self.conf["system"].items():
+            if k == "touch":
+                continue
             if on:
                 try:
                     self.set_system(k, True)
@@ -205,18 +258,32 @@ class Engine:
                     decky.logger.error(f"tweak {k} on load failed: {e}")
 
     def undo_system(self):
-        for k in list(self.conf["system"]):
+        """Only reverts what the user actually changed (non-default values)."""
+        for k, v in list(self.conf["system"].items()):
+            if v in (False, "", "on", None):
+                continue
             try:
-                self.set_system(k, False)
+                self.set_system(k, "" if k == "epp" else ("on" if k == "touch" else False))
             except Exception as e:
                 decky.logger.error(f"undo {k} failed: {e}")
 
     def tick(self, force=False):
         with self.lock:
             try:
-                if self.conf["system"].get("wifiPowersaveOff"):
+                sysc = self.conf["system"]
+                if sysc.get("wifiPowersaveOff"):
                     # Power Saver (tuned powersave-bazzite) turns it back on.
                     tweaks.wifi_enforce()
+                # Power-profile switches (tuned / power-profiles-daemon) rewrite
+                # these; put the user's choice back (writes only on a change).
+                if sysc.get("cpuBoostOff") and tweaks.boost_status():
+                    tweaks.set_boost(False)
+                if sysc.get("touch", "on") != "on":
+                    self._apply_touch()
+                if sysc.get("epp"):
+                    st = tweaks.epp_status()
+                    if st and st["current"] != sysc["epp"]:
+                        tweaks.set_epp(sysc["epp"])
             except Exception as e:
                 decky.logger.error(f"wifi enforce failed: {e}")
             try:
@@ -270,6 +337,10 @@ class Engine:
         with self.lock:
             self.game = {"appid": str(appid), "name": name} if appid else None
             try:
+                self._apply_touch()
+            except Exception as e:
+                decky.logger.error(f"touch failed: {e}")
+            try:
                 self._apply_buttons()
             except Exception as e:
                 decky.logger.error(f"buttons failed: {e}")
@@ -321,10 +392,18 @@ class Engine:
 
     def run(self, stop: threading.Event, interval=5.0, fast=0.5):
         last = 0.0
+        wall, mono = time.time(), time.monotonic()
         while not stop.is_set():
             now = time.monotonic()
+            # Monotonic time stops during suspend, wall time doesn't: a gap
+            # means we just woke up, so push everything again.
+            woke = (time.time() - wall) - (now - mono) > 10
+            wall, mono = time.time(), now
+            if woke:
+                decky.logger.info("Resume detected; re-applying lighting and tweaks")
+                self.last_light = None
             changed = self._poll_screen()
-            if changed or now - last >= interval:
+            if woke or changed or now - last >= interval:
                 last = now
-                self.tick()
+                self.tick(force=woke)
             stop.wait(fast)

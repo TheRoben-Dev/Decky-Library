@@ -44,6 +44,7 @@ class Plugin:
             "hhd": {"running": hhd.available()},
             "battery": battery.snapshot(),
             "panel": armoury.read_all(),
+            "apuMem": armoury.apu_mem_status(),
             "settings": e.conf,
             "lightReason": e.reason,
             "screen": backlight.fraction(),
@@ -64,6 +65,7 @@ class Plugin:
         out["restoreUnit"] = e.persist.installed()
         out["wifi"] = tweaks.wifi_status()
         out["usb"] = tweaks.usb_status()
+        out["cpu"] = tweaks.status_all()
         return out
 
     async def save_settings(self, patch: dict):
@@ -115,12 +117,28 @@ class Plugin:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    async def set_system(self, key: str, on: bool):
+    async def set_pcie(self, off: bool):
+        try:
+            await asyncio.to_thread(tweaks.set_pcie_pm_off, bool(off))
+            return {"ok": True}
+        except Exception as e:
+            decky.logger.error(f"set_pcie failed: {e}")
+            return {"ok": False, "error": str(e)}
+
+    async def set_system(self, key: str, on):
         try:
             await asyncio.to_thread(self.engine.set_system, key, on)
             return {"ok": True}
         except Exception as e:
             decky.logger.error(f"set_system failed: {e}")
+            return {"ok": False, "error": str(e)}
+
+    async def set_apu_mem(self, index: int):
+        try:
+            ok = await asyncio.to_thread(armoury.set_apu_mem, int(index))
+            return {"ok": ok}
+        except Exception as e:
+            decky.logger.error(f"set_apu_mem failed: {e}")
             return {"ok": False, "error": str(e)}
 
     async def reapply_buttons(self):
@@ -184,6 +202,8 @@ class Plugin:
             decky.logger.error(f"uninstall cleanup failed: {ex}")
         try:
             (self.engine or Engine()).undo_system()
+            # PCIe karg is left alone on purpose: it's the same setting as
+            # `ujust manage-pcie-power`, which the user may have set there.
         except Exception as ex:
             decky.logger.error(f"tweak cleanup failed: {ex}")
         try:

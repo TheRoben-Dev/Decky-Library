@@ -14,7 +14,7 @@ The plugin detects what's running and uses it:
 | | Bazzite 44+ (InputPlumber, no HHD) | Installs that still run HHD |
 |---|---|---|
 | Ring RGB | Kernel LED class: `/sys/class/leds/ally:rgb:joystick_rings` (`multi_intensity`, `brightness`) + `asus::kbd_backlight` level, from the kernel's `hid-asus-ally` driver | HHD settings API `rgb.handheld.mode.*` |
-| Effects | Solid, **Left / right colors** (each ring its own color), Off | Solid, Pulse, Two colors, Rainbow, Spiral, Off |
+| Effects | Solid, **Left / right colors** (with swap), **Four zones**, Off, plus the controller's own animations (breathe, rainbow, strobe…) when the driver exposes `effect`/`effect_index`. Never animated from software | Solid, Pulse, Two colors, Rainbow, Spiral, Off |
 | Persistence | A small restore unit the plugin installs (see below) | HHD saves and re-sends it itself |
 | Charge limit | `charge_control_end_threshold` (asus-wmi) + restore unit at boot | HHD `gamemode.battery.charge_limit` |
 | Back buttons | InputPlumber maps M1/M2 to Xbox Elite back paddles, so Steam binds them per game (shown as a hint) | HHD `paddles_as` + A/B swap, global or per game |
@@ -45,11 +45,22 @@ InputPlumber leaves the rings alone and the kernel LED is the right place.
 | **Wi-Fi power saving off** | NetworkManager drop-in `/etc/NetworkManager/conf.d/99-zz-ally-tweaks-wifi.conf` (`wifi.powersave=2`) + `iw dev <if> set power_save off` now, at boot and after resume. Bazzite's deck image already ships `wifi.powersave=2`, but its tuned **Power Saver** profile turns power save back on with `iw`; the plugin switches it off again within ~5 s. Turning the toggle off deletes the drop-in and reloads NetworkManager's config. | ~0.2–0.5 W more on battery |
 | **USB autosuspend off** | `usbcore` `autosuspend=-1` and `power/control=on` for connected devices; re-applied at boot. Fixes docks/USB controllers dropping out after idling. Turning it off restores the 2 s default for new devices. | Slightly more battery use with USB devices plugged in |
 
-Already handled by Bazzite, so not duplicated: split-lock mitigation off
-(`sysctl.d/60-kernel.conf`), zram zstd + swappiness 180, low-latency Bluetooth
-LE intervals (`/etc/bluetooth/main.conf`), the audio pop fix (WirePlumber never
-suspends sinks), PCIe port power (`ujust manage-pcie-power`). CPU boost/SMT/EPP
-are power tuning and belong in Vex Performance / Steam's power profiles.
+| **Audio codec power saving off** | `snd_hda_intel` `power_save=0`, re-applied at boot. Bazzite already keeps PipeWire outputs awake; this also keeps the codec itself up (no pop / clipped first sound) | ~0.1–0.3 W |
+| **Split-lock mitigation** | Bazzite ships it **off** (`kernel.split_lock_mitigate=0`). The toggle can turn it back on via `/etc/sysctl.d/99-ally-tweaks-splitlock.conf` | On = some games slow down badly |
+| **PCIe power management off** | The same kernel argument `ujust manage-pcie-power` sets (`pcie_port_pm=off` via `rpm-ostree kargs`), from Game Mode. Shows "reboot to apply" | Less micro-stutter / SSD latency, more battery and sleep drain |
+| **Touchscreen**: On / Off while a game runs / Off | Input `inhibited` attribute on the touchscreen; re-checked after resume | None |
+| **CPU boost** | amd-pstate `cpufreq/boost`; kept off across power-profile switches, sleep and reboot | Cooler/longer battery, slower in CPU-heavy games |
+| **SMT** | `/sys/devices/system/cpu/smt/control` | 8 threads instead of 16 |
+| **CPU energy preference (EPP)** | `energy_performance_preference` on every core, or "follow power profile" | Within stock range; re-applied when tuned changes it |
+| **GPU memory (VRAM)** | asus-armoury `apu_mem` (Armoury Crate's "Memory assigned to GPU": Auto, 2, 3, 4, 6, 8 GB) | Taken from system RAM; needs a reboot |
+
+Shown as "already set by Bazzite" (nothing to toggle): zram zstd + swappiness 180,
+low-latency Bluetooth LE intervals, PipeWire outputs never suspending.
+
+### RGB reliability
+The plugin reads the LED back every few seconds and re-applies the colour if
+the driver reset it (after resume or a re-probe) or something else wrote it,
+and forces a full re-apply when it detects the device just woke up.
 
 ### What stays when the plugin isn't loaded
 - **Kernel path:** the plugin installs `ally-tweaks-restore.service`, a root
@@ -68,12 +79,13 @@ are power tuning and belong in Vex Performance / Steam's power profiles.
 - **No** raw MCU/EC commands and **no** firmware writes. The kernel driver (or HHD) talks to the MCU.
 - Writes only to documented kernel attributes: LED class `multi_intensity`/`brightness`,
   `charge_control_end_threshold`, `panel_overdrive`/`panel_od`, `boot_sound`.
-- No software-animated effects on the kernel path (that would be a constant stream of controller writes); only static colors.
+- No software-animated effects on the kernel path (that would be a constant stream of controller writes). Animations only when the controller runs them itself.
+- CPU boost/SMT/EPP only *reduce* or pick within stock behaviour; GPU memory is a stock BIOS option.
 
 ### Deliberately left out
 | Idea | Why |
 |---|---|
-| Pulse / rainbow on the kernel path | The stock `hid-asus-ally` LED device has no hardware effects. Faking them means writing to the controller many times a second. |
+| Software pulse / rainbow on the kernel path | Faking them means writing to the controller many times a second. Hardware effects are used when the driver offers them. |
 | MCU powersave / "Extreme standby" | Known to leave the controller unresponsive after sleep (HHD hides it for that reason). |
 | Saving colors into MCU flash | Undocumented command. The restore unit covers reboots safely. |
 | InputPlumber button remaps / profiles | Steam Input already binds the paddles per game; swapping whole InputPlumber profiles from a plugin would fight Bazzite's own InputPlumber/OpenGamepadUI setup. |

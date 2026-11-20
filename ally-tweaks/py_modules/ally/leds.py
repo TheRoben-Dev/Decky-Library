@@ -17,8 +17,10 @@ InputPlumber reads the same LED (50-rog_ally.yaml, group
 to a DualSense target; the Ally's default target is Xbox Elite, so it leaves
 the rings alone. The driver itself talks to the MCU; we never do.
 
-Only static colours are offered here: the stock driver has no hardware
-effects, and animating in software would mean a constant stream of HID writes.
+Static colours (one, left/right, or four zones) work on every driver build.
+Animated effects are offered only when the driver exposes the MCU's own
+effects (effect/effect_index); the plugin never animates from software, which
+would mean a constant stream of HID writes.
 """
 import colorsys
 import os
@@ -78,7 +80,18 @@ def status() -> dict:
         "name": os.path.basename(ring),
         "zones": max(1, sum(1 for t in idx if t in ("rgb", "multi", "blue"))),
         "layout": " ".join(idx),
+        "effects": hw_effects(ring),
     }
+
+
+def hw_effects(ring=None):
+    """Some hid-asus-ally builds expose the ring MCU's own effects as LED
+    attributes (effect / effect_index / speed / direction). The MCU runs them
+    itself, so nothing is animated from software. Empty list = not available."""
+    ring = ring or ring_path()
+    if not ring or not os.path.exists(f"{ring}/effect"):
+        return []
+    return (_read(f"{ring}/effect_index") or "").split()
 
 
 def _rgb(hue, sat):
@@ -100,16 +113,28 @@ def to_values(light: dict, ring: str | None = None) -> dict | None:
         return {"intensity": None, "brightness": "0", "kbd": None}
 
     sat = light.get("saturation", 100)
-    first = _rgb(light.get("hue", 0), sat)
-    # Two-ring / two-colour modes: first half of the zones gets colour 1,
-    # second half colour 2. Zone order is the driver's (assumed left ring
-    # first; unverified on hardware).
-    second = _rgb(light.get("hue2", 180), sat) if mode in ("split", "duality") else first
-
     zones = max(1, sum(1 for t in idx if t in ("rgb", "multi", "blue")))
+    hue, hue2 = light.get("hue", 0), light.get("hue2", 180)
+    if mode == "zones":
+        hues = list(light.get("zoneHues") or [hue] * 4)
+        hues = (hues + [hue] * 4)[:4]
+        sats = list(light.get("zoneSats") or [sat] * 4)
+        sats = (sats + [sat] * 4)[:4]
+        colors = [_rgb(hues[min(3, z * 4 // zones)], sats[min(3, z * 4 // zones)]) for z in range(zones)]
+    elif mode in ("split", "duality"):
+        # First half of the zones = colour 1, second half = colour 2. Zone
+        # order is the driver's (assumed left ring first; unverified, and
+        # swappable with "swapSides").
+        a, b = _rgb(hue, sat), _rgb(hue2, sat)
+        if light.get("swapSides"):
+            a, b = b, a
+        colors = [a if z < (zones + 1) // 2 or zones == 1 else b for z in range(zones)]
+    else:
+        colors = [_rgb(hue, sat)] * zones
+
     out, zone = [], 0
     for t in idx:
-        col = first if zone < (zones + 1) // 2 or zones == 1 else second
+        col = colors[min(zone, zones - 1)]
         if t in ("rgb", "multi"):
             out.append(str((col[0] << 16) | (col[1] << 8) | col[2]))
             zone += 1
@@ -124,11 +149,38 @@ def to_values(light: dict, ring: str | None = None) -> dict | None:
             out.append("0")
     kbd = kbd_path(ring)
     kmax = _read(f"{kbd}/max_brightness") if kbd else None
-    return {
+    vals = {
         "intensity": " ".join(out),
         "brightness": str(max(1, round(pct * mx / 100))),
         "kbd": kmax if kmax and kmax.isdigit() else None,
     }
+    eff = (light.get("hwEffect") or "") if mode == "hw" else ""
+    effects = hw_effects(ring)
+    if effects:
+        # Static colour modes use the MCU's own "monocolor" effect so the
+        # driver doesn't keep an old animation running.
+        vals["effect"] = eff if eff in effects else ("monocolor" if "monocolor" in effects else None)
+        if eff in effects:
+            vals["speed"] = str(max(0, min(100, int(light.get("hwSpeed", 50)))))
+    return vals
+
+
+def readback(ring=None) -> dict:
+    ring = ring or ring_path()
+    if not ring:
+        return {}
+    return {"intensity": _read(f"{ring}/multi_intensity"), "brightness": _read(f"{ring}/brightness")}
+
+
+def matches(vals: dict) -> bool:
+    """True when the LED really shows what we set (catches driver resets after
+    resume / re-probe, and other programs writing the LED)."""
+    rb = readback()
+    if not rb:
+        return False
+    if vals.get("intensity") is None:
+        return rb.get("brightness") == "0"
+    return rb.get("intensity") == vals["intensity"] and rb.get("brightness") == vals["brightness"]
 
 
 def apply(light: dict) -> dict | None:
@@ -139,6 +191,13 @@ def apply(light: dict) -> dict | None:
     kbd = kbd_path(ring)
     if vals["kbd"] and kbd and _read(f"{kbd}/brightness") != vals["kbd"]:
         _write(f"{kbd}/brightness", vals["kbd"])
+    if vals.get("effect") and _read(f"{ring}/effect") != vals["effect"]:
+        try:
+            _write(f"{ring}/effect", vals["effect"])
+            if vals.get("speed") and os.path.exists(f"{ring}/speed"):
+                _write(f"{ring}/speed", vals["speed"])
+        except Exception:
+            pass  # optional driver feature; colours below still apply
     if vals["intensity"] and _read(f"{ring}/multi_intensity") != vals["intensity"]:
         _write(f"{ring}/multi_intensity", vals["intensity"])
     # Always rewrite brightness: it's what makes the driver push the colour.
