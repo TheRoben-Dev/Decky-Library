@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { FaBoxOpen } from "react-icons/fa";
 import {
   Dep, getStatus, installPlugin, installStorePlugin, installTheme, Item, reloadCssLoader, Status,
-  uninstallPlugin, uninstallTheme,
+  uninstallPlugin, uninstallTheme, installPluginsBatch,
 } from "./backend";
 
 const note = { fontSize: "12px", lineHeight: "16px", opacity: 0.75, whiteSpace: "normal" as const };
@@ -117,6 +117,26 @@ function Content() {
     } finally { setBusy(false); }
   };
 
+  // Theme first (done here), then every plugin with an update in one Decky prompt, Library Hub last
+  // (Decky reloads it when its turn comes, after the others are in).
+  const updateAll = () => act(async () => {
+    const todo = (status?.items ?? []).filter((i) => i.installed && i.updateAvailable);
+    const errs: string[] = [];
+    const t = todo.find((i) => i.kind === "theme");
+    if (t) {
+      setMsg({ text: "Updating Nightgrid…", bad: false });
+      const r = await installTheme();
+      if (!r.ok) errs.push(`Nightgrid: ${r.error}`); else await reloadCssLoader();
+    }
+    const ids = [
+      ...todo.filter((i) => i.kind === "plugin" && !i.isSelf).map((i) => i.id),
+      ...todo.filter((i) => i.isSelf).map((i) => i.id),
+    ];
+    const err = await installPluginsBatch(ids, (text) => setMsg({ text, bad: false }));
+    if (err) errs.push(err);
+    return errs.length ? errs.join(" · ") : null;
+  }, "Updates handed to Decky; confirm its prompt if you haven't.");
+
   useEffect(() => { check(); }, []);
 
   const s = status;
@@ -143,6 +163,13 @@ function Content() {
         {s?.error && <PanelSectionRow><div style={warn}>{s.error}</div></PanelSectionRow>}
         {s && !s.error && others.length === 0 && (
           <PanelSectionRow><div style={note}>No releases published yet.</div></PanelSectionRow>
+        )}
+        {(s?.items.filter((i) => i.installed && i.updateAvailable).length ?? 0) > 0 && (
+          <PanelSectionRow>
+            <ButtonItem layout="below" disabled={busy} onClick={updateAll}>
+              Update all ({s!.items.filter((i) => i.installed && i.updateAvailable).length})
+            </ButtonItem>
+          </PanelSectionRow>
         )}
         {others.map((it) => <ItemRows key={it.id} it={it} busy={busy} act={act} />)}
         {msg && <PanelSectionRow><div style={msg.bad ? warn : note}>{msg.text}</div></PanelSectionRow>}

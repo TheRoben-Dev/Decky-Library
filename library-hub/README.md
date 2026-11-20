@@ -10,6 +10,8 @@ and shows a toast.
 ## What it does
 - Lists every published item with the installed and latest version, and **Install**, **Update to X**
   and **Uninstall** buttons. Library Hub's own update is in its own section.
+- **Update all** updates every installed item that has a newer release: the theme first, then all
+  plugins in one Decky confirmation (each one checksum-checked first), Library Hub itself last.
 - Plugins are installed through Decky Loader's own installer (`utilities/install_plugin`), so you get
   Decky's normal confirmation prompt and Decky loads the new version without a restart.
 - The theme is installed into `~/homebrew/themes/Nightgrid` and CSS Loader is reloaded; your Nightgrid

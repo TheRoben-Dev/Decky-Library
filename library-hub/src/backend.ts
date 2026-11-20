@@ -35,6 +35,24 @@ export async function installPlugin(id: string): Promise<string | null> {
   try { return await handToDecky(await preparePlugin(id)); } catch (e) { return String(e); }
 }
 
+/** Update several plugins with one Decky prompt: each is downloaded and SHA-256 checked here
+ * first, then handed to Decky's batch installer (utilities/install_plugins) in the given order. */
+export async function installPluginsBatch(ids: string[], onProgress: (text: string) => void): Promise<string | null> {
+  try {
+    const reqs: any[] = [];
+    for (let i = 0; i < ids.length; i++) {
+      onProgress(`Checking ${i + 1}/${ids.length}: ${ids[i]}…`);
+      const p = await preparePlugin(ids[i]);
+      if (!p.ok) return `${ids[i]}: ${p.error}`;
+      reqs.push({ name: p.name, artifact: p.artifact, version: p.version, hash: p.hash, install_type: p.installType });
+    }
+    if (!reqs.length) return null;
+    onProgress("Confirm the updates in Decky's prompt.");
+    await deckyBackend().call("utilities/install_plugins", reqs);
+    return null;
+  } catch (e) { return String(e); }
+}
+
 export async function installStorePlugin(name: string): Promise<string | null> {
   try { return await handToDecky(await prepareStorePlugin(name)); } catch (e) { return String(e); }
 }
