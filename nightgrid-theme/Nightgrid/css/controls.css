@@ -1,0 +1,220 @@
+/* Nightgrid — controls.css  (bigpicture, MainMenu, QuickAccess)
+ * Buttons, toggles, sliders, dropdowns, dialogs, context menus, settings rows.
+ * MainMenu/QuickAccess load Steam's stylesheets after CSS Loader's, so equal specificity
+ * loses there: every rule carries `.BasicUI` (+1 class) and focus states use !important.
+ */
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.BasicUI button.DialogButton,
+.BasicUI button.DialogButton:enabled {
+  background: var(--ng-bg-2);
+  color: var(--ng-text-0);
+  border: 1px solid var(--ng-line);
+  border-radius: var(--ng-radius);
+}
+.BasicUI button.DialogButton:enabled.gpfocus,
+.BasicUI button.DialogButton:enabled:focus,
+.BasicUI button.DialogButton:enabled:hover {
+  background: color-mix(in srgb, var(--ng-active) 18%, var(--ng-bg-1)) !important;
+  color: var(--ng-text-0) !important;
+  border-color: var(--ng-active) !important;
+  box-shadow: var(--ng-glow-active);
+}
+.BasicUI button.DialogButton:enabled.Primary {
+  border-color: var(--ng-data);
+  color: var(--ng-data);
+}
+.BasicUI button.DialogButton:enabled.gpfocus.Primary,
+.BasicUI button.DialogButton:enabled:focus.Primary {
+  background: var(--ng-data) !important;
+  color: var(--ng-on-fill) !important;
+  border-color: var(--ng-data) !important;
+  box-shadow: var(--ng-glow-data);
+}
+.BasicUI button.DialogButton:enabled.gpfocus.gamepadcontextmenu_Destructive {
+  background: var(--ng-danger) !important;
+  border-color: var(--ng-danger) !important;
+  color: #fff !important;
+}
+.BasicUI button.DialogButton[disabled] {
+  opacity: .45;
+}
+.BasicUI button.gamepaddropdown_DropDownControlButton.DialogButton {
+  background: var(--ng-bg-1);
+  border: 1px solid var(--ng-line);
+  border-radius: var(--ng-radius);
+}
+
+/* ── Toggles: cyan rail, square-ish knob ─────────────────── */
+.BasicUI .gamepaddialog_ToggleRail {
+  background: var(--ng-bg-2);
+  border: 1px solid var(--ng-line);
+  border-radius: var(--ng-radius);
+}
+.BasicUI .gamepaddialog_ToggleRail::before {
+  background: var(--ng-data);
+  border-radius: var(--ng-radius);
+}
+.BasicUI .gamepaddialog_ToggleSwitch {
+  border-radius: var(--ng-radius);
+}
+.BasicUI .gamepaddialog_Toggle.gamepaddialog_On .gamepaddialog_ToggleSwitch {
+  background: var(--ng-on-fill);
+  box-shadow: inset 0 0 0 2px var(--ng-data);
+}
+.BasicUI .gamepaddialog_Field.gpfocuswithin .gamepaddialog_ToggleRail {
+  background: var(--ng-bg-1);
+  border-color: var(--ng-active);
+}
+
+/* ── Sliders: Steam sets --left-track-color on the track itself ── */
+.BasicUI,
+.BasicUI .gamepadslider_SliderTrack {
+  --left-track-color: var(--ng-data);
+}
+.BasicUI .gamepadslider_SliderTrack {
+  border-radius: 0;
+}
+.BasicUI .gamepadslider_SliderHandle {
+  border-radius: var(--ng-radius);
+  background: var(--ng-text-0);
+}
+.BasicUI .gamepaddialog_Field.gpfocuswithin .gamepadslider_SliderControlAndNotches.gpfocus .gamepadslider_SliderHandle {
+  background: var(--ng-active) !important;
+  box-shadow: var(--ng-glow-active);
+}
+.BasicUI .gamepadslider_SliderNotchTick.gamepadslider_TickActive {
+  background-color: var(--ng-data);
+}
+.BasicUI .gamepadslider_DescriptionValue,
+.BasicUI .gamepadslider_EditableValue {
+  color: var(--ng-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Progress bars ───────────────────────────────────────── */
+.BasicUI .progressbar_ProgressBar {
+  border-radius: 0;
+}
+
+/* ── Settings rows ───────────────────────────────────────── */
+.BasicUI .gamepaddialog_Field.gamepaddialog_WithBottomSeparatorThick::after {
+  background: var(--ng-line);
+}
+.BasicUI .gamepaddialog_FieldLabel {
+  color: var(--ng-text-0);
+}
+.BasicUI .gamepaddialog_FieldDescription {
+  color: var(--ng-text-1);
+}
+.BasicUI .gamepaddialog_FieldDescription a {
+  color: var(--ng-data);
+}
+/* Focused row. Steam colors it with a static #3d4450 and a forwards fade animation
+ * (ItemFocusAnim-darkGreySettings) — animations beat normal declarations, so swap the animation. */
+@keyframes ng-row-focus {
+  0%   { background: var(--ng-bg-1); }
+  100% { background: color-mix(in srgb, var(--ng-active) 10%, var(--ng-bg-2)); }
+}
+.BasicUI .gamepaddialog_Field.gamepaddialog_Field.gamepaddialog_HighlightOnFocus:is(.gpfocus, .gpfocuswithin) {
+  background: color-mix(in srgb, var(--ng-active) 10%, var(--ng-bg-2));
+  animation-name: ng-row-focus;
+  box-shadow: inset 2px 0 0 var(--ng-active);
+}
+.BasicUI .gamepaddialog_BasicTextInput {
+  background: var(--ng-bg-0);
+  border: 1px solid var(--ng-line);
+  border-radius: var(--ng-radius);
+  color: var(--ng-text-0);
+}
+.BasicUI .gamepaddialog_BasicTextInput.gpfocus {
+  border-color: var(--ng-active);
+}
+.BasicUI .DialogCheckbox {
+  border-radius: var(--ng-radius);
+}
+
+/* ── Settings page (Settings, Game Properties, Notes) ────── */
+.BasicUI .gamepadpagedsettings_PagedSettingsDialog,
+.BasicUI .gamepadpagedsettings_PagedSettingsDialog .gamepadpagedsettings_PagedSettingDialog_ContentColumn {
+  background: var(--ng-bg-0);
+}
+.BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListColumn {
+  background: var(--ng-bg-1);
+  box-shadow: inset -1px 0 0 var(--ng-line);
+}
+.BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem {
+  color: var(--ng-text-1);
+}
+/* Active page: like Nightgrid's active module row (outlined magenta, faint fill) */
+.BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem.gamepadpagedsettings_Active {
+  background: color-mix(in srgb, var(--ng-active) 10%, transparent);
+  color: var(--ng-text-0);
+  border-left-color: var(--ng-active);
+}
+.BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem:focus {
+  background: color-mix(in srgb, var(--ng-active) 18%, var(--ng-bg-1));
+  color: var(--ng-text-0);
+  border-left-color: var(--ng-active);
+  box-shadow: inset 0 0 0 1px var(--ng-active);
+}
+
+/* Storage bars */
+.BasicUI .contentmanagement_DriveUsageGames { background-color: var(--ng-data); }
+.BasicUI .contentmanagement_DriveUsageWorkshop { background-color: var(--ng-accent); }
+.BasicUI .contentmanagement_DriveUsageFreeSpace { background-color: var(--ng-bg-2); }
+.BasicUI .contentmanagement_AppBody { border-radius: var(--ng-radius); }
+
+/* ── Dialogs ─────────────────────────────────────────────── */
+.BasicUI .gamepaddialog_ModalPosition > .gamepaddialog_GamepadDialogContent {
+  background: var(--ng-bg-1);
+  border: 1px solid var(--ng-line);
+  border-top: 2px solid var(--ng-active);
+  border-radius: 0;
+}
+.BasicUI .gamepadui_GamepadDialogOverlay .ModalOverlayBackground {
+  background: rgba(7, 8, 11, .82);
+}
+
+/* ── Context menus (game ≡ menu, power menu) ─────────────── */
+.BasicUI .gamepadcontextmenu_contextMenuContents {
+  background: var(--ng-bg-1);
+  border: 1px solid var(--ng-line);
+  border-radius: 0;
+}
+.BasicUI .gamepadcontextmenu_contextMenuItem:not(.gamepadcontextmenu_Focused):not(.gamepadcontextmenu_active):not(.gamepadcontextmenu_Selected) {
+  background: var(--ng-bg-1);
+  color: var(--ng-text-0);
+}
+.BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_Selected:not(.gamepadcontextmenu_Focused) {
+  background: var(--ng-bg-2);
+}
+.BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_Focused {
+  background: color-mix(in srgb, var(--ng-active) 20%, var(--ng-bg-1)) !important;
+  color: var(--ng-text-0) !important;
+  box-shadow: inset 0 0 0 1px var(--ng-active);
+}
+/* Play / Launch / Resume keep their meaning as "ready" (ok), installs as "data" (cyan).
+ * Class names Play/Launch/Pause are CSS Loader translation names, so they're matched by
+ * a partial-word substring CSS Loader leaves alone (see Slate's docs/selectors.md). */
+.BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_Focused:is(.gamepadcontextmenu_Positive, [class^="Pla"], [class*=" Pla"], [class^="Launc"], [class*=" Launc"], .Resume) {
+  background: var(--ng-ok) !important;
+  color: var(--ng-on-fill) !important;
+  box-shadow: none;
+}
+.BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_Focused:is(.gamepadcontextmenu_Emphasis, .Download, .Update, .Install) {
+  background: var(--ng-data) !important;
+  color: var(--ng-on-fill) !important;
+  box-shadow: none;
+}
+.BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_Focused.gamepadcontextmenu_Destructive {
+  background: var(--ng-danger) !important;
+  color: #fff !important;
+  box-shadow: none;
+}
+.BasicUI .gamepadcontextmenu_contextMenuItem.menuChecked {
+  color: var(--ng-data);
+}
+.BasicUI .gamepadcontextmenu_ContextMenuSeparator {
+  background-color: var(--ng-line);
+}

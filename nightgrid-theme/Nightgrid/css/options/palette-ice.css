@@ -1,0 +1,8 @@
+/* Palette: ICE (from Nightgrid's theme list) */
+html:root {
+  --ng-bg-0: #050A12; --ng-bg-1: #0A1220; --ng-bg-2: #111C2E; --ng-line: #1B2A40;
+  --ng-text-0: #EAF6FF; --ng-text-1: #8FA6BE;
+  --ng-accent: #7DF9FF; --ng-data: #00C8FF; --ng-active: #B98CFF;
+  --ng-danger: #FF4D6A; --ng-ok: #4DFFC3; --ng-warn: #FFC857; --ng-mint: #D6F4FF;
+  --ng-on-fill: #050A12;
+}

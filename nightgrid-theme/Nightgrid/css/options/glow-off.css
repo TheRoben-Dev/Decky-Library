@@ -1,0 +1,5 @@
+/* Glow: off — flat outlines only (same as Nightgrid's "reduce effects") */
+html:root {
+  --ng-glow-active: 0 0 0 transparent;
+  --ng-glow-data: 0 0 0 transparent;
+}

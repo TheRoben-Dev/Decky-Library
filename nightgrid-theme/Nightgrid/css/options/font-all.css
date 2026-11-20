@@ -1,0 +1,7 @@
+/* Nightgrid — options/font-all.css  (Font: "Mono everywhere")
+ * Every piece of UI text in JetBrains Mono, like the Nightgrid app. SVG icons are untouched. */
+html,
+body,
+body *:not(svg):not(svg *) {
+  font-family: var(--ng-font-mono) !important;
+}

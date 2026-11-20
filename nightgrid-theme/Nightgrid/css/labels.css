@@ -1,0 +1,35 @@
+/* Nightgrid — labels.css  (all pages)
+ * Nightgrid labels: uppercase, letter-spaced. Body text (descriptions, game names, chat) keeps
+ * normal case so it stays readable at handheld distance.
+ */
+.BasicUI .gamepadtabbedpage_Tab,
+.BasicUI .footer_BasicFooter,
+.BasicUI .footer_QuickAccessFooter,
+.BasicUI .quickaccessmenu_Title,
+.BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem,
+.BasicUI .gamepaddialog_GamepadDialogContent .DialogHeader,
+.BasicUI .DialogControlsSectionHeader,
+.BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_MenuSectionHeader,
+.BasicUI .homestorecarousel_Header,
+.BasicUI .header_Clock,
+.BasicUI button.DialogButton {
+  text-transform: uppercase;
+  letter-spacing: var(--ng-tracking);
+}
+/* Big headers get the "// SECTION" marker: magenta for page titles, cyan for sections */
+.BasicUI .quickaccessmenu_Title::before,
+.BasicUI .gamepaddialog_GamepadDialogContent .DialogHeader::before {
+  content: "// ";
+  color: var(--ng-active);
+  letter-spacing: 0;
+}
+.BasicUI .DialogControlsSectionHeader::before {
+  content: "// ";
+  color: var(--ng-data);
+  letter-spacing: 0;
+}
+.BasicUI .homestorecarousel_Header::before {
+  content: "> ";
+  color: var(--ng-data);
+  letter-spacing: 0;
+}
