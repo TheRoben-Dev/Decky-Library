@@ -30,13 +30,13 @@ The checksum guards against corrupted or swapped downloads; it comes from the sa
 anchor is the GitHub repo itself (only people with push access to it can publish a release).
 
 ## Releasing (maintainer)
-Bump `version` in `nightgrid-theme/Nightgrid/theme.json`, merge, then:
-```
-git tag nightgrid-theme-v0.3.0 && git push origin nightgrid-theme-v0.3.0
-```
-`.github/workflows/nightgrid-release.yml` checks that the tag matches theme.json, builds `Nightgrid.zip`
-and its `.sha256`, and publishes the release. The updater picks it up from there.
-Tag `nightgrid-updater-vX.Y.Z` (matching `package.json`) to publish this plugin's own zip.
+Bump `version` in `nightgrid-theme/Nightgrid/theme.json` and push (to `main` or a `claude/*` branch).
+`.github/workflows/nightgrid-release.yml` sees the new version, builds `Nightgrid.zip` and its `.sha256`,
+creates the tag `nightgrid-theme-vX.Y.Z` on that commit and publishes the release. The updater picks it
+up from there. A version that already has a release is skipped, never rebuilt.
+Bumping `version` in this plugin's `package.json` publishes `nightgrid-updater-vX.Y.Z` the same way
+(after its tests pass). Pushing one of those tags by hand, or publishing the release in the web UI,
+still works; the tag must match the version in the file.
 
 ## Build
 ```

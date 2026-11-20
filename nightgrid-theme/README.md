@@ -115,8 +115,8 @@ settings) and use CEF remote debugging (`<ally-ip>:8081`) to read the element's 
 ```
 ./package.sh   # → out/Nightgrid.zip
 ```
-Releases (what the updater installs) are made by tagging `nightgrid-theme-vX.Y.Z` with the same version
-as `theme.json`; see [nightgrid-updater](../nightgrid-updater/README.md#releasing-maintainer).
+Releases (what the updater installs) are published automatically when a push to `main` or a `claude/*`
+branch changes the `version` in `theme.json`; see [nightgrid-updater](../nightgrid-updater/README.md#releasing-maintainer).
 
 ## Credits / licenses
 - Theme: MIT (`LICENSE`).
