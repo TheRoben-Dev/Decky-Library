@@ -3,6 +3,8 @@
 #     → release with Nightgrid.zip + Nightgrid.zip.sha256 (tag must match theme.json "version")
 #   git tag nightgrid-updater-v0.1.0 && git push origin nightgrid-updater-v0.1.0
 #     → release with Nightgrid-Updater.zip + .sha256 (tag must match plugin package.json "version")
+# Publishing a release with one of those tags from the GitHub web UI works too: the assets are
+# built and attached to that release.
 name: Nightgrid release
 
 on:
@@ -10,6 +12,12 @@ on:
     tags:
       - "nightgrid-theme-v*"
       - "nightgrid-updater-v*"
+  release:
+    types: [published]
+
+# A web-UI release fires both events; run once per tag, the second run just re-uploads.
+concurrency:
+  group: nightgrid-release-${{ github.ref_name }}
 
 permissions:
   contents: write   # create the release and upload its assets; nothing else
@@ -33,8 +41,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            nightgrid-theme/out/Nightgrid.zip nightgrid-theme/out/Nightgrid.zip.sha256 \
+          files="nightgrid-theme/out/Nightgrid.zip nightgrid-theme/out/Nightgrid.zip.sha256"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" $files --clobber
+            exit 0
+          fi
+          gh release create "$GITHUB_REF_NAME" $files \
             --title "Nightgrid theme ${GITHUB_REF_NAME#nightgrid-theme-}" \
             --notes "Install or update from the Nightgrid Updater plugin, or extract Nightgrid.zip into ~/homebrew/themes/." \
             --verify-tag
@@ -66,7 +78,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" out/Nightgrid-Updater.zip out/Nightgrid-Updater.zip.sha256 \
+          files="out/Nightgrid-Updater.zip out/Nightgrid-Updater.zip.sha256"
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" $files --clobber
+            exit 0
+          fi
+          gh release create "$GITHUB_REF_NAME" $files \
             --title "Nightgrid Updater ${GITHUB_REF_NAME#nightgrid-updater-}" \
             --notes "Install from Decky → Developer → Install Plugin from Zip." \
             --verify-tag
