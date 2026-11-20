@@ -99,6 +99,13 @@ class Plugin:
             decky.logger.error(f"lsfg_set_game failed: {e}")
             return {"ok": False, "error": str(e)}
 
+    async def lsfg_install(self, force: bool = False):
+        try:
+            return lsfg.install_layer(bool(force))
+        except Exception as e:
+            decky.logger.error(f"lsfg_install failed: {e}")
+            return {"ok": False, "error": str(e)}
+
     async def log(self, msg: str):
         decky.logger.info(f"[frontend] {msg}")
 
@@ -110,8 +117,9 @@ class Plugin:
         decky.logger.info("Vex Performance unloaded")
 
     async def _uninstall(self):
-        # Leave lsfg-vk profiles we created? Remove them so nothing lingers.
+        # Remove the lsfg-vk profiles and layer files we installed so nothing lingers.
         try:
             lsfg.remove_all_owned()
+            lsfg.uninstall_layer()
         except Exception as e:
             decky.logger.error(f"uninstall cleanup failed: {e}")

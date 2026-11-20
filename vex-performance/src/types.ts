@@ -46,7 +46,11 @@ export interface Environment {
   powerstation: { running: boolean; card?: string; tdp?: number | null; tdpUnsupported?: boolean; gpuRange?: [number, number] | null; error?: string };
   hhd: { running: boolean; tdpEnabled?: boolean; tdpPrefix?: string; gpuControl?: boolean; steamFuse?: boolean; error?: string };
   power: { sysfsTdp: boolean; tdpMin: number | null; tdpMax: number | null; gpuRange: [number, number] | null };
-  lsfg: { installed: boolean; legacyV1: boolean; flatpakLayer: boolean; configExists: boolean; dll: string; dllFound: boolean; version: number | null; error?: string };
+  lsfg: {
+    installed: boolean; ownedByVex: boolean; otherPlugin: string | null; bundled: boolean; bundledVersion: string;
+    legacyV1: boolean; configExists: boolean; dll: string; dllFound: boolean; version: number | null; error?: string;
+    lossless: { installed: boolean; branch: string | null; needsBranch: boolean; dll: string };
+  };
   conflicts: { plugins: { name: string; controls: string }[]; tuned_ppd: boolean };
 }
 

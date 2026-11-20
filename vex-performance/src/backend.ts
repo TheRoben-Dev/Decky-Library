@@ -13,4 +13,5 @@ export const lsfgSetGame = callable<
   [appid: string, name: string, enabled: boolean, multiplier: number, flowScale: number, perfMode: boolean],
   { ok: boolean; error?: string; dll?: string }
 >("lsfg_set_game");
+export const lsfgInstall = callable<[force: boolean], { ok: boolean; error?: string; skipped?: string; installed?: string }>("lsfg_install");
 export const log = callable<[msg: string], void>("log");
