@@ -39,7 +39,7 @@ pnpm build          # -> dist/index.js
 Bazzite 44 (Aug 2026) retired Handheld Daemon in favor of InputPlumber, steamos-manager and PowerStation, and moved TDP into Steam's Quick Access menu. Vex follows that: Steam first, PowerStation second, HHD only as an opt-in legacy path for older images. If Steam's TDP slider is hidden on your device, Vex uses PowerStation directly. Note that OpenGamepadUI's overlay also writes TDP through PowerStation, so a change there lasts until the next game launch or profile edit.
 
 ## Releases
-Bumping `version` in `package.json` on `main` publishes a GitHub release `vex-performance-v<version>` with the zip attached (see `.github/workflows/release-vex-performance.yml`).
+Bumping `version` in `package.json` publishes a GitHub release `vex-performance-v<version>` with the zip and its `.sha256` (repo-wide `.github/workflows/plugin-release.yml`). Library Hub installs from those releases.
 
 ## Known limits
 - Steam's perf APIs are internal; a Steam client update can rename them. Vex
