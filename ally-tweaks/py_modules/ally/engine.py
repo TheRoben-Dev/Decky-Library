@@ -34,7 +34,7 @@ DEFAULTS = {
     "system": {
         "wifiPowersaveOff": False, "usbAutosuspendOff": False,
         "cpuBoostOff": False, "smtOff": False, "epp": "",      # "" = follow power profile
-        "audioPowersaveOff": False, "splitLockMitigation": False,
+        "audioPowersaveOff": False, "splitLockMitigation": False, "ampsAwake": False,
         "touch": "on",                                          # on | off | games
     },
 }
@@ -69,6 +69,8 @@ class Engine:
         self.temp_bin = None
         self.persist = Persist()
         self.readback_ok = False
+        self.drifts = []
+        self.led_contested = False
         self.screen = None          # debounced backlight fraction
         self._screen_seen = None
 
@@ -182,8 +184,21 @@ class Engine:
             # Re-assert when the LED doesn't show what we set: the driver can
             # reset it after resume or re-probe, or another program wrote it.
             if vals and not force and key == self.last_light and self.readback_ok and not leds.matches(vals):
-                decky.logger.info("Ring LED drifted from the set colour; re-applying")
-                force = True
+                now = time.monotonic()
+                self.drifts = [t for t in self.drifts if now - t < 120] + [now]
+                if len(self.drifts) >= 3:
+                    # Something keeps overwriting the rings (usually Steam's
+                    # DualSense lightbar via InputPlumber). Don't fight it every
+                    # few seconds; the UI explains it. User changes still apply.
+                    if not self.led_contested:
+                        decky.logger.warning("Ring LED keeps being overwritten by another program; not re-asserting")
+                    self.led_contested = True
+                else:
+                    decky.logger.info("Ring LED drifted from the set colour; re-applying")
+                    force = True
+            if key != self.last_light:
+                self.led_contested = False
+                self.drifts = []
             if force or key != self.last_light:
                 leds.apply(target)
                 self.last_light = key
@@ -233,6 +248,9 @@ class Engine:
             elif key == "audioPowersaveOff":
                 tweaks.set_audio_ps(not on)
                 self.persist.update(AUDIO_PS_OFF=1 if on else None)
+            elif key == "ampsAwake":
+                tweaks.set_amps_awake(on)
+                self.persist.update(AMPS_AWAKE=1 if on else None)
             elif key == "splitLockMitigation":
                 tweaks.set_splitlock(on)   # persisted by its sysctl.d drop-in
             else:
@@ -278,6 +296,10 @@ class Engine:
                 # these; put the user's choice back (writes only on a change).
                 if sysc.get("cpuBoostOff") and tweaks.boost_status():
                     tweaks.set_boost(False)
+                if sysc.get("ampsAwake"):
+                    st = tweaks.amp_status()   # amps re-probe after resume
+                    if st and not st["awake"]:
+                        tweaks.set_amps_awake(True)
                 if sysc.get("touch", "on") != "on":
                     self._apply_touch()
                 if sysc.get("epp"):

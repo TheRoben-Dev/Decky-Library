@@ -242,6 +242,12 @@ function Lighting() {
   return (
     <PanelSection title="Ring lighting">
       {st.rgbBackend === "none" && <Note warning>No ring LED control found: neither the kernel's joystick-ring LED nor Handheld Daemon is available on this system.</Note>}
+      {st.rgbBackend === "sysfs" && st.leds.lightbarTarget && (
+        <Note warning>InputPlumber is emulating a {st.leds.lightbarTarget}, so Steam's light-bar color (blue by default) gets copied onto the rings and overrides these settings. Set the controller's light bar to off or a color in Steam (Settings → Controller → your controller), or use an Xbox-type controller mode.</Note>
+      )}
+      {st.rgbBackend === "sysfs" && st.leds.contested && !st.leds.lightbarTarget && (
+        <Note warning>Another program keeps changing the ring colors, so the plugin stopped fighting it. Your next change here still applies.</Note>
+      )}
       {r?.controllerOwnsLeds && <Note warning>HHD's Dualsense "LED Support" is on, so games control the rings. Turn it off in HHD to use these settings.</Note>}
       {r && !r.hhdRgbEnabled && <Note>RGB support is off in HHD. Changing a setting here turns it on.</Note>}
       <PanelSectionRow>
@@ -472,6 +478,13 @@ function SystemTweaks() {
           <ToggleField label="Audio codec power saving off" checked={sys.audioPowersaveOff}
             description="Keeps the sound chip awake, so there's no pop or cut-off first syllable when sound starts after silence. Bazzite already keeps PipeWire outputs awake; this also covers the codec itself. About 0.1–0.3 W."
             onChange={(v) => set("audioPowersaveOff", v)} />
+        </PanelSectionRow>
+      )}
+      {st.cpu.amps && (
+        <PanelSectionRow>
+          <ToggleField label="Keep speaker amps awake" checked={sys.ampsAwake}
+            description={`Workaround for one speaker going silent after a pause: stops the ${st.cpu.amps.count} ${st.cpu.amps.driver === "cs35l41-hda" ? "Cirrus CS35L41" : "TI TAS2781"} speaker amps from powering down between sounds, so there's nothing to fail on wake-up. Experimental (not a confirmed fix); best combined with "Audio codec power saving off". A little more idle power.`}
+            onChange={(v) => set("ampsAwake", v)} />
         </PanelSectionRow>
       )}
       {st.cpu.splitLockMitigation != null && (

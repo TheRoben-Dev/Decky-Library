@@ -203,3 +203,44 @@ def apply(light: dict) -> dict | None:
     # Always rewrite brightness: it's what makes the driver push the colour.
     _write(f"{ring}/brightness", vals["brightness"])
     return vals
+
+
+# ---- who else writes the rings? ----
+# InputPlumber copies a DualSense target's lightbar colour (sent by Steam or a
+# game) onto this same LED. Steam's default DualSense lightbar is blue, so with
+# a DualSense/DualShock target the rings get overwritten. Detect that so the UI
+# can explain it instead of the plugin silently losing a tug-of-war.
+import subprocess as _sp
+import time as _time
+
+_ip_cache = {"t": 0.0, "v": None}
+
+
+def _busctl(*args):
+    env = dict(os.environ)
+    env.pop("LD_LIBRARY_PATH", None)
+    try:
+        r = _sp.run(["busctl", "--system", *args], capture_output=True, text=True, timeout=5, env=env)
+        return r.stdout if r.returncode == 0 else ""
+    except Exception:
+        return ""
+
+
+def inputplumber_lightbar_target():
+    """Name of an InputPlumber target that forwards a lightbar (DualSense /
+    DualShock), or None. Cached for 30 s."""
+    now = _time.monotonic()
+    if now - _ip_cache["t"] < 30:
+        return _ip_cache["v"]
+    found = None
+    tree = _busctl("tree", "--list", "org.shadowblip.InputPlumber")
+    for path in tree.split():
+        if "/devices/target/" not in path or not path.rsplit("/", 1)[-1].startswith("gamepad"):
+            continue
+        out = _busctl("get-property", "org.shadowblip.InputPlumber", path, "org.shadowblip.Input.Gamepad", "Name")
+        name = out.partition(" ")[2].strip().strip('"')
+        if any(k in name.lower() for k in ("dualsense", "dualshock", "playstation")):
+            found = name
+            break
+    _ip_cache.update(t=now, v=found)
+    return found

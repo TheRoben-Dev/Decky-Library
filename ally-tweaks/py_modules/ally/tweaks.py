@@ -337,6 +337,7 @@ def status_all():
         "audioPowerSave": audio_ps_status(),
         "pcie": pcie_status(),
         "touch": touch_status(),
+        "amps": amp_status(),
     }
 
 
@@ -385,4 +386,49 @@ def set_touch(enabled: bool):
     ok = False
     for d in touchscreens():
         ok = _w(f"{d}/inhibited", "0" if enabled else "1") or ok
+    return ok
+
+
+# ---- speaker amplifiers: keep them out of runtime suspend ----
+# The Ally 2023's speakers sit behind two Cirrus CS35L41 smart amps (driver
+# cs35l41-hda; TI TAS2781 on newer Allys). They runtime-suspend a few seconds
+# after audio stops; a common report is one side not coming back. Pinning
+# runtime PM to "on" (standard power/control sysfs) keeps both amps powered,
+# so there is no wake-up to fail. Experimental workaround, fully reversible.
+AMP_DRIVERS = ("cs35l41-hda", "tas2781-hda")
+AMP_BUSES = ("/sys/bus/i2c/drivers", "/sys/bus/spi/drivers")
+
+
+def amp_devices():
+    out = []
+    for bus in AMP_BUSES:
+        for drv in AMP_DRIVERS:
+            d = f"{bus}/{drv}"
+            try:
+                names = os.listdir(d)
+            except Exception:
+                continue
+            for n in sorted(names):
+                p = f"{d}/{n}/power/control"
+                if os.path.exists(p):
+                    out.append((drv, os.path.realpath(f"{d}/{n}")))
+    return out
+
+
+def amp_status():
+    devs = amp_devices()
+    if not devs:
+        return None
+    return {
+        "driver": devs[0][0],
+        "count": len(devs),
+        "awake": all(_r(f"{p}/power/control") == "on" for _, p in devs),
+        "runtime": [_r(f"{p}/power/runtime_status") for _, p in devs],
+    }
+
+
+def set_amps_awake(on: bool):
+    ok = False
+    for _, p in amp_devices():
+        ok = _w(f"{p}/power/control", "on" if on else "auto") or ok
     return ok

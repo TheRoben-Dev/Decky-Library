@@ -61,6 +61,8 @@ class Plugin:
         out["chargeBackend"] = battery.backend(st)
         out["rgbBackend"] = e.rgb_backend(st)
         out["leds"] = leds.status()
+        out["leds"]["contested"] = e.led_contested
+        out["leds"]["lightbarTarget"] = leds.inputplumber_lightbar_target() if out["leds"].get("supported") else None
         out["inputplumber"] = os.path.exists("/usr/bin/inputplumber")
         out["restoreUnit"] = e.persist.installed()
         out["wifi"] = tweaks.wifi_status()

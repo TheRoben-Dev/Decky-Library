@@ -37,7 +37,7 @@ export interface Settings {
   system: {
     wifiPowersaveOff: boolean; usbAutosuspendOff: boolean;
     cpuBoostOff: boolean; smtOff: boolean; epp: string;
-    audioPowersaveOff: boolean; splitLockMitigation: boolean;
+    audioPowersaveOff: boolean; splitLockMitigation: boolean; ampsAwake: boolean;
     touch: "on" | "off" | "games";
   };
 }
@@ -75,7 +75,7 @@ export interface AppState {
   };
   chargeBackend: "hhd" | "sysfs" | "none";
   rgbBackend: "hhd" | "sysfs" | "none";
-  leds: { supported: boolean; name?: string; zones?: number; layout?: string; effects?: string[] };
+  leds: { supported: boolean; name?: string; zones?: number; layout?: string; effects?: string[]; contested?: boolean; lightbarTarget?: string | null };
   apuMem: { current: number | null; choices: number[] } | null;
   inputplumber: boolean;
   restoreUnit: boolean;
@@ -89,6 +89,7 @@ export interface AppState {
     audioPowerSave: boolean | null;
     pcie: { supported: boolean; active: boolean; next: boolean; rebootNeeded: boolean };
     touch: { enabled: boolean; names: string[] } | null;
+    amps: { driver: string; count: number; awake: boolean; runtime: string[] } | null;
   };
   settings: Settings;
   lightReason: string;

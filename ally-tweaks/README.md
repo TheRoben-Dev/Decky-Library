@@ -46,6 +46,7 @@ InputPlumber leaves the rings alone and the kernel LED is the right place.
 | **USB autosuspend off** | `usbcore` `autosuspend=-1` and `power/control=on` for connected devices; re-applied at boot. Fixes docks/USB controllers dropping out after idling. Turning it off restores the 2 s default for new devices. | Slightly more battery use with USB devices plugged in |
 
 | **Audio codec power saving off** | `snd_hda_intel` `power_save=0`, re-applied at boot. Bazzite already keeps PipeWire outputs awake; this also keeps the codec itself up (no pop / clipped first sound) | ~0.1–0.3 W |
+| **Keep speaker amps awake** (one speaker going silent) | Experimental workaround for the known "one speaker drops out" reports: sets runtime PM `power/control=on` for the `cs35l41-hda` (or `tas2781-hda`) amp devices so they never power down between sounds. Re-applied after resume and at boot. Not a confirmed fix: no upstream fix was found for the RC71L. If a side stays silent, a reboot brings it back; check `journalctl -k -b \| grep -i cs35l41` | A little more idle power |
 | **Split-lock mitigation** | Bazzite ships it **off** (`kernel.split_lock_mitigate=0`). The toggle can turn it back on via `/etc/sysctl.d/99-ally-tweaks-splitlock.conf` | On = some games slow down badly |
 | **PCIe power management off** | The same kernel argument `ujust manage-pcie-power` sets (`pcie_port_pm=off` via `rpm-ostree kargs`), from Game Mode. Shows "reboot to apply" | Less micro-stutter / SSD latency, more battery and sleep drain |
 | **Touchscreen**: On / Off while a game runs / Off | Input `inhibited` attribute on the touchscreen; re-checked after resume | None |
@@ -60,7 +61,11 @@ low-latency Bluetooth LE intervals, PipeWire outputs never suspending.
 ### RGB reliability
 The plugin reads the LED back every few seconds and re-applies the colour if
 the driver reset it (after resume or a re-probe) or something else wrote it,
-and forces a full re-apply when it detects the device just woke up.
+and forces a full re-apply when it detects the device just woke up. If
+something keeps overwriting the rings (3 times in 2 minutes) it stops
+fighting and says so. The usual culprit: when InputPlumber emulates a
+DualSense, Steam's light-bar colour (blue by default) is copied onto the
+rings; the plugin detects that target over D-Bus and explains how to change it.
 
 ### What stays when the plugin isn't loaded
 - **Kernel path:** the plugin installs `ally-tweaks-restore.service`, a root

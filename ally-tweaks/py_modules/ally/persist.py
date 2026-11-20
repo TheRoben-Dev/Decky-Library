@@ -37,7 +37,7 @@ CONF=/etc/ally-tweaks/restore.env
 get() { sed -n "s/^$1=\([0-9 ]*\)$/\1/p" "$CONF" | head -n1; }
 INTENSITY=$(get RGB_INTENSITY); BRIGHT=$(get RGB_BRIGHTNESS); KBD=$(get KBD_LEVEL); LIMIT=$(get CHARGE_LIMIT)
 WIFI_PS_OFF=$(get WIFI_PS_OFF); USB_AS_OFF=$(get USB_AS_OFF)
-BOOST_OFF=$(get BOOST_OFF); SMT_OFF=$(get SMT_OFF); EPP_IDX=$(get EPP_IDX); AUDIO_PS_OFF=$(get AUDIO_PS_OFF)
+AMPS_AWAKE=$(get AMPS_AWAKE); BOOST_OFF=$(get BOOST_OFF); SMT_OFF=$(get SMT_OFF); EPP_IDX=$(get EPP_IDX); AUDIO_PS_OFF=$(get AUDIO_PS_OFF)
 
 if [ "$BOOST_OFF" = "1" ]; then
   for f in /sys/devices/system/cpu/cpufreq/boost /sys/devices/system/cpu/cpufreq/policy*/boost; do
@@ -54,6 +54,12 @@ if [ -n "$EPP_IDX" ]; then
       [ -w "$f" ] && echo "$EPP" > "$f" 2>/dev/null
     done
   fi
+fi
+if [ "$AMPS_AWAKE" = "1" ]; then
+  for c in /sys/bus/i2c/drivers/cs35l41-hda/*/power/control /sys/bus/spi/drivers/cs35l41-hda/*/power/control \
+           /sys/bus/i2c/drivers/tas2781-hda/*/power/control; do
+    [ -w "$c" ] && echo on > "$c"
+  done
 fi
 [ "$AUDIO_PS_OFF" = "1" ] && [ -w /sys/module/snd_hda_intel/parameters/power_save ] && echo 0 > /sys/module/snd_hda_intel/parameters/power_save
 
