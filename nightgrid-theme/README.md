@@ -32,10 +32,13 @@ Plugin from Zip), open it from Quick Access and press **Install**. It also handl
 | Colors | **From palette** · Custom → three color pickers: Selection (magenta), Data (cyan), Accent (yellow) |
 | Grid | **Dots + grid** (Nightgrid's backdrop) · Lines · Off |
 | Font | **Mono labels** (tabs, menus, headers, numbers) · Mono everywhere · Steam default |
-| Button prompts | **Steam default** · Ally 2023: original Nightgrid-style View, Menu, squared LB/RB/LT/RT and L3/R3 prompts; A/B/X/Y and the system button keep Steam's own colored prompts |
 | Glow | **Yes** · No (flat outlines, like Nightgrid's "reduce effects") |
 | Scanlines | Yes · **No** (static CRT lines + vignette on Home/Library) |
 
+
+**Ally button prompts:** Nightgrid doesn't change controller glyphs. Use
+[Handheld Controller Glyphs](https://deckthemes.com/themes/view?themeId=27d2dfb0-f58c-468f-81d5-f06534534133)
+by victor-borges (CSS Loader → Store, then set **Handheld** to *ASUS ROG Ally*). It works alongside Nightgrid.
 ## What it styles
 | Area | Pages (CSS Loader tabs) | File |
 |---|---|---|

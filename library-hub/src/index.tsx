@@ -150,6 +150,17 @@ function Content() {
           <ButtonItem layout="below" disabled={busy} onClick={check}>{busy ? "Working…" : "Check for updates"}</ButtonItem>
         </PanelSectionRow>
       </PanelSection>
+      <PanelSection title="Recommended">
+        <PanelSectionRow>
+          <Field label="Handheld Controller Glyphs" description="Ally button prompts (CSS Loader theme by victor-borges)" bottomSeparator="none" />
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <div style={note}>
+            Install it from CSS Loader → Store (search “Handheld Controller Glyphs”), then set Handheld to
+            ASUS ROG Ally. It works alongside Nightgrid.
+          </div>
+        </PanelSectionRow>
+      </PanelSection>
       <PanelSection title="Library Hub">
         {self && <ItemRows it={self} busy={busy} act={act} />}
         <PanelSectionRow>
