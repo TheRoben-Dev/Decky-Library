@@ -13,3 +13,4 @@ Install a theme by extracting its zip into `~/homebrew/themes/`, then refresh CS
 | Plugin | What it does |
 |---|---|
 | [library-hub](library-hub/) | Installs, updates and removes every plugin in this repo and the Nightgrid theme from Quick Access (SHA-256 checked, via Decky's own installer), offers CSS Loader if it's missing, and updates itself. |
+| [handheld-library](handheld-library/) | Keeps a "Handheld Ready" Library collection of games rated Deck Verified/Playable (optionally SteamOS Compatible, ProtonDB Gold+ or native) that have full or partial controller support, and lists your hidden games in Quick Access with Play and Unhide. |
