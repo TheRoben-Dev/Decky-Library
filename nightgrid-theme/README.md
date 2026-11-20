@@ -32,7 +32,7 @@ Plugin from Zip), open it from Quick Access and press **Install**. It also handl
 | Colors | **From palette** · Custom → three color pickers: Selection (magenta), Data (cyan), Accent (yellow) |
 | Grid | **Dots + grid** (Nightgrid's backdrop) · Lines · Off |
 | Font | **Mono labels** (tabs, menus, headers, numbers) · Mono everywhere · Steam default |
-| Button prompts | **Steam default** · Ally 2023: original monochrome glyphs shaped after the ROG Ally's controls (A/B/X/Y caps, View, Menu, Command Center for the Steam button, squared LB/RB/LT/RT, L3/R3) in place of Steam's colored Xbox prompts; leftover Xbox prompts are desaturated |
+| Button prompts | **Steam default** · Ally 2023: original Nightgrid-style View, Menu, squared LB/RB/LT/RT and L3/R3 prompts; A/B/X/Y and the system button keep Steam's own colored prompts |
 | Glow | **Yes** · No (flat outlines, like Nightgrid's "reduce effects") |
 | Scanlines | Yes · **No** (static CRT lines + vignette on Home/Library) |
 
