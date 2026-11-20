@@ -108,7 +108,7 @@ function LightEditor({ light }: { light: Light }) {
   const st = c.state;
   const follow = !!c.settings?.rgb.followScreen;
   const hhdMode = st?.rgbBackend === "hhd";
-  const hwEffects = !hhdMode ? st?.leds.effects ?? [] : [];
+  const hwEffects = !hhdMode && !st?.leds.hidFallback ? st?.leds.effects ?? [] : [];
   const modes = hhdMode ? MODES_HHD : [
     ...MODES_SYSFS.filter((m) => m.data !== "off"),
     ...(hwEffects.length ? [{ data: "hw" as LightMode, label: "Animated (controller effect)" }] : []),
@@ -242,10 +242,13 @@ function Lighting() {
   return (
     <PanelSection title="Ring lighting">
       {st.rgbBackend === "none" && <Note warning>No ring LED control found: neither the kernel's joystick-ring LED nor Handheld Daemon is available on this system.</Note>}
-      {st.rgbBackend === "sysfs" && st.leds.clamped && (
-        <Note warning>Your kernel caps each ring color value at 255 (multi_max_intensity), but the Ally driver packs the whole RGB color into that one value, so every color comes out as a shade of blue. This is a kernel/driver bug, not a setting. Brightness and off still work.</Note>
+      {st.rgbBackend === "sysfs" && st.leds.clamped && st.leds.hidFallback && (
+        <Note>Your kernel caps ring color values at 255, which turns every color blue through the normal LED interface. Colors are sent with the ring LED's own color command instead (the one the driver and HHD use). Hardware animations aren't available in this mode.</Note>
       )}
-      {st.rgbBackend === "sysfs" && st.leds.lastError && !st.leds.clamped && (
+      {st.rgbBackend === "sysfs" && st.leds.clamped && !st.leds.hidFallback && (
+        <Note warning>Your kernel caps each ring color value at 255 (multi_max_intensity), but the Ally driver packs the whole RGB color into that one value, so every color comes out as a shade of blue. This is a kernel/driver bug, not a setting. The plugin couldn't find the ring LED's HID interface to work around it.</Note>
+      )}
+      {st.rgbBackend === "sysfs" && st.leds.lastError && (!st.leds.clamped || st.leds.hidFallback) && (
         <Note warning>The ring LED rejected the last change: {st.leds.lastError}</Note>
       )}
       {st.rgbBackend === "sysfs" && st.leds.lightbarTarget && (

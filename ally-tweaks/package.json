@@ -1,6 +1,6 @@
 {
   "name": "ally-tweaks",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "ROG Ally 2023 tweaks: persistent ring RGB, charge limit, back buttons and panel options",
   "type": "module",
   "scripts": {

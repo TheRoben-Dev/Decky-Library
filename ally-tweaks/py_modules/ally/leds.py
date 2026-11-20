@@ -25,6 +25,8 @@ would mean a constant stream of HID writes.
 import colorsys
 import os
 
+from . import ring_hid
+
 LEDS = "/sys/class/leds"
 SUFFIX = ":rgb:joystick_rings"
 KBD = "asus::kbd_backlight"
@@ -97,6 +99,28 @@ def packed_clamped(ring=None) -> bool:
     return any(t in ("rgb", "multi") and m < PACKED_MAX for t, m in zip(idx, mx))
 
 
+def use_hid(ring=None) -> bool:
+    """Send ring colours with the MCU's LED report instead of the LED class:
+    only when the kernel clamps packed colours (see packed_clamped)."""
+    ring = ring or ring_path()
+    return bool(ring) and packed_clamped(ring) and ring_hid.available()
+
+
+def apply_hid(light: dict) -> dict | None:
+    global last_error
+    vals = to_values(light)
+    if not vals:
+        return None
+    try:
+        ring_hid.send(vals["hid"].split())
+        last_error = None
+    except Exception as e:
+        last_error = f"ring LED report: {e}"
+        import decky
+        decky.logger.error(last_error)
+    return vals
+
+
 def available() -> bool:
     return ring_path() is not None
 
@@ -113,6 +137,7 @@ def status() -> dict:
         "layout": " ".join(idx),
         "effects": hw_effects(ring),
         "clamped": packed_clamped(ring),
+        "hidFallback": use_hid(ring),
         "maxIntensity": _read(f"{ring}/multi_max_intensity"),
         "readback": readback(ring),
         "lastError": last_error,
@@ -145,7 +170,7 @@ def to_values(light: dict, ring: str | None = None) -> dict | None:
     mode = light.get("mode", "solid")
     pct = max(0, min(100, int(light.get("brightness", 50))))
     if mode == "off" or pct == 0:
-        return {"intensity": None, "brightness": "0", "kbd": None}
+        return {"intensity": None, "brightness": "0", "kbd": None, "hid": " ".join(["0"] * 12)}
 
     sat = light.get("saturation", 100)
     zones = max(1, sum(1 for t in idx if t in ("rgb", "multi", "blue")))
@@ -184,10 +209,17 @@ def to_values(light: dict, ring: str | None = None) -> dict | None:
             out.append("0")
     kbd = kbd_path(ring)
     kmax = _read(f"{kbd}/max_brightness") if kbd else None
+    # Same colours as plain per-zone bytes (brightness applied) for the MCU
+    # LED report fallback (ring_hid), used when the kernel clamps packed values.
+    hid = []
+    for z in range(4):
+        col = colors[min(z * zones // 4, zones - 1)]
+        hid += [round(c * pct / 100) for c in col]
     vals = {
         "intensity": " ".join(out),
         "brightness": str(max(1, round(pct * mx / 100))),
         "kbd": kmax if kmax and kmax.isdigit() else None,
+        "hid": " ".join(str(v) for v in hid),
     }
     eff = (light.get("hwEffect") or "") if mode == "hw" else ""
     effects = hw_effects(ring)

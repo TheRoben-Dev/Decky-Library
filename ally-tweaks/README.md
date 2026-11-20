@@ -81,7 +81,11 @@ rings; the plugin detects that target over D-Bus and explains how to change it.
 
 ## Hardware safety
 - **No** TDP, clocks, voltages, undervolting, fan curves or thermal policy.
-- **No** raw MCU/EC commands and **no** firmware writes. The kernel driver (or HHD) talks to the MCU.
+- **No** MCU/EC settings and **no** firmware writes. The kernel driver (or HHD) talks to the MCU, with one
+  exception, approved by the owner: on Linux 7.2+ kernels that clamp `multi_intensity` to 255 (which turns
+  every ring colour blue), the plugin sends the ring-colour report itself (`0x5A 0xD1 0x08 0x0C` + 4×RGB),
+  byte-for-byte what `hid-asus-ally` and HHD send. It's only used when that clamp is detected, and the
+  restore unit re-sends it at boot and after sleep. No other HID command is ever sent.
 - Writes only to documented kernel attributes: LED class `multi_intensity`/`brightness`,
   `charge_control_end_threshold`, `panel_overdrive`/`panel_od`, `boot_sound`.
 - No software-animated effects on the kernel path (that would be a constant stream of controller writes). Animations only when the controller runs them itself.

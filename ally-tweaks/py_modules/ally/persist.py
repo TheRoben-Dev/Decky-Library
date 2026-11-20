@@ -25,6 +25,8 @@ import decky
 DIR = "/etc/ally-tweaks"
 ENV = f"{DIR}/restore.env"
 SCRIPT = f"{DIR}/restore.sh"
+HELPER = f"{DIR}/ring_hid.py"
+HELPER_SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ring_hid.py")
 UNIT_NAME = "ally-tweaks-restore.service"
 UNIT = f"/etc/systemd/system/{UNIT_NAME}"
 SLEEP_TARGETS = "suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate.target"
@@ -37,7 +39,7 @@ CONF=/etc/ally-tweaks/restore.env
 get() { sed -n "s/^$1=\([0-9 ]*\)$/\1/p" "$CONF" | head -n1; }
 INTENSITY=$(get RGB_INTENSITY); BRIGHT=$(get RGB_BRIGHTNESS); KBD=$(get KBD_LEVEL); LIMIT=$(get CHARGE_LIMIT)
 WIFI_PS_OFF=$(get WIFI_PS_OFF); USB_AS_OFF=$(get USB_AS_OFF)
-AMPS_AWAKE=$(get AMPS_AWAKE); BOOST_OFF=$(get BOOST_OFF); SMT_OFF=$(get SMT_OFF); EPP_IDX=$(get EPP_IDX); AUDIO_PS_OFF=$(get AUDIO_PS_OFF)
+RGB_HID=$(get RGB_HID); AMPS_AWAKE=$(get AMPS_AWAKE); BOOST_OFF=$(get BOOST_OFF); SMT_OFF=$(get SMT_OFF); EPP_IDX=$(get EPP_IDX); AUDIO_PS_OFF=$(get AUDIO_PS_OFF)
 
 if [ "$BOOST_OFF" = "1" ]; then
   for f in /sys/devices/system/cpu/cpufreq/boost /sys/devices/system/cpu/cpufreq/policy*/boost; do
@@ -95,6 +97,17 @@ if [ -n "$BRIGHT" ]; then
     [ -n "$INTENSITY" ] && echo "$INTENSITY" > "$LED/multi_intensity"
     echo "$BRIGHT" > "$LED/brightness"
   fi
+fi
+if [ -n "$RGB_HID" ] && [ -r /etc/ally-tweaks/ring_hid.py ]; then
+  # Kernel clamps packed ring colours: send the MCU LED report instead. Wait
+  # for the MCU to come back, and for the driver's own (blue) resume write.
+  PY=$(command -v python3 || echo /usr/bin/python3)
+  i=0
+  while [ $i -lt 30 ]; do
+    sleep 1
+    "$PY" -I /etc/ally-tweaks/ring_hid.py $RGB_HID 2>/dev/null && break
+    i=$((i+1))
+  done
 fi
 if [ -n "$LIMIT" ]; then
   for b in /sys/class/power_supply/BAT*/charge_control_end_threshold; do
@@ -160,6 +173,13 @@ class Persist:
         if _read(SCRIPT) != SCRIPT_BODY:
             _atomic(SCRIPT, SCRIPT_BODY, 0o755)
             changed = True
+        try:
+            with open(HELPER_SRC) as f:
+                helper = f.read()
+            if _read(HELPER) != helper:
+                _atomic(HELPER, helper, 0o644)
+        except OSError as e:
+            decky.logger.error(f"installing ring helper failed: {e}")
         if _read(UNIT) != UNIT_BODY:
             _atomic(UNIT, UNIT_BODY)
             changed = True
@@ -195,7 +215,7 @@ class Persist:
         try:
             if os.path.exists(UNIT):
                 _systemctl("disable", UNIT_NAME)
-            for p in (UNIT, SCRIPT, ENV):
+            for p in (UNIT, SCRIPT, ENV, HELPER):
                 if os.path.exists(p):
                     os.remove(p)
             if os.path.isdir(DIR) and not os.listdir(DIR):

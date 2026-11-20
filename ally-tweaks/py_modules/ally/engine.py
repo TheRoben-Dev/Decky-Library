@@ -74,7 +74,8 @@ class Engine:
         self.readback_ok = False
         self.drifts = []
         self.led_contested = False
-        self.sys_errors = {}        # tweak key -> last apply error
+        self.sys_errors = {}
+        self.last_hid = 0.0        # tweak key -> last apply error
         self.screen = None          # debounced backlight fraction
         self._screen_seen = None
 
@@ -182,6 +183,25 @@ class Engine:
             if force or key != self.last_light:
                 rgb.apply(target, state)
                 self.last_light = key
+        elif be == "sysfs" and leds.use_hid():
+            # Kernel clamps packed colours (everything turns blue): send the
+            # MCU's own LED report. No readback exists, so re-send on change,
+            # on force (resume / settings) and every 10 s, which also wins back
+            # the rings after something writes the LED class (the driver then
+            # pushes its clamped blue).
+            vals = leds.to_values(target)
+            key = ("hid", (vals or {}).get("hid"))
+            now = time.monotonic()
+            if force or key != self.last_light or now - self.last_hid > 10:
+                leds.apply_hid(target)
+                self.last_light = key
+                self.last_hid = now
+                self.led_contested = False
+                if vals:
+                    # Restore unit sends the same report at boot / after resume;
+                    # drop the LED-class values, which would only push blue.
+                    self.persist.update(RGB_HID=vals["hid"], RGB_INTENSITY=None,
+                                        RGB_BRIGHTNESS=None, KBD_LEVEL=None)
         elif be == "sysfs":
             vals = leds.to_values(target)
             key = ("sysfs", tuple(sorted((vals or {}).items())))
@@ -212,7 +232,7 @@ class Engine:
                 # Same values come back at boot / after resume via the unit.
                 if not vals:
                     return
-                self.persist.update(RGB_INTENSITY=vals.get("intensity"),
+                self.persist.update(RGB_HID=None, RGB_INTENSITY=vals.get("intensity"),
                                     RGB_BRIGHTNESS=vals.get("brightness"),
                                     KBD_LEVEL=vals.get("kbd"))
 

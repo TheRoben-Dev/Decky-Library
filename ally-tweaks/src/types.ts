@@ -75,7 +75,7 @@ export interface AppState {
   };
   chargeBackend: "hhd" | "sysfs" | "none";
   rgbBackend: "hhd" | "sysfs" | "none";
-  leds: { supported: boolean; name?: string; zones?: number; layout?: string; effects?: string[]; contested?: boolean; lightbarTarget?: string | null; clamped?: boolean; maxIntensity?: string | null; lastError?: string | null };
+  leds: { supported: boolean; name?: string; zones?: number; layout?: string; effects?: string[]; contested?: boolean; lightbarTarget?: string | null; clamped?: boolean; hidFallback?: boolean; maxIntensity?: string | null; lastError?: string | null };
   apuMem: { current: number | null; choices: number[] } | null;
   inputplumber: boolean;
   sysErrors?: Record<string, string>;
