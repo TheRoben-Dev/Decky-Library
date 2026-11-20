@@ -14,6 +14,8 @@ export interface Settings {
   installedOnly: boolean;
   collectionId: string;
   hiddenQamTabs: string[];
+  hiddenLibraryTabs: string[];
+  readyLibraryTab: boolean;
 }
 
 export const getSettings = callable<[], Settings>("get_settings");

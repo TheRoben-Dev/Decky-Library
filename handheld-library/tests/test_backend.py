@@ -25,6 +25,9 @@ class SettingsTest(unittest.TestCase):
             self.assertNotIn("unknown", s)
             s = settings.save(p, {"hiddenQamTabs": [3, "999", "48151", 3, {"x": 1}]})
             self.assertEqual(s["hiddenQamTabs"], ["3", "48151"])
+            s = settings.save(p, {"hiddenLibraryTabs": ["Soundtracks", 5, "", "Soundtracks"], "readyLibraryTab": True})
+            self.assertEqual(s["hiddenLibraryTabs"], ["Soundtracks"])
+            self.assertIs(s["readyLibraryTab"], True)
             self.assertEqual(settings.load(p), s)
 
 

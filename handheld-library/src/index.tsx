@@ -6,6 +6,7 @@ import { definePlugin, toaster } from "@decky/api";
 import { useEffect, useMemo, useState } from "react";
 import { FaEyeSlash, FaFilter } from "react-icons/fa";
 import { HiddenTab } from "./hiddenTab";
+import { installLibrary, LIBRARY_TABS, libraryActive, seenLibraryTabs, setLibraryConfig, tabMasterInstalled, uninstallLibrary } from "./library";
 import { installQam, onSeenTabs, qamActive, seenTabs, setHiddenTabs, uninstallQam } from "./qam";
 import { GameRow, note, warn } from "./ui";
 import { deleteCollection, Game, isHidden, launch } from "./steam";
@@ -184,10 +185,52 @@ function QamTabsSection() {
   );
 }
 
+function LibraryTabsSection() {
+  const st = useEngine();
+  const s = st.settings;
+  if (!s) return null;
+  if (tabMasterInstalled()) {
+    return (
+      <PanelSection title="Library tabs">
+        <PanelSectionRow><div style={note}>TabMaster is installed and already controls the Library tabs, so this section is off. Hide tabs in TabMaster instead.</div></PanelSectionRow>
+      </PanelSection>
+    );
+  }
+  const hiddenSet = new Set(s.hiddenLibraryTabs);
+  const ids = [...new Set([...seenLibraryTabs(), ...s.hiddenLibraryTabs])];
+  if (!ids.length) ids.push(...Object.keys(LIBRARY_TABS).filter((k) => ["AllGames", "Installed", "Favorites", "Collections", "DesktopApps", "Soundtracks"].includes(k)));
+  const toggle = (id: string, on: boolean) => {
+    const next = new Set(hiddenSet);
+    if (on) next.delete(id); else next.add(id);
+    updateSettings({ hiddenLibraryTabs: [...next] }, false);
+  };
+  return (
+    <PanelSection title="Library tabs">
+      {!libraryActive() && (
+        <PanelSectionRow><div style={warn}>The Library patch isn't active, so Steam shows its normal tabs.</div></PanelSectionRow>
+      )}
+      <PanelSectionRow>
+        <div style={note}>Turn a tab off to remove it from the Library. Applies the next time the Library opens. If every tab is off, Steam's tabs come back.</div>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <ToggleField label={`"${s.collectionName}" tab`} checked={s.readyLibraryTab} disabled={!s.collectionId}
+          description={s.collectionId ? "Shows the collection as its own Library tab, second from the left." : "Turn on collection sync first."}
+          onChange={(v) => updateSettings({ readyLibraryTab: v }, false)} />
+      </PanelSectionRow>
+      {ids.map((id) => (
+        <PanelSectionRow key={id}>
+          <ToggleField label={LIBRARY_TABS[id] ?? id} checked={!hiddenSet.has(id)} onChange={(on) => toggle(id, on)} />
+        </PanelSectionRow>
+      ))}
+    </PanelSection>
+  );
+}
+
 function Content() {
   return (
     <>
       <FilterView />
+      <LibraryTabsSection />
       <QamTabsSection />
     </>
   );
@@ -200,16 +243,23 @@ export default definePlugin(() => {
     icon: <FaEyeSlash />,
     content: <HiddenTab />,
   });
-  if (qamOk) {
-    const apply = () => { const s = snapshot().settings; if (s) setHiddenTabs(s.hiddenQamTabs); };
-    subscribe(apply);
-    loadSettings().then(apply).catch(() => {});
-  }
+  installLibrary();
+  const apply = () => {
+    const s = snapshot().settings;
+    if (!s) return;
+    if (qamOk) setHiddenTabs(s.hiddenQamTabs);
+    setLibraryConfig({
+      hidden: new Set(s.hiddenLibraryTabs),
+      readyTab: s.readyLibraryTab && s.collectionId && s.enabled ? { name: s.collectionName, collectionId: s.collectionId } : null,
+    });
+  };
+  subscribe(apply);
+  loadSettings().then(apply).catch(() => {});
   return {
     name: "Handheld Library",
     titleView: <div className={staticClasses.Title}>Handheld Library</div>,
     content: <Content />,
     icon: <FaFilter />,
-    onDismount() { uninstallQam(); stop(); },
+    onDismount() { uninstallLibrary(); uninstallQam(); stop(); },
   };
 });

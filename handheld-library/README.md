@@ -9,6 +9,11 @@
 3. **Quick Access tab hiding** – in the plugin's panel, switch off any Quick Access tab you don't use
    (Steam's own, the Hidden games tab, or tabs other plugins add). Decky's own tab can't be hidden, so
    you can always get back to the setting. Applies the next time Quick Access opens.
+4. **Library tab hiding** – switch off Steam Library tabs (Great on Deck / SteamOS Compatible,
+   All games, Installed, Favorites, Collections, Non-Steam, Soundtracks, …), and optionally show the
+   Handheld Ready collection as its own Library tab. Steam has no built-in setting for this. If every
+   tab is off, Steam's tabs come back. If **TabMaster** is installed, this section turns itself off
+   and leaves the Library to TabMaster.
 
 ## Rules (all changeable in Quick Access)
 A game is in the collection when it has the controller support you pick **and** at least one accepted
@@ -42,6 +47,11 @@ Software, tools and non-Steam shortcuts are left out (Steam has no ratings for t
   list right after Decky fills it, putting the full list back before each render so Decky's own
   bookkeeping is unaffected. If the hook is missing or anything throws, filtering stops and Quick
   Access renders exactly as without the plugin. Unloading the plugin restores every tab.
+- Library tabs: Steam builds the tab list in a `useMemo` inside the Library component. Like
+  TabMaster, the plugin patches the `/library` route and, only while that component renders, wraps
+  `useMemo` to filter the list it returns (and add the collection tab, built from Steam's own
+  "All games" tab with the collection swapped in). Anything unexpected returns Steam's own tabs;
+  unloading the plugin turns the patch into a pass-through at once.
 - Hidden games come from Steam's own Hidden collection (installed ones only); Unhide uses Steam's own call
   (`SetAppsAsHidden`), the same as the game's context menu.
 - The Python backend only stores settings and looks up ProtonDB tiers (the browser side can't, because
