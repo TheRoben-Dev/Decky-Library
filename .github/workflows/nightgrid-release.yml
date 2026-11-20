@@ -1,8 +1,7 @@
-# Publishes Nightgrid releases that the Nightgrid Updater plugin installs.
+# Publishes Nightgrid theme releases (Library Hub installs them). Plugins: plugin-release.yml.
 #
 # Automatic: push a commit that changes a version, on main or a claude/* branch:
 #   nightgrid-theme/Nightgrid/theme.json "version"  → release nightgrid-theme-v<version>
-#   nightgrid-updater/package.json "version"        → release nightgrid-updater-v<version>
 #   The tag is created on that commit. A version that already has a release is left alone,
 #   so a published release is never rebuilt from different code.
 # Manual (still works): push one of those tags, or publish a release for it in the web UI;
@@ -16,10 +15,8 @@ on:
       - "claude/**"
     tags:
       - "nightgrid-theme-v*"
-      - "nightgrid-updater-v*"
     paths:
       - "nightgrid-theme/Nightgrid/theme.json"
-      - "nightgrid-updater/package.json"
       - ".github/workflows/nightgrid-release.yml"
   release:
     types: [published]
@@ -73,60 +70,4 @@ jobs:
           gh release create "$TAG" $files \
             --target "$GITHUB_SHA" \
             --title "Nightgrid theme ${TAG#nightgrid-theme-}" \
-            --notes "Install or update from the Nightgrid Updater plugin, or extract Nightgrid.zip into ~/homebrew/themes/." 
-
-  updater:
-    if: github.ref_type == 'branch' || startsWith(github.ref_name, 'nightgrid-updater-v')
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: nightgrid-updater
-    steps:
-      - uses: actions/checkout@v4
-      - name: Resolve tag
-        id: tag
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          have=$(python3 -c 'import json;print(json.load(open("package.json"))["version"])')
-          case "$have" in [0-9]*.[0-9]*.[0-9]*) ;; *) echo "::error::package.json version '$have' is not X.Y.Z"; exit 1;; esac
-          if [ "$GITHUB_REF_TYPE" = branch ]; then
-            tag="nightgrid-updater-v$have"
-            if gh release view "$tag" >/dev/null 2>&1; then
-              echo "$tag already released; nothing to do"; echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0
-            fi
-          else
-            tag="$GITHUB_REF_NAME"
-            [ "nightgrid-updater-v$have" = "$tag" ] || { echo "::error::tag $tag but package.json says $have"; exit 1; }
-          fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-      - uses: actions/setup-node@v4
-        if: steps.tag.outputs.skip != 'true'
-        with:
-          node-version: 22
-      - if: steps.tag.outputs.skip != 'true'
-        run: corepack enable && corepack prepare pnpm@10.28.0 --activate
-      - if: steps.tag.outputs.skip != 'true'
-        run: python3 -m unittest discover -s tests -v
-      - if: steps.tag.outputs.skip != 'true'
-        run: pnpm install --frozen-lockfile && pnpm build
-      - name: Build zip and checksum
-        if: steps.tag.outputs.skip != 'true'
-        run: |
-          ./package.sh
-          cd out && sha256sum Nightgrid-Updater.zip > Nightgrid-Updater.zip.sha256
-      - name: Publish release
-        if: steps.tag.outputs.skip != 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.tag.outputs.tag }}
-        run: |
-          files="out/Nightgrid-Updater.zip out/Nightgrid-Updater.zip.sha256"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" $files --clobber
-            exit 0
-          fi
-          gh release create "$TAG" $files \
-            --target "$GITHUB_SHA" \
-            --title "Nightgrid Updater ${TAG#nightgrid-updater-}" \
-            --notes "Install from Decky → Developer → Install Plugin from Zip." 
+            --notes "Install or update from Library Hub in Quick Access, or extract Nightgrid.zip into ~/homebrew/themes/."

@@ -1,14 +1,14 @@
 {
-  "name": "nightgrid-updater",
+  "name": "library-hub",
   "version": "0.1.0",
-  "description": "Keeps the Nightgrid CSS Loader theme up to date from GitHub releases",
+  "description": "Installs and updates Decky-Library plugins and the Nightgrid theme from GitHub releases",
   "type": "module",
   "scripts": {
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "test": "python3 -m unittest discover -s tests -v"
   },
-  "keywords": ["decky", "plugin", "css-loader", "theme", "updater"],
+  "keywords": ["decky", "plugin", "css-loader", "theme", "updater", "library"],
   "author": "Roben",
   "license": "BSD-3-Clause",
   "devDependencies": {

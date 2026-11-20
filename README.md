@@ -12,4 +12,4 @@ Install a theme by extracting its zip into `~/homebrew/themes/`, then refresh CS
 ## Plugins
 | Plugin | What it does |
 |---|---|
-| [nightgrid-updater](nightgrid-updater/) | Installs and updates the Nightgrid theme from this repo's GitHub releases (HTTPS, SHA-256 checked, keeps your theme options) and reloads CSS Loader. |
+| [library-hub](library-hub/) | Installs, updates and removes every plugin in this repo and the Nightgrid theme from Quick Access (SHA-256 checked, via Decky's own installer), offers CSS Loader if it's missing, and updates itself. |

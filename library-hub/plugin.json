@@ -1,0 +1,16 @@
+{
+  "name": "Library Hub",
+  "author": "Roben",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": [
+      "library",
+      "updater",
+      "theme",
+      "css-loader"
+    ],
+    "description": "Installs, updates and removes Roben's Decky-Library plugins and the Nightgrid theme from Quick Access. SHA-256 checked, installed through Decky's own installer.",
+    "image": "https://opengraph.githubassets.com/1/TheRoben-Dev/Decky-Library"
+  }
+}

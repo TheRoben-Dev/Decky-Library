@@ -14,7 +14,7 @@ Made for an ASUS ROG Ally (1080p) on Bazzite, works the same on any SteamOS-styl
   maps the readable selectors in this theme to Steam's current hashed classes.
 
 ## Install
-**Easiest:** install the [Nightgrid Updater](../nightgrid-updater/) plugin (Decky → Developer → Install
+**Easiest:** install the [Library Hub](../library-hub/) plugin (Decky → Developer → Install
 Plugin from Zip), open it from Quick Access and press **Install**. It also handles updates later.
 
 **Manual:**
@@ -116,7 +116,7 @@ settings) and use CEF remote debugging (`<ally-ip>:8081`) to read the element's 
 ./package.sh   # → out/Nightgrid.zip
 ```
 Releases (what the updater installs) are published automatically when a push to `main` or a `claude/*`
-branch changes the `version` in `theme.json`; see [nightgrid-updater](../nightgrid-updater/README.md#releasing-maintainer).
+branch changes the `version` in `theme.json`; see [library-hub](../library-hub/README.md#releasing-maintainer).
 
 ## Credits / licenses
 - Theme: MIT (`LICENSE`).
