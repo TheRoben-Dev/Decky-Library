@@ -459,12 +459,16 @@ function SystemTweaks() {
   const st = c.state!;
   const sys = st.settings.system;
   const set = async (key: string, v: boolean) => {
+    c.setSystemLocal(key, v);
     const r = await be.setSystem(key, v);
-    if (!r.ok) toaster.toast({ title: "Ally Tweaks", body: `Couldn't change setting${r.error ? `: ${r.error}` : ""}` });
+    if (!r.ok) toaster.toast({ title: "Ally Tweaks", body: `Saved, but applying it failed${r.error ? `: ${r.error}` : ""}` });
     c.refresh();
   };
   return (
     <PanelSection title="System tweaks">
+      {Object.entries(st.sysErrors ?? {}).map(([k, m]) => (
+        <Note key={k} warning>{k}: saved, but applying it failed ({m}). It's retried at boot and while the plugin runs; the log has details.</Note>
+      ))}
       {st.wifi.supported && (
         <PanelSectionRow>
           <ToggleField label="Wi-Fi power saving off" checked={sys.wifiPowersaveOff}
@@ -533,8 +537,9 @@ function CpuTweaks() {
   const cpu = st.cpu;
   if (cpu.boost == null && cpu.smt == null && !cpu.epp) return null;
   const set = async (key: string, v: boolean | string) => {
+    c.setSystemLocal(key, v);
     const r = await be.setSystem(key, v);
-    if (!r.ok) toaster.toast({ title: "Ally Tweaks", body: `Couldn't change setting${r.error ? `: ${r.error}` : ""}` });
+    if (!r.ok) toaster.toast({ title: "Ally Tweaks", body: `Saved, but applying it failed${r.error ? `: ${r.error}` : ""}` });
     c.refresh();
   };
   return (

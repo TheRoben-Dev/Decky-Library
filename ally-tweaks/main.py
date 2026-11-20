@@ -68,6 +68,7 @@ class Plugin:
         out["wifi"] = tweaks.wifi_status()
         out["usb"] = tweaks.usb_status()
         out["cpu"] = tweaks.status_all()
+        out["sysErrors"] = dict(e.sys_errors)
         return out
 
     async def save_settings(self, patch: dict):

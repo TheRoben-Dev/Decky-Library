@@ -78,6 +78,7 @@ export interface AppState {
   leds: { supported: boolean; name?: string; zones?: number; layout?: string; effects?: string[]; contested?: boolean; lightbarTarget?: string | null; clamped?: boolean; maxIntensity?: string | null; lastError?: string | null };
   apuMem: { current: number | null; choices: number[] } | null;
   inputplumber: boolean;
+  sysErrors?: Record<string, string>;
   restoreUnit: boolean;
   wifi: { supported: boolean; ifaces: string[]; powerSaveOn: boolean; dropin: boolean };
   usb: { supported: boolean; delay?: string; disabled?: boolean };

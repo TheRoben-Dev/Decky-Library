@@ -16,7 +16,19 @@ class Controller {
   private saveTimer?: number;
   private pending: Partial<Settings> = {};
   private saving = 0;   // saves in flight
+  private savingKeys = new Set<string>(); // settings sections being saved
+  private savingSince = 0;
   private editGen = 0;  // bumps on every local edit
+  private lastEditKeys: string[] | null = null;
+
+  /** Show a system-tweak change right away (the backend call can take a few
+   *  seconds: nmcli, systemctl). The next refresh replaces it with the truth. */
+  setSystemLocal(key: string, v: boolean | string) {
+    if (!this.state) return;
+    const st = this.state.settings;
+    this.state = { ...this.state, settings: { ...st, system: { ...st.system, [key]: v } as any } };
+    this.emit();
+  }
 
   subscribe(l: Listener) {
     this.listeners.add(l);
@@ -56,9 +68,17 @@ class Controller {
       const gen = this.editGen;
       const s = await be.getState();
       // Never let a poll that started before (or during) an edit/save roll the
-      // sliders back: keep local settings until the backend has caught up.
-      if (gen !== this.editGen || this.saving || Object.keys(this.pending).length) {
-        if (this.state) s.settings = this.state.settings;
+      // sliders back: keep the local copy of only the sections being edited
+      // (e.g. rgb) until the backend has caught up. Everything else (system
+      // tweaks, charge, ...) always comes from the backend.
+      const stuck = this.saving && Date.now() - this.savingSince > 15000;
+      if (stuck) { this.saving = 0; this.savingKeys.clear(); }
+      const keep = new Set<string>([...Object.keys(this.pending), ...this.savingKeys]);
+      if (gen !== this.editGen && this.lastEditKeys) this.lastEditKeys.forEach((k) => keep.add(k));
+      if (this.state && keep.size) {
+        const local: any = this.state.settings, merged: any = { ...s.settings };
+        keep.forEach((k) => { if (k in local) merged[k] = local[k]; });
+        s.settings = merged;
       }
       this.state = s;
       this.emit();
@@ -76,6 +96,7 @@ class Controller {
     if (!this.state) return;
     this.state = { ...this.state, settings: { ...this.state.settings, ...p } };
     this.pending = { ...this.pending, ...p };
+    this.lastEditKeys = Object.keys(p);
     this.editGen++;
     this.emit();
     clearTimeout(this.saveTimer);
@@ -83,8 +104,16 @@ class Controller {
       const send = this.pending;
       this.pending = {};
       this.saving++;
-      await be.saveSettings(send).catch((e) => be.log(`save ${e}`));
-      this.saving--;
+      this.savingSince = Date.now();
+      Object.keys(send).forEach((k) => this.savingKeys.add(k));
+      try {
+        await be.saveSettings(send);
+      } catch (e) {
+        be.log(`save ${e}`);
+      } finally {
+        this.saving = Math.max(0, this.saving - 1);
+        if (!this.saving) this.savingKeys.clear();
+      }
       this.refresh();
     }, 250);
   }

@@ -39,6 +39,9 @@ DEFAULTS = {
     },
 }
 
+SYSTEM_KEYS = ("wifiPowersaveOff", "usbAutosuspendOff", "cpuBoostOff", "smtOff",
+               "audioPowersaveOff", "splitLockMitigation", "ampsAwake")
+
 # Colours that match HHD's own TDP-mode flash (hhd/plugins/rgb/__init__.py)
 TDP_COLORS = {
     "quiet": (240, 100),
@@ -71,6 +74,7 @@ class Engine:
         self.readback_ok = False
         self.drifts = []
         self.led_contested = False
+        self.sys_errors = {}        # tweak key -> last apply error
         self.screen = None          # debounced backlight fraction
         self._screen_seen = None
 
@@ -214,49 +218,57 @@ class Engine:
 
     # ---------- system tweaks ----------
     def set_system(self, key: str, on):
-        """on is a bool, except for "epp" (a preference name or "" for default).
-        Every tweak is written live, persisted (restore unit / drop-in) and
-        undone by setting it back to its default (False / "")."""
-        with self.lock:
-            if key == "touch":
-                val = on if on in ("on", "off", "games") else "on"
-                self.conf["system"]["touch"] = val
-                self.save()
-                self._apply_touch()
-                return
-            if key == "epp":
-                val = on if on in tweaks.EPP_VALUES else ""
-                if val:
-                    tweaks.set_epp(val)
-                self.persist.update(EPP_IDX=tweaks.EPP_VALUES.index(val) if val else None)
-                self.conf["system"]["epp"] = val
-                self.save()
-                return
+        """on is a bool, except for "epp" (a preference name or "" for default)
+        and "touch". The choice is saved first, so it sticks even if applying
+        it fails; a failure is kept per tweak and shown under its toggle, and
+        the periodic tick / restore unit keep trying."""
+        if key == "touch":
+            on = on if on in ("on", "off", "games") else "on"
+        elif key == "epp":
+            on = on if on in tweaks.EPP_VALUES else ""
+        elif key in SYSTEM_KEYS:
             on = bool(on)
-            if key == "wifiPowersaveOff":
-                tweaks.set_wifi_powersave_off(on)
-                self.persist.update(WIFI_PS_OFF=1 if on else None)
-            elif key == "usbAutosuspendOff":
-                tweaks.set_usb_autosuspend_off(on)
-                self.persist.update(USB_AS_OFF=1 if on else None)
-            elif key == "cpuBoostOff":
-                tweaks.set_boost(not on)
-                self.persist.update(BOOST_OFF=1 if on else None)
-            elif key == "smtOff":
-                tweaks.set_smt(not on)
-                self.persist.update(SMT_OFF=1 if on else None)
-            elif key == "audioPowersaveOff":
-                tweaks.set_audio_ps(not on)
-                self.persist.update(AUDIO_PS_OFF=1 if on else None)
-            elif key == "ampsAwake":
-                tweaks.set_amps_awake(on)
-                self.persist.update(AMPS_AWAKE=1 if on else None)
-            elif key == "splitLockMitigation":
-                tweaks.set_splitlock(on)   # persisted by its sysctl.d drop-in
-            else:
-                raise ValueError(f"unknown tweak {key}")
+        else:
+            raise ValueError(f"unknown tweak {key}")
+        with self.lock:
             self.conf["system"][key] = on
             self.save()
+            try:
+                self._apply_system_key(key, on)
+                self.sys_errors.pop(key, None)
+            except Exception as e:
+                msg = str(e) or e.__class__.__name__
+                self.sys_errors[key] = msg
+                decky.logger.error(f"applying {key}={on} failed: {msg}")
+                raise
+
+    def _apply_system_key(self, key, on):
+        if key == "touch":
+            self._apply_touch()
+        elif key == "epp":
+            if on:
+                tweaks.set_epp(on)
+            self.persist.update(EPP_IDX=tweaks.EPP_VALUES.index(on) if on else None)
+        elif key == "wifiPowersaveOff":
+            tweaks.set_wifi_powersave_off(on)
+            self.persist.update(WIFI_PS_OFF=1 if on else None)
+        elif key == "usbAutosuspendOff":
+            tweaks.set_usb_autosuspend_off(on)
+            self.persist.update(USB_AS_OFF=1 if on else None)
+        elif key == "cpuBoostOff":
+            tweaks.set_boost(not on)
+            self.persist.update(BOOST_OFF=1 if on else None)
+        elif key == "smtOff":
+            tweaks.set_smt(not on)
+            self.persist.update(SMT_OFF=1 if on else None)
+        elif key == "audioPowersaveOff":
+            tweaks.set_audio_ps(not on)
+            self.persist.update(AUDIO_PS_OFF=1 if on else None)
+        elif key == "ampsAwake":
+            tweaks.set_amps_awake(on)
+            self.persist.update(AMPS_AWAKE=1 if on else None)
+        elif key == "splitLockMitigation":
+            tweaks.set_splitlock(on)   # persisted by its sysctl.d drop-in
 
     def _apply_touch(self):
         mode = self.conf["system"].get("touch", "on")
@@ -271,7 +283,7 @@ class Engine:
                 continue
             if on:
                 try:
-                    self.set_system(k, True)
+                    self.set_system(k, on)
                 except Exception as e:
                     decky.logger.error(f"tweak {k} on load failed: {e}")
 
