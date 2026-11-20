@@ -66,6 +66,37 @@ def kbd_path(ring):
     return None
 
 
+PACKED_MAX = 0xFFFFFF
+last_error = None   # last failed sysfs write, shown in the UI
+
+
+def max_intensity(ring=None):
+    """Per-entry ceiling the kernel enforces on multi_intensity (Linux 7.2+
+    clamps each value to multi_max_intensity). None on older kernels."""
+    ring = ring or ring_path()
+    raw = _read(f"{ring}/multi_max_intensity") if ring else None
+    try:
+        return [int(v) for v in raw.split()] if raw else None
+    except ValueError:
+        return None
+
+
+def packed_clamped(ring=None) -> bool:
+    """True when the driver packs 0xRRGGBB into one value per zone but the
+    kernel clamps that value to 255. Every colour then collapses to
+    0x0000FF-or-less, i.e. some shade of blue. That's a driver bug
+    (hid-asus-ally doesn't set subled max_intensity), not something the
+    plugin can work around through the LED class."""
+    ring = ring or ring_path()
+    if not ring:
+        return False
+    idx = (_read(f"{ring}/multi_index") or "").split()
+    mx = max_intensity(ring)
+    if not mx:
+        return False
+    return any(t in ("rgb", "multi") and m < PACKED_MAX for t, m in zip(idx, mx))
+
+
 def available() -> bool:
     return ring_path() is not None
 
@@ -81,6 +112,10 @@ def status() -> dict:
         "zones": max(1, sum(1 for t in idx if t in ("rgb", "multi", "blue"))),
         "layout": " ".join(idx),
         "effects": hw_effects(ring),
+        "clamped": packed_clamped(ring),
+        "maxIntensity": _read(f"{ring}/multi_max_intensity"),
+        "readback": readback(ring),
+        "lastError": last_error,
     }
 
 
@@ -169,7 +204,8 @@ def readback(ring=None) -> dict:
     ring = ring or ring_path()
     if not ring:
         return {}
-    return {"intensity": _read(f"{ring}/multi_intensity"), "brightness": _read(f"{ring}/brightness")}
+    norm = lambda v: " ".join(v.split()) if v else v  # noqa: E731
+    return {"intensity": norm(_read(f"{ring}/multi_intensity")), "brightness": _read(f"{ring}/brightness")}
 
 
 def matches(vals: dict) -> bool:
@@ -183,25 +219,42 @@ def matches(vals: dict) -> bool:
     return rb.get("intensity") == vals["intensity"] and rb.get("brightness") == vals["brightness"]
 
 
+def _try_write(path, value, errs):
+    try:
+        _write(path, value)
+        return True
+    except OSError as e:
+        errs.append(f"{os.path.basename(path)}={value!s:.40}: {e.strerror or e}")
+        return False
+
+
 def apply(light: dict) -> dict | None:
+    """Write the light to the LED. Each file is written on its own so one
+    rejected value doesn't stop the rest; failures are logged and surfaced."""
+    global last_error
     ring = ring_path()
     vals = to_values(light, ring)
     if not vals:
         return None
+    errs = []
     kbd = kbd_path(ring)
     if vals["kbd"] and kbd and _read(f"{kbd}/brightness") != vals["kbd"]:
-        _write(f"{kbd}/brightness", vals["kbd"])
+        _try_write(f"{kbd}/brightness", vals["kbd"], errs)
     if vals.get("effect") and _read(f"{ring}/effect") != vals["effect"]:
-        try:
-            _write(f"{ring}/effect", vals["effect"])
+        if _try_write(f"{ring}/effect", vals["effect"], []):
             if vals.get("speed") and os.path.exists(f"{ring}/speed"):
-                _write(f"{ring}/speed", vals["speed"])
-        except Exception:
-            pass  # optional driver feature; colours below still apply
-    if vals["intensity"] and _read(f"{ring}/multi_intensity") != vals["intensity"]:
-        _write(f"{ring}/multi_intensity", vals["intensity"])
-    # Always rewrite brightness: it's what makes the driver push the colour.
-    _write(f"{ring}/brightness", vals["brightness"])
+                _try_write(f"{ring}/speed", vals["speed"], [])
+    if vals["intensity"]:
+        # Always write: the driver only pushes a colour to the MCU on a write,
+        # and its cached readback can claim a colour the rings aren't showing.
+        _try_write(f"{ring}/multi_intensity", vals["intensity"], errs)
+    _try_write(f"{ring}/brightness", vals["brightness"], errs)
+    if not errs and vals["intensity"] and packed_clamped(ring):
+        errs.append("kernel clamps packed colours to 255 (only blue shades can show)")
+    last_error = "; ".join(errs) or None
+    if last_error:
+        import decky
+        decky.logger.error(f"Ring LED write: {last_error}")
     return vals
 
 

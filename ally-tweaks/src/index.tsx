@@ -242,6 +242,12 @@ function Lighting() {
   return (
     <PanelSection title="Ring lighting">
       {st.rgbBackend === "none" && <Note warning>No ring LED control found: neither the kernel's joystick-ring LED nor Handheld Daemon is available on this system.</Note>}
+      {st.rgbBackend === "sysfs" && st.leds.clamped && (
+        <Note warning>Your kernel caps each ring color value at 255 (multi_max_intensity), but the Ally driver packs the whole RGB color into that one value, so every color comes out as a shade of blue. This is a kernel/driver bug, not a setting. Brightness and off still work.</Note>
+      )}
+      {st.rgbBackend === "sysfs" && st.leds.lastError && !st.leds.clamped && (
+        <Note warning>The ring LED rejected the last change: {st.leds.lastError}</Note>
+      )}
       {st.rgbBackend === "sysfs" && st.leds.lightbarTarget && (
         <Note warning>InputPlumber is emulating a {st.leds.lightbarTarget}, so Steam's light-bar color (blue by default) gets copied onto the rings and overrides these settings. Set the controller's light bar to off or a color in Steam (Settings → Controller → your controller), or use an Xbox-type controller mode.</Note>
       )}
