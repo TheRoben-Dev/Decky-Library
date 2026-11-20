@@ -43,6 +43,12 @@
   --ng-font-mono: "Nightgrid Mono", "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
   --ng-tracking: 0.14em;
 
+  /* Motion (Nightgrid: --dur-fast / --dur / --dur-slow / --ease) */
+  --ng-dur-fast: 120ms;
+  --ng-dur: 160ms;
+  --ng-dur-slow: 200ms;
+  --ng-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
   /* Shape */
   --ng-radius: 0px;        /* Nightgrid is square: every control, highlight and focus ring uses this */
   --ng-hairline: 1px solid var(--ng-line);

@@ -1,8 +1,8 @@
 {
   "name": "Nightgrid",
   "author": "TheRoben-Dev",
-  "version": "v0.3.0",
-  "description": "Retro-terminal Game Mode theme based on the Nightgrid homelab app: near-black canvas with a faint grid, cyan data accents, magenta outlined selection, uppercase letter-spaced labels and JetBrains Mono. Covers Home, Library, game pages, Settings, menus, Quick Access, Friends & Chat, Store, Downloads, Search, Media, Achievements, keyboard and notifications. Options: palette (Nightgrid / Ice / Bloodline), custom colors, grid, font, glow, scanlines.",
+  "version": "v0.4.0",
+  "description": "Retro-terminal Game Mode theme based on the Nightgrid homelab app: near-black canvas with a faint grid, cyan data accents, magenta outlined selection, uppercase letter-spaced labels and JetBrains Mono. Covers Home, Library, game pages, Settings, menus, Quick Access, Friends & Chat, Store, Downloads, Search, Media, Achievements, keyboard and notifications. Options: animations (off / subtle / full), palette (Nightgrid / Ice / Bloodline), custom colors, grid, font, glow, scanlines.",
   "target": "System-Wide",
   "manifest_version": 9,
   "tabs": {
@@ -81,6 +81,34 @@
     ]
   },
   "patches": {
+    "Animations": {
+      "type": "dropdown",
+      "default": "Subtle",
+      "values": {
+        "Off": {},
+        "Subtle": {
+          "css/anim/subtle.css": [
+            "sp",
+            "menu",
+            "qam",
+            "toasts"
+          ]
+        },
+        "Full": {
+          "css/anim/subtle.css": [
+            "sp",
+            "menu",
+            "qam",
+            "toasts"
+          ],
+          "css/anim/full.css": [
+            "sp",
+            "menu",
+            "qam"
+          ]
+        }
+      }
+    },
     "Palette": {
       "type": "dropdown",
       "default": "Nightgrid",

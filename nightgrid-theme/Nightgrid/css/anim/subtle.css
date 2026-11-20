@@ -1,0 +1,108 @@
+/* Nightgrid — anim/subtle.css  (Animations: "Subtle" and "Full"; bigpicture, MainMenu, QuickAccess, toasts)
+ * Motion tokens are Nightgrid's own (ui/src/styles/tokens.css: 120/160/200 ms, ease 0.2,0.8,0.2,1).
+ * Rules:
+ *  - only opacity and transform are animated (compositor-only); the header reveal uses clip-path
+ *    on a few short text elements, once;
+ *  - one-shot animations start when the selector starts matching (focus moves, a menu mounts),
+ *    so nothing runs while the UI is idle except the small blinking cursor;
+ *  - everything is inside `prefers-reduced-motion: no-preference`, and Steam's own LowPerfMode
+ *    turns it off;
+ *  - looping animations stop while a game is running (see the end of the file). Steam's windows
+ *    don't paint at all while they're hidden behind a game, so the remaining cost is only while
+ *    a menu is actually open.
+ */
+@media (prefers-reduced-motion: no-preference) {
+
+  @keyframes ng-in-fade   { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ng-in-up     { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes ng-in-left   { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+  @keyframes ng-in-right  { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+  @keyframes ng-in-scale  { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+  @keyframes ng-focus-pop { from { transform: scale(.97); } to { transform: none; } }
+  @keyframes ng-ring-in   { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: none; } }
+  @keyframes ng-bar-grow  { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes ng-blink     { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+  /* ── Focus ────────────────────────────────────────────── */
+  /* The global focus ring fades/settles in whenever it appears. */
+  .focusring_FocusRing {
+    animation: ng-ring-in var(--ng-dur) var(--ng-ease);
+  }
+  /* Nightgrid-styled controls give a tiny "lock-on" as focus lands on them. Steam's own animated
+   * items (game covers, STEAM-menu rows) are left alone so their transforms aren't fought. */
+  .BasicUI :is(.gamepadtabbedpage_Tab, .quickaccessmenu_Tab, .header_HeaderItem,
+               .gamepadpagedsettings_PagedSettingsDialog_PageListItem, button.DialogButton).gpfocus,
+  .BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_Focused {
+    animation: ng-focus-pop var(--ng-dur-fast) var(--ng-ease);
+  }
+
+  /* ── Selected tab: the magenta bar grows in on the newly selected tab ── */
+  .BasicUI .gamepadtabbedpage_Tab { position: relative; }
+  .BasicUI .gamepadtabbedpage_Tab.gamepadtabbedpage_Selected:not(.gpfocus) { box-shadow: none; }
+  .BasicUI .gamepadtabbedpage_Tab.gamepadtabbedpage_Selected::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 2px;
+    background: var(--ng-active);
+    transform-origin: 50% 50%;
+    animation: ng-bar-grow var(--ng-dur-slow) var(--ng-ease);
+    pointer-events: none;
+  }
+
+  /* ── Panels opening ───────────────────────────────────── */
+  .BasicUI .gamepaddialog_ModalPosition > .gamepaddialog_GamepadDialogContent {
+    animation: ng-in-up var(--ng-dur-slow) var(--ng-ease);
+  }
+  .BasicUI .gamepadcontextmenu_contextMenuContents {
+    animation: ng-in-scale var(--ng-dur) var(--ng-ease);
+    transform-origin: 50% 0;
+  }
+  .BasicUI .gamepadpagedsettings_PagedSettingsDialog .gamepadpagedsettings_PagedSettingDialog_ContentColumn {
+    animation: ng-in-fade var(--ng-dur) var(--ng-ease);
+  }
+  .BasicUI .quickaccessmenu_Title {
+    animation: ng-in-left var(--ng-dur-slow) var(--ng-ease);
+  }
+  .BasicUI :is(.gamepadsearch_GamepadSearch, .downloads_DownloadsPage) {
+    animation: ng-in-fade var(--ng-dur-slow) var(--ng-ease);
+  }
+  .BasicUI .virtualkeyboard_Keyboard {
+    animation: ng-in-up var(--ng-dur) var(--ng-ease);
+  }
+  :root :is(.standardtemplates_StandardTemplate, .notificationcontent_StandardTemplate,
+            .standardtemplates_PinnedTemplate, .notificationcontent_PinnedTemplate, .shorttemplates_ShortTemplate) {
+    animation: ng-in-right var(--ng-dur-slow) var(--ng-ease);
+  }
+
+  /* ── Terminal cursor after the big "// TITLE" headers ── */
+  .BasicUI :is(.quickaccessmenu_Title, .downloads_Title)::after,
+  .BasicUI .gamepaddialog_GamepadDialogContent .DialogHeader::after {
+    content: "_";
+    display: inline-block;
+    margin-left: .2em;
+    color: var(--ng-active);
+    animation: ng-blink 1.1s steps(1, end) infinite;
+  }
+
+  /* ── Section headers: quick left-to-right reveal when they appear ── */
+  @keyframes ng-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  .BasicUI :is(.DialogControlsSectionHeader, .homestorecarousel_Header, .downloads_Title) {
+    animation: ng-reveal var(--ng-dur-slow) var(--ng-ease);
+  }
+
+  /* ── While a game is running: no loops ───────────────── */
+  /* bigpicture: the in-game overlay uses Steam's transparent page background.
+   * MainMenu: the running-game column (no stable name; hash substring, fails safe). */
+  :root:has(.gamepadui_BasicHome.gamepadui_TransparentBackground) :is(.quickaccessmenu_Title, .downloads_Title, .DialogHeader)::after,
+  :root:has([class*="RAI0lLN8sCtqCMI36rLiB"]) :is(.quickaccessmenu_Title, .DialogHeader)::after {
+    animation: none;
+  }
+}
+
+/* Steam's own low-performance mode wins over everything here */
+.LowPerfMode *,
+.LowPerfMode *::before,
+.LowPerfMode *::after {
+  animation: none !important;
+}

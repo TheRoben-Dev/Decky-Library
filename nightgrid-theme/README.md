@@ -27,6 +27,7 @@ Plugin from Zip), open it from Quick Access and press **Install**. It also handl
 ## Options (CSS Loader → Nightgrid)
 | Option | Values |
 |---|---|
+| Animations | Off · **Subtle** · Full (see below) |
 | Palette | **Nightgrid** (default) · Ice · Bloodline |
 | Colors | **From palette** · Custom → three color pickers: Selection (magenta), Data (cyan), Accent (yellow) |
 | Grid | **Dots + grid** (Nightgrid's backdrop) · Lines · Off |
@@ -70,8 +71,24 @@ Color roles follow the app: **magenta** = what's selected/focused, **cyan** = da
 **green** = ready/online/Play, **yellow** = accent, **red** = destructive. Bright fills (focused Play /
 Install / primary buttons) use dark text, since white on cyan or green fails contrast.
 
+## Animations
+| | Subtle (default) | Full adds |
+|---|---|---|
+| Focus | focus ring fades in; tabs, buttons, menu rows "lock on" with a tiny scale | soft magenta pulse on the focus ring |
+| Tabs | magenta bar grows in on the newly selected tab | |
+| Panels | dialogs slide up, context/power menus scale in, settings pages fade, Quick Access title slides in, toasts slide in from the right, keyboard rises | settings and Quick Access rows cascade in |
+| Headers | blinking `_` cursor after the big `// TITLE`s; section headers wipe in | typewriter-style reveal |
+| Progress | | moving stripes on download bars |
+
+Everything animates only `opacity`/`transform` (the header wipe uses `clip-path` on a few short
+labels, once). One-shot effects run when focus moves or a panel opens, so an idle screen does nothing
+but blink one cursor. Loops stop while a game is running (detected from Steam's in-game overlay
+background and the running-game column in the STEAM menu), `prefers-reduced-motion` turns all of it off,
+and so does Steam's own LowPerfMode. CSS can't animate the page change itself (Steam swaps the whole
+page), and tabs are separate elements, so the selected-tab bar grows in place rather than sliding over.
+
 ## Performance
-Everything is static: the grid is a background on the page containers (one paint, no fixed overlay),
+Without animations everything is static: the grid is a background on the page containers (one paint, no fixed overlay),
 the only effects are a box-shadow glow on the focused element and the optional static scanlines.
 No animations, no `backdrop-filter`, no blend modes. Two of Steam's own focus fade animations are
 swapped for equivalent Nightgrid ones (otherwise they'd override the colors).
