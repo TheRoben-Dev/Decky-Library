@@ -29,6 +29,7 @@ export interface Settings {
   charge: { limit: number; travel: boolean };
   buttons: { perGame: Record<string, GameButtons>; default: { paddles: string; nintendo: boolean } | null };
   panel: Record<string, boolean>;
+  system: { wifiPowersaveOff: boolean; usbAutosuspendOff: boolean };
 }
 
 export interface AppState {
@@ -67,6 +68,8 @@ export interface AppState {
   leds: { supported: boolean; name?: string; zones?: number; layout?: string };
   inputplumber: boolean;
   restoreUnit: boolean;
+  wifi: { supported: boolean; ifaces: string[]; powerSaveOn: boolean; dropin: boolean };
+  usb: { supported: boolean; delay?: string; disabled?: boolean };
   settings: Settings;
   lightReason: string;
   screen: number | null;

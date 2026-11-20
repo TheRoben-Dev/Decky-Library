@@ -371,6 +371,36 @@ function Panel() {
   );
 }
 
+function SystemTweaks() {
+  const c = useController();
+  const st = c.state!;
+  const sys = st.settings.system;
+  const set = async (key: string, v: boolean) => {
+    const r = await be.setSystem(key, v);
+    if (!r.ok) toaster.toast({ title: "Ally Tweaks", body: `Couldn't change setting${r.error ? `: ${r.error}` : ""}` });
+    c.refresh();
+  };
+  return (
+    <PanelSection title="System tweaks">
+      {st.wifi.supported && (
+        <PanelSectionRow>
+          <ToggleField label="Wi-Fi power saving off" checked={sys.wifiPowersaveOff}
+            description={`Steadier ping and fewer stutters in streaming / online games. Costs roughly 0.2–0.5 W on battery. Stays off even in Power Saver mode, after sleep and after reboot.${st.wifi.ifaces.length ? ` Now: ${st.wifi.powerSaveOn ? "on" : "off"} (${st.wifi.ifaces.join(", ")}).` : ""}`}
+            onChange={(v) => set("wifiPowersaveOff", v)} />
+        </PanelSectionRow>
+      )}
+      {st.usb.supported && (
+        <PanelSectionRow>
+          <ToggleField label="USB autosuspend off" checked={sys.usbAutosuspendOff}
+            description="Stops docks, USB controllers and adapters from dropping out after idling. Slightly more battery use while USB devices are plugged in. When turned off again, devices already plugged in keep this until replugged or reboot."
+            onChange={(v) => set("usbAutosuspendOff", v)} />
+        </PanelSectionRow>
+      )}
+      <Note>Already handled by Bazzite, so not duplicated here: split-lock mitigation off, zram + swappiness, low-latency Bluetooth, the audio pop fix, and PCIe power (ujust manage-pcie-power).</Note>
+    </PanelSection>
+  );
+}
+
 function Content() {
   const c = useController();
   const st = c.state;
@@ -386,6 +416,7 @@ function Content() {
       <Battery />
       <Buttons />
       <Panel />
+      <SystemTweaks />
       <PanelSection title="About">
         <Note>
           {st.device.isAlly2023 ? `ROG Ally ${st.device.chip} · BIOS ${st.device.bios}. ` : ""}

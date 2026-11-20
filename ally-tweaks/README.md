@@ -39,13 +39,26 @@ InputPlumber leaves the rings alone and the kernel LED is the right place.
 | **Battery info** | Health % vs design, cycles, live watts, current stop threshold |
 | **Panel overdrive**, **Boot sound** | asus-armoury `panel_overdrive` / `boot_sound` (legacy asus-nb-wmi fallback) |
 
+### System tweaks (persistent, reversible)
+| Toggle | What it does | Tradeoff |
+|---|---|---|
+| **Wi-Fi power saving off** | NetworkManager drop-in `/etc/NetworkManager/conf.d/99-zz-ally-tweaks-wifi.conf` (`wifi.powersave=2`) + `iw dev <if> set power_save off` now, at boot and after resume. Bazzite's deck image already ships `wifi.powersave=2`, but its tuned **Power Saver** profile turns power save back on with `iw`; the plugin switches it off again within ~5 s. Turning the toggle off deletes the drop-in and reloads NetworkManager's config. | ~0.2–0.5 W more on battery |
+| **USB autosuspend off** | `usbcore` `autosuspend=-1` and `power/control=on` for connected devices; re-applied at boot. Fixes docks/USB controllers dropping out after idling. Turning it off restores the 2 s default for new devices. | Slightly more battery use with USB devices plugged in |
+
+Already handled by Bazzite, so not duplicated: split-lock mitigation off
+(`sysctl.d/60-kernel.conf`), zram zstd + swappiness 180, low-latency Bluetooth
+LE intervals (`/etc/bluetooth/main.conf`), the audio pop fix (WirePlumber never
+suspends sinks), PCIe port power (`ujust manage-pcie-power`). CPU boost/SMT/EPP
+are power tuning and belong in Vex Performance / Steam's power profiles.
+
 ### What stays when the plugin isn't loaded
 - **Kernel path:** the plugin installs `ally-tweaks-restore.service`, a root
   oneshot that runs at boot and after every resume. It reads
   `/etc/ally-tweaks/restore.env` (plain numbers only, parsed with `sed`, never
-  executed) and writes them back to the ring LED and `charge_control_end_threshold`.
+  executed) and writes them back to the ring LED and `charge_control_end_threshold`,
+  and re-applies the Wi-Fi power save and USB autosuspend toggles.
   So the last lighting and the charge limit survive reboots and sleep with
-  Decky off. The plugin removes the unit and its files when uninstalled.
+  Decky off. Uninstalling the plugin removes the unit, its files and the NetworkManager drop-in, and resets USB autosuspend.
 - **HHD path:** HHD keeps the settings itself; no unit is installed.
 - Changing parts (reactive colors, low-battery warning, per-game switching,
   follow-screen) need the plugin running. Otherwise the last value stays.

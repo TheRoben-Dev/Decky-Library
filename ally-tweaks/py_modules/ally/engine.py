@@ -13,7 +13,7 @@ import time
 
 import decky
 
-from . import backlight, battery, buttons, hhd, leds, rgb, sensors, settings
+from . import backlight, battery, buttons, hhd, leds, rgb, sensors, settings, tweaks
 from .persist import Persist
 
 DEFAULTS = {
@@ -31,6 +31,7 @@ DEFAULTS = {
     "charge": {"limit": 100, "travel": False},
     "buttons": {"perGame": {}, "default": None},  # appid -> {"name", "paddles", "nintendo"}
     "panel": {},                     # desired armoury toggles, only keys the user changed
+    "system": {"wifiPowersaveOff": False, "usbAutosuspendOff": False},
 }
 
 # Colours that match HHD's own TDP-mode flash (hhd/plugins/rgb/__init__.py)
@@ -180,8 +181,44 @@ class Engine:
                                     RGB_BRIGHTNESS=vals.get("brightness"),
                                     KBD_LEVEL=vals.get("kbd"))
 
+    # ---------- system tweaks ----------
+    def set_system(self, key: str, on: bool):
+        with self.lock:
+            on = bool(on)
+            if key == "wifiPowersaveOff":
+                tweaks.set_wifi_powersave_off(on)
+                self.persist.update(WIFI_PS_OFF=1 if on else None)
+            elif key == "usbAutosuspendOff":
+                tweaks.set_usb_autosuspend_off(on)
+                self.persist.update(USB_AS_OFF=1 if on else None)
+            else:
+                raise ValueError(f"unknown tweak {key}")
+            self.conf["system"][key] = on
+            self.save()
+
+    def apply_system(self):
+        for k, on in self.conf["system"].items():
+            if on:
+                try:
+                    self.set_system(k, True)
+                except Exception as e:
+                    decky.logger.error(f"tweak {k} on load failed: {e}")
+
+    def undo_system(self):
+        for k in list(self.conf["system"]):
+            try:
+                self.set_system(k, False)
+            except Exception as e:
+                decky.logger.error(f"undo {k} failed: {e}")
+
     def tick(self, force=False):
         with self.lock:
+            try:
+                if self.conf["system"].get("wifiPowersaveOff"):
+                    # Power Saver (tuned powersave-bazzite) turns it back on.
+                    tweaks.wifi_enforce()
+            except Exception as e:
+                decky.logger.error(f"wifi enforce failed: {e}")
             try:
                 snap = battery.snapshot()
                 self._travel(snap)

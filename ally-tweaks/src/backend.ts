@@ -10,5 +10,6 @@ export const setCharge = callable<[limit: number, travel: boolean], Res>("set_ch
 export const setRgbFlags = callable<[boot: boolean, charging: boolean], Res>("set_rgb_flags");
 export const setPanel = callable<[key: string, on: boolean], Res>("set_panel");
 export const setButtonsGlobal = callable<[paddles: string, nintendo: boolean], Res>("set_buttons_global");
+export const setSystem = callable<[key: string, on: boolean], Res>("set_system");
 export const reapplyButtons = callable<[], Res>("reapply_buttons");
 export const log = callable<[msg: string], void>("log");

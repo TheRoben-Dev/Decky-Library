@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "py
 
 import decky  # noqa: E402
 
-from ally import armoury, backlight, battery, buttons, device, hhd, leds, rgb  # noqa: E402
+from ally import armoury, backlight, battery, buttons, device, hhd, leds, rgb, tweaks  # noqa: E402
 from ally.engine import Engine  # noqa: E402
 
 
@@ -62,6 +62,8 @@ class Plugin:
         out["leds"] = leds.status()
         out["inputplumber"] = os.path.exists("/usr/bin/inputplumber")
         out["restoreUnit"] = e.persist.installed()
+        out["wifi"] = tweaks.wifi_status()
+        out["usb"] = tweaks.usb_status()
         return out
 
     async def save_settings(self, patch: dict):
@@ -113,6 +115,14 @@ class Plugin:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
+    async def set_system(self, key: str, on: bool):
+        try:
+            await asyncio.to_thread(self.engine.set_system, key, on)
+            return {"ok": True}
+        except Exception as e:
+            decky.logger.error(f"set_system failed: {e}")
+            return {"ok": False, "error": str(e)}
+
     async def reapply_buttons(self):
         try:
             await asyncio.to_thread(self.engine.reapply_buttons)
@@ -141,6 +151,7 @@ class Plugin:
                     armoury.write(key, on)
                 except Exception as ex:
                     decky.logger.error(f"panel {key} on load failed: {ex}")
+            e.apply_system()
             # If Decky restarted mid-game, undo any per-game button override.
             try:
                 e.reapply_buttons()
@@ -171,6 +182,10 @@ class Plugin:
             e.reapply_buttons()
         except Exception as ex:
             decky.logger.error(f"uninstall cleanup failed: {ex}")
+        try:
+            (self.engine or Engine()).undo_system()
+        except Exception as ex:
+            decky.logger.error(f"tweak cleanup failed: {ex}")
         try:
             (self.engine or Engine()).persist.remove()
         except Exception as ex:

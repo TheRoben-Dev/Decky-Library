@@ -6,7 +6,8 @@ and asus-wmi forgets the charge limit on reboot. So the plugin installs one
 small root oneshot unit:
 
   /etc/ally-tweaks/restore.env   last applied values (plain integers only)
-  /etc/ally-tweaks/restore.sh    writes them to the same documented sysfs files
+  /etc/ally-tweaks/restore.sh    writes them back: ring LED, charge limit,
+                                 Wi-Fi power save off (iw), USB autosuspend off
   /etc/systemd/system/ally-tweaks-restore.service
                                  runs at boot and after every resume
 
@@ -34,6 +35,27 @@ CONF=/etc/ally-tweaks/restore.env
 [ -r "$CONF" ] || exit 0
 get() { sed -n "s/^$1=\([0-9 ]*\)$/\1/p" "$CONF" | head -n1; }
 INTENSITY=$(get RGB_INTENSITY); BRIGHT=$(get RGB_BRIGHTNESS); KBD=$(get KBD_LEVEL); LIMIT=$(get CHARGE_LIMIT)
+WIFI_PS_OFF=$(get WIFI_PS_OFF); USB_AS_OFF=$(get USB_AS_OFF)
+
+if [ "$USB_AS_OFF" = "1" ] && [ -w /sys/module/usbcore/parameters/autosuspend ]; then
+  echo -1 > /sys/module/usbcore/parameters/autosuspend
+  for c in /sys/bus/usb/devices/*/power/control; do echo on > "$c" 2>/dev/null; done
+fi
+if [ "$WIFI_PS_OFF" = "1" ]; then
+  IW=$(command -v iw || echo /usr/sbin/iw)
+  if [ -x "$IW" ]; then
+    i=0
+    while [ $i -lt 20 ]; do
+      found=0
+      for n in /sys/class/net/*; do
+        [ -d "$n/wireless" ] || continue
+        found=1; "$IW" dev "$(basename "$n")" set power_save off 2>/dev/null
+      done
+      [ $found = 1 ] && break
+      sleep 1; i=$((i+1))
+    done
+  fi
+fi
 
 if [ -n "$BRIGHT" ]; then
   LED=""; i=0
@@ -137,6 +159,8 @@ class Persist:
             return
         self.values = new
         if not new:
+            if os.path.exists(ENV):
+                _atomic(ENV, "")
             return
         _atomic(ENV, "".join(f"{k}={v}\n" for k, v in sorted(new.items())))
         self._ensure_unit()
