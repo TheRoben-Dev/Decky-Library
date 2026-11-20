@@ -48,3 +48,20 @@
 .BasicUI .FriendsListContent .friendlistListContainer .friendGroup.friendGroup.offlineFriends {
   border-top-color: var(--ng-line);
 }
+
+/* Decky plugin pages: Decky renders the plugin's title inside Steam's Quick Access title, and
+ * plugins (incl. Decky itself) give their own title element the same class
+ * (`staticClasses.Title` = quickaccessmenu_Title). Without this the nested copy got its own
+ * background, glow band, "// " prefix, cursor and slide-in, so the title bar showed twice side by
+ * side. Only the outer title keeps the Nightgrid decoration. */
+.BasicUI .quickaccessmenu_Title .quickaccessmenu_Title {
+  background: none !important;
+  box-shadow: none !important;
+  animation: none !important;
+  padding-left: 0;
+}
+.BasicUI .quickaccessmenu_Title .quickaccessmenu_Title::before,
+.BasicUI .quickaccessmenu_Title .quickaccessmenu_Title::after {
+  content: none !important;
+  animation: none !important;
+}
