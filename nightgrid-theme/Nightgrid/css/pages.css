@@ -29,7 +29,7 @@
   background: linear-gradient(90deg, transparent 40%, var(--ng-bg-0) 100%);   /* Steam: blue multiply tint on the art */
 }
 /* Progress bars: grey paused/queued variant (_2Xedpg…) keeps Steam's grey */
-.BasicUI .downloads_ProgressBar.downloads_ProgressBar { border-radius: 0; }
+.BasicUI .downloads_ProgressBar.downloads_ProgressBar { border-radius: var(--ng-radius); }
 .BasicUI .downloads_ProgressBar.downloads_ProgressBar:not([class*="_2XedpgsgZ3gMAUuPRtnfld"]) div { background-color: var(--ng-data); }
 .BasicUI .downloads_ProgressBar.downloads_ProgressBar[class*="HifZB5TP6WNuubp1dzyxS"] div { background-color: var(--ng-ok); }
 .BasicUI .downloads_SectionItemStatus .downloads_ProgressBar.downloads_ProgressBar { background-color: var(--ng-bg-2); }
@@ -135,5 +135,5 @@
 .BasicUI :is(.header_VolumePopin, .audio_VolumePopin) {
   background: var(--ng-bg-1);
   border: 1px solid var(--ng-line);
-  border-radius: 0;
+  border-radius: var(--ng-radius);
 }

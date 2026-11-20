@@ -11,23 +11,23 @@
   background-image: var(--ng-grid-image);
   background-size: var(--ng-grid-size);
   border-right: 1px solid var(--ng-line);
-  border-radius: 0;
+  border-radius: var(--ng-radius);
   box-shadow: 8px 0 32px rgba(0, 0, 0, .55);
 }
 .BasicUI :is(.mainmenu_Item, [class*="2w9TpQwxU7vcwaAbf3KGv"]) {
   text-transform: uppercase;
   letter-spacing: var(--ng-tracking);
   color: var(--ng-text-1);
-  border-radius: 0;
+  border-radius: var(--ng-radius);
 }
 .BasicUI .mainmenu_Menu :is(.mainmenu_Item, [class*="2w9TpQwxU7vcwaAbf3KGv"]):is(.gpfocus, :hover) {
-  color: var(--ng-text-0);
+  color: var(--ng-text-0) !important;
   background: color-mix(in srgb, var(--ng-active) 16%, var(--ng-bg-1)) !important;
   box-shadow: inset 0 0 0 1px var(--ng-active), var(--ng-glow-active);
 }
 .BasicUI :is(.mainmenu_Item, [class*="2w9TpQwxU7vcwaAbf3KGv"]) :is(.mainmenu_ActiveDot, [class*="1uLVHdiiCg78BRnhqLxUID"]) {
   background: var(--ng-active);
-  border-radius: 0;
+  border-radius: var(--ng-radius);
 }
 .BasicUI .mainmenu_RunnningAppSeparator {
   background: linear-gradient(90deg, transparent 2%, var(--ng-line) 50%, transparent 98%);

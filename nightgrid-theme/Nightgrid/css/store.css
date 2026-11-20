@@ -64,7 +64,7 @@ html.GamepadMode.GamepadMode :is([class*="XLbP8xOkCYw-"], [class*="WCG-2-OYepA-"
 html.GamepadMode.GamepadMode [class*="bXqaBMkoZYQ-"] {
   border-color: var(--ng-active) !important;
   outline-color: var(--ng-active) !important;
-  border-radius: 0 !important;
+  border-radius: var(--ng-radius) !important;
   box-shadow: var(--ng-glow-active) !important;
 }
 
@@ -131,7 +131,7 @@ html.GamepadMode.GamepadMode .DialogContent {
   background-color: var(--ng-bg-1);
   border: 1px solid var(--ng-line);
   border-top: 2px solid var(--ng-active);
-  border-radius: 0;
+  border-radius: var(--ng-radius);
 }
 html.GamepadMode.GamepadMode :is(.DeckVerifiedModalDialogClient, .DeckVerifiedModalDialog) .DialogContent._DialogLayout {
   background: var(--ng-bg-1) !important;   /* Steam forces #0e141b with !important here */

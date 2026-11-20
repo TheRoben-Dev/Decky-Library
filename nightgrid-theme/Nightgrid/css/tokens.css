@@ -44,6 +44,6 @@
   --ng-tracking: 0.14em;
 
   /* Shape */
-  --ng-radius: 2px;
+  --ng-radius: 0px;        /* Nightgrid is square: every control, highlight and focus ring uses this */
   --ng-hairline: 1px solid var(--ng-line);
 }

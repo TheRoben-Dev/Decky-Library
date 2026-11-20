@@ -1,0 +1,11 @@
+{
+  "name": "Nightgrid Updater",
+  "author": "Roben",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": ["theme", "css-loader", "updater"],
+    "description": "Installs and updates the Nightgrid CSS Loader theme from the Decky-Library GitHub releases, verified by SHA-256, keeping your theme options.",
+    "image": "https://opengraph.githubassets.com/1/TheRoben-Dev/Decky-Library"
+  }
+}

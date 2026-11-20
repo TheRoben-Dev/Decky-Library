@@ -4,6 +4,22 @@
  * loses there: every rule carries `.BasicUI` (+1 class) and focus states use !important.
  */
 
+/* ── Focus ring ──────────────────────────────────────────── */
+/* Steam draws focus for most rows/buttons/cards with one overlay element that follows the
+ * focused element, on every page (also Quick Access, where Decky's plugin panels live).
+ * Nightgrid: square magenta outline + soft glow. Its corners follow --ng-radius, like the controls. */
+.BasicUI .focusring_FocusRing,
+.focusring_FocusRing {
+  border-radius: var(--ng-radius) !important;
+  outline: 2px solid var(--ng-active) !important;
+  outline-offset: 2px !important;
+  box-shadow: var(--ng-glow-active) !important;
+}
+.focusring_FocusRing::before,
+.focusring_FocusRing::after {
+  border-radius: var(--ng-radius) !important;
+}
+
 /* ── Buttons ─────────────────────────────────────────────── */
 .BasicUI button.DialogButton,
 .BasicUI button.DialogButton:enabled {
@@ -19,6 +35,14 @@
   color: var(--ng-text-0) !important;
   border-color: var(--ng-active) !important;
   box-shadow: var(--ng-glow-active);
+}
+.BasicUI button.DialogButton:enabled:is(.gpfocus, :focus, :hover) :is(svg, .gamepaddialog_DropDownControlButtonContents, .dropdownlabel_DropDownLabelTitle) {
+  color: var(--ng-text-0) !important;
+}
+.BasicUI button.DialogButton[disabled].gpfocus {
+  background: var(--ng-bg-2) !important;
+  color: var(--ng-text-1) !important;
+  border-color: var(--ng-active) !important;
 }
 .BasicUI button.DialogButton:enabled.Primary {
   border-color: var(--ng-data);
@@ -45,7 +69,30 @@
   border-radius: var(--ng-radius);
 }
 
-/* ── Toggles: cyan rail, square-ish knob ─────────────────── */
+/* ── Rows (Settings, Quick Access, Decky plugin panels) ──── */
+/* Steam rounds the row highlight and the toggle's own focus box; make both square like the rails. */
+.BasicUI .gamepaddialog_Field,
+.BasicUI .gamepaddialog_Field::before,
+.BasicUI .gamepaddialog_Field.gamepaddialog_HighlightOnFocus::after,
+.BasicUI .gamepaddialog_Toggle,
+.BasicUI .gamepaddialog_Toggle::before,
+.BasicUI .gamepaddialog_Toggle::after,
+.BasicUI .gamepaddialog_Toggle.gpfocus::after,
+.BasicUI .gamepadslider_SliderControlAndNotches,
+.BasicUI .gamepadslider_EditableValue,
+.BasicUI .DialogCheckbox_Container,
+.BasicUI .DialogCheckbox {
+  border-radius: var(--ng-radius) !important;
+}
+.BasicUI .gamepaddialog_Toggle.gpfocus::after {
+  border-color: var(--ng-active) !important;
+  box-shadow: var(--ng-glow-active);
+}
+.BasicUI .DialogCheckbox_Container.gpfocus .DialogCheckbox {
+  background: var(--ng-active);
+}
+
+/* ── Toggles: cyan rail, square knob ─────────────────────── */
 .BasicUI .gamepaddialog_ToggleRail {
   background: var(--ng-bg-2);
   border: 1px solid var(--ng-line);
@@ -73,7 +120,7 @@
   --left-track-color: var(--ng-data);
 }
 .BasicUI .gamepadslider_SliderTrack {
-  border-radius: 0;
+  border-radius: var(--ng-radius);
 }
 .BasicUI .gamepadslider_SliderHandle {
   border-radius: var(--ng-radius);
@@ -94,7 +141,7 @@
 
 /* ── Progress bars ───────────────────────────────────────── */
 .BasicUI .progressbar_ProgressBar {
-  border-radius: 0;
+  border-radius: var(--ng-radius);
 }
 
 /* ── Settings rows ───────────────────────────────────────── */
@@ -154,7 +201,7 @@
 }
 .BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem:focus {
   background: color-mix(in srgb, var(--ng-active) 18%, var(--ng-bg-1));
-  color: var(--ng-text-0);
+  color: var(--ng-text-0) !important;
   border-left-color: var(--ng-active);
   box-shadow: inset 0 0 0 1px var(--ng-active);
 }
@@ -170,7 +217,7 @@
   background: var(--ng-bg-1);
   border: 1px solid var(--ng-line);
   border-top: 2px solid var(--ng-active);
-  border-radius: 0;
+  border-radius: var(--ng-radius);
 }
 .BasicUI .gamepadui_GamepadDialogOverlay .ModalOverlayBackground {
   background: rgba(7, 8, 11, .82);
@@ -180,7 +227,7 @@
 .BasicUI .gamepadcontextmenu_contextMenuContents {
   background: var(--ng-bg-1);
   border: 1px solid var(--ng-line);
-  border-radius: 0;
+  border-radius: var(--ng-radius);
 }
 .BasicUI .gamepadcontextmenu_contextMenuItem:not(.gamepadcontextmenu_Focused):not(.gamepadcontextmenu_active):not(.gamepadcontextmenu_Selected) {
   background: var(--ng-bg-1);

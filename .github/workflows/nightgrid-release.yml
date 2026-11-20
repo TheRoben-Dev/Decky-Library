@@ -1,0 +1,72 @@
+# Publishes Nightgrid releases that the Nightgrid Updater plugin installs.
+#   git tag nightgrid-theme-v0.3.0 && git push origin nightgrid-theme-v0.3.0
+#     → release with Nightgrid.zip + Nightgrid.zip.sha256 (tag must match theme.json "version")
+#   git tag nightgrid-updater-v0.1.0 && git push origin nightgrid-updater-v0.1.0
+#     → release with Nightgrid-Updater.zip + .sha256 (tag must match plugin package.json "version")
+name: Nightgrid release
+
+on:
+  push:
+    tags:
+      - "nightgrid-theme-v*"
+      - "nightgrid-updater-v*"
+
+permissions:
+  contents: write   # create the release and upload its assets; nothing else
+
+jobs:
+  theme:
+    if: startsWith(github.ref_name, 'nightgrid-theme-v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check tag matches theme.json version
+        run: |
+          want="v${GITHUB_REF_NAME#nightgrid-theme-v}"
+          have=$(python3 -c 'import json;print(json.load(open("nightgrid-theme/Nightgrid/theme.json"))["version"])')
+          [ "$want" = "$have" ] || { echo "::error::tag $want but theme.json says $have"; exit 1; }
+      - name: Build zip and checksum
+        run: |
+          nightgrid-theme/package.sh
+          cd nightgrid-theme/out && sha256sum Nightgrid.zip > Nightgrid.zip.sha256 && cat Nightgrid.zip.sha256
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            nightgrid-theme/out/Nightgrid.zip nightgrid-theme/out/Nightgrid.zip.sha256 \
+            --title "Nightgrid theme ${GITHUB_REF_NAME#nightgrid-theme-}" \
+            --notes "Install or update from the Nightgrid Updater plugin, or extract Nightgrid.zip into ~/homebrew/themes/." \
+            --verify-tag
+
+  updater:
+    if: startsWith(github.ref_name, 'nightgrid-updater-v')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: nightgrid-updater
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable && corepack prepare pnpm@10.28.0 --activate
+      - name: Check tag matches package.json version
+        run: |
+          want="${GITHUB_REF_NAME#nightgrid-updater-v}"
+          have=$(node -p 'require("./package.json").version')
+          [ "$want" = "$have" ] || { echo "::error::tag $want but package.json says $have"; exit 1; }
+      - run: python3 -m unittest discover -s tests -v
+      - run: pnpm install --frozen-lockfile && pnpm build
+      - name: Build zip and checksum
+        run: |
+          ./package.sh
+          cd out && sha256sum Nightgrid-Updater.zip > Nightgrid-Updater.zip.sha256
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" out/Nightgrid-Updater.zip out/Nightgrid-Updater.zip.sha256 \
+            --title "Nightgrid Updater ${GITHUB_REF_NAME#nightgrid-updater-}" \
+            --notes "Install from Decky → Developer → Install Plugin from Zip." \
+            --verify-tag

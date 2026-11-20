@@ -14,6 +14,10 @@ Made for an ASUS ROG Ally (1080p) on Bazzite, works the same on any SteamOS-styl
   maps the readable selectors in this theme to Steam's current hashed classes.
 
 ## Install
+**Easiest:** install the [Nightgrid Updater](../nightgrid-updater/) plugin (Decky → Developer → Install
+Plugin from Zip), open it from Quick Access and press **Install**. It also handles updates later.
+
+**Manual:**
 1. Get `Nightgrid.zip` (from the release / project files, or build it with `./package.sh`).
 2. On the Ally, extract it so you end up with `~/homebrew/themes/Nightgrid/theme.json`
    (or run `./install.sh` next to the zip). The folder **must be named `Nightgrid`**: the bundled
@@ -59,6 +63,9 @@ shows over a running game), plus toasts and the keyboard.
 - **Colors a page sets inline** (sale pages, category art, branded events) are left alone on purpose.
 - **Points Shop keyboard themes** keep their own look; only Steam's default keyboard is restyled.
 
+Every control is square (`--ng-radius: 0`), including Steam's focus ring and the row/toggle highlights,
+so the focus box always lines up with the control.
+
 Color roles follow the app: **magenta** = what's selected/focused, **cyan** = data and "on" states,
 **green** = ready/online/Play, **yellow** = accent, **red** = destructive. Bright fills (focused Play /
 Install / primary buttons) use dark text, since white on cyan or green fails contrast.
@@ -87,10 +94,12 @@ which simply stops matching if Valve renames them. Lessons reused from there:
 **Not yet checked on the Ally.** If something looks off, enable CSS Loader's unminify mode (its
 settings) and use CEF remote debugging (`<ally-ip>:8081`) to read the element's stable name.
 
-## Build
+## Build and release
 ```
 ./package.sh   # → out/Nightgrid.zip
 ```
+Releases (what the updater installs) are made by tagging `nightgrid-theme-vX.Y.Z` with the same version
+as `theme.json`; see [nightgrid-updater](../nightgrid-updater/README.md#releasing-maintainer).
 
 ## Credits / licenses
 - Theme: MIT (`LICENSE`).

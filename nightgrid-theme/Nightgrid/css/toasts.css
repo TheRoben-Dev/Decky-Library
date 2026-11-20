@@ -18,7 +18,7 @@
           .shorttemplates_ShortTemplate):is(.standardtemplates_StandardTemplate, .notificationcontent_StandardTemplate,
           .standardtemplates_PinnedTemplate, .notificationcontent_PinnedTemplate, .shorttemplates_ShortTemplate) {
   background: var(--ng-bg-1) !important;
-  border-radius: 0;
+  border-radius: var(--ng-radius);
   box-shadow: inset 0 0 0 1px var(--ng-line), inset 0 2px 0 var(--ng-data);
 }
 :root .shorttemplates_ShortTemplate .shorttemplates_Count,
