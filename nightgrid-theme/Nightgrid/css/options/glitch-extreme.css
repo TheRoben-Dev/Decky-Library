@@ -1,0 +1,5 @@
+/* Nightgrid — Glitch: Extreme (bigger tears, longer) */
+html:root .BasicUI {
+  --ng-gi: 1.6;
+  --ng-gdur: 480ms;
+}

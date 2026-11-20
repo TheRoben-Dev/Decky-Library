@@ -1,0 +1,5 @@
+/* Nightgrid — Glitch: Subtle (smaller tears, short) */
+html:root .BasicUI {
+  --ng-gi: .35;
+  --ng-gdur: 280ms;
+}

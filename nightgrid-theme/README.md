@@ -31,6 +31,7 @@ Plugin from Zip), open it from Quick Access and press **Install**. It also handl
 | Palette | **Nightgrid** (default) · Ice · Bloodline |
 | Colors | **From palette** · Custom → three color pickers: Selection (magenta), Data (cyan), Accent (yellow) |
 | Grid | **Dots + grid** (Nightgrid's backdrop) · Lines · Off |
+| Glitch | Subtle (~280 ms, small tears) · **Strong** (~400 ms) · Extreme (~480 ms, bigger tears); only with Animations Subtle/Full |
 | Font | **Mono labels** (tabs, menus, headers, numbers) · Mono everywhere · Steam default |
 | Glow | **Yes** · No (flat outlines, like Nightgrid's "reduce effects") |
 | Scanlines | Yes · **No** (static CRT lines + vignette on Home/Library) |
@@ -81,7 +82,7 @@ Install / primary buttons) use dark text, since white on cyan or green fails con
 |---|---|---|
 | Focus | focus ring fades in; tabs, buttons, menu rows "lock on" with a tiny scale | soft magenta pulse on the focus ring |
 | Tabs | newly selected tab fades up with its magenta bar | |
-| Home | moving between recent games cuts the hero art in with a ~260 ms glitch (slices, cyan/magenta split, jitter) and jolts the newly focused cover | |
+| Home | moving between recent games tears the hero art in with a glitch (bands thrown 20–60 px, hard cyan/magenta split, skew/scale stutter, blackout flicker, scanline burst) and the newly focused cover tears the same way; strength from **Glitch** | |
 | Panels | dialogs slide up, context/power menus scale in, settings pages fade, Quick Access title slides in, toasts slide in from the right, keyboard rises | |
 | Headers | blinking `_` cursor after the Quick Access and Downloads titles; section headers wipe in | typewriter-style reveal |
 | Progress | | moving stripes on running download bars (the bar's box isn't touched) |

@@ -8,6 +8,9 @@
  */
 .BasicUI {
   --ng-hero-filter: brightness(.66) saturate(.9);
+  /* Glitch option (Strong defaults; options/glitch-*.css override with html:root .BasicUI) */
+  --ng-gi: 1;
+  --ng-gdur: 400ms;
 }
 /* Art: brighter than Steam's 50% dim, faded out toward the bottom into the canvas. */
 .gamepadhomerecentgames_RecentGamesBackgroundContainer {

@@ -68,39 +68,72 @@
   }
 
   /* ── Home spotlight: glitch cut between games ─────────
-   * The incoming hero art (Steam marks it MoveLeft/MoveRight) cuts in through horizontal
-   * slices with a cyan/magenta channel split and a little horizontal jitter, ~260 ms, once.
-   * Same selectors/specificity as Steam's own incoming animation, which this replaces. */
+   * The incoming hero art (Steam marks it MoveLeft/MoveRight) tears in: horizontal bands thrown
+   * 20-60 px sideways, a hard cyan/magenta channel split, skew/scale stutter, a blackout flicker
+   * and a scanline burst, then settles. Strength and length come from the Glitch option
+   * (--ng-gi multiplier, --ng-gdur; defaults = Strong). Same selectors/specificity as Steam's own
+   * incoming animation, which this replaces. Runs once per move; nothing loops. */
   @keyframes ng-glitch-art {
-    0%   { opacity: 0;   transform: translateX(calc(var(--ng-gx) * 24px)); clip-path: inset(0 0 0 0);
-           filter: var(--ng-hero-filter) drop-shadow(-6px 0 rgba(0, 229, 255, .65)) drop-shadow(6px 0 rgba(255, 42, 109, .65)); }
-    18%  { opacity: .9;  transform: translateX(calc(var(--ng-gx) * -10px)); clip-path: inset(18% 0 52% 0); }
-    34%  { opacity: 1;   transform: translateX(calc(var(--ng-gx) * 8px));   clip-path: inset(58% 0 10% 0); }
-    50%  {               transform: translateX(calc(var(--ng-gx) * -4px)); clip-path: inset(0 0 66% 0);
-           filter: var(--ng-hero-filter) drop-shadow(-3px 0 rgba(0, 229, 255, .55)) drop-shadow(3px 0 rgba(255, 42, 109, .55)); }
-    66%  {               transform: translateX(calc(var(--ng-gx) * 2px));  clip-path: inset(32% 0 28% 0); }
-    80%  {               transform: none;                                   clip-path: inset(0 0 0 0); filter: var(--ng-hero-filter); }
-    100% { opacity: 1;   transform: none;                                   clip-path: inset(0 0 0 0); filter: var(--ng-hero-filter); }
+    0%   { opacity: 0; }
+    4%   { opacity: 1;
+           transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * 60px)) skewX(calc(var(--ng-gi) * -12deg)) scale(1.06);
+           clip-path: inset(10% 0 62% 0);
+           filter: var(--ng-hero-filter) drop-shadow(calc(var(--ng-gi) * -14px) 0 rgba(0, 229, 255, .9)) drop-shadow(calc(var(--ng-gi) * 14px) 0 rgba(255, 42, 109, .9));
+           -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 3px, rgba(0, 0, 0, .2) 3px 5px); }
+    10%  { transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * -40px)) skewX(calc(var(--ng-gi) * 8deg)) scale(1.02);
+           clip-path: inset(46% 0 22% 0); }
+    16%  { opacity: .12;
+           transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * 22px)); clip-path: inset(0 0 0 0); }
+    22%  { opacity: 1;
+           transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * -55px)) skewX(calc(var(--ng-gi) * -6deg)) scale(.97);
+           clip-path: inset(70% 0 4% 0); }
+    30%  { transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * 32px)) scale(1.04);
+           clip-path: inset(0 0 72% 0);
+           -webkit-mask-image: none; }
+    38%  { transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * -20px)) skewX(calc(var(--ng-gi) * 4deg));
+           clip-path: inset(28% 0 40% 0);
+           filter: var(--ng-hero-filter) drop-shadow(calc(var(--ng-gi) * -9px) 0 rgba(0, 229, 255, .85)) drop-shadow(calc(var(--ng-gi) * 9px) 0 rgba(255, 42, 109, .85)); }
+    46%  { opacity: .45;
+           transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * 12px));
+           clip-path: inset(0 0 0 0);
+           -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 2px, rgba(0, 0, 0, .35) 2px 4px); }
+    54%  { opacity: 1;
+           transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * -8px));
+           clip-path: inset(55% 0 25% 0);
+           -webkit-mask-image: none; }
+    64%  { transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * 4px));
+           clip-path: inset(0 0 0 0);
+           filter: var(--ng-hero-filter) drop-shadow(calc(var(--ng-gi) * -4px) 0 rgba(0, 229, 255, .7)) drop-shadow(calc(var(--ng-gi) * 4px) 0 rgba(255, 42, 109, .7)); }
+    76%  { transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * -2px));
+           filter: var(--ng-hero-filter) drop-shadow(-2px 0 rgba(0, 229, 255, .5)) drop-shadow(2px 0 rgba(255, 42, 109, .5)); }
+    88%, 100% { opacity: 1; transform: none; clip-path: inset(0 0 0 0); filter: var(--ng-hero-filter); -webkit-mask-image: none; }
   }
   .gamepadhomerecentgames_RecentGamesBackgroundImage.gamepadhomerecentgames_MoveRight:not(.gamepadhomerecentgames_OffScreen) {
     --ng-gx: 1;
-    animation: ng-glitch-art 260ms linear;
+    animation: ng-glitch-art var(--ng-gdur) steps(3, end);
   }
   .gamepadhomerecentgames_RecentGamesBackgroundImage.gamepadhomerecentgames_MoveLeft:not(.gamepadhomerecentgames_OffScreen) {
     --ng-gx: -1;
-    animation: ng-glitch-art 260ms linear;
+    animation: ng-glitch-art var(--ng-gdur) steps(3, end);
   }
-  /* The newly focused cover jolts with the same channel split as focus lands on it. */
+  /* The newly focused cover tears the same way, smaller and quicker. */
   @keyframes ng-glitch-card {
-    0%   { transform: translateZ(15px) scale(1.03) translateX(-3px);
-           filter: drop-shadow(-3px 0 rgba(0, 229, 255, .8)) drop-shadow(3px 0 rgba(255, 42, 109, .8)); }
-    35%  { transform: translateZ(15px) scale(1.03) translateX(3px); }
-    65%  { transform: translateZ(15px) scale(1.03) translateX(-1px);
+    0%   { transform: translateZ(15px) scale(1.03) translateX(calc(var(--ng-gi) * -12px)) skewX(calc(var(--ng-gi) * -8deg));
+           clip-path: inset(12% -20px 58% -20px);
+           filter: drop-shadow(calc(var(--ng-gi) * -6px) 0 rgba(0, 229, 255, .95)) drop-shadow(calc(var(--ng-gi) * 6px) 0 rgba(255, 42, 109, .95)); }
+    15%  { transform: translateZ(15px) scale(1.07) translateX(calc(var(--ng-gi) * 10px)) skewX(calc(var(--ng-gi) * 6deg));
+           clip-path: inset(50% -20px 18% -20px); }
+    28%  { opacity: .2; transform: translateZ(15px) scale(1.0) translateX(calc(var(--ng-gi) * -6px)); clip-path: inset(-20px); }
+    40%  { opacity: 1; transform: translateZ(15px) scale(1.05) translateX(calc(var(--ng-gi) * 8px));
+           clip-path: inset(0 -20px 66% -20px); }
+    55%  { transform: translateZ(15px) scale(1.03) translateX(calc(var(--ng-gi) * -4px)); clip-path: inset(-20px);
+           filter: drop-shadow(calc(var(--ng-gi) * -3px) 0 rgba(0, 229, 255, .8)) drop-shadow(calc(var(--ng-gi) * 3px) 0 rgba(255, 42, 109, .8)); }
+    75%  { transform: translateZ(15px) scale(1.03) translateX(calc(var(--ng-gi) * 2px));
            filter: drop-shadow(-1px 0 rgba(0, 229, 255, .6)) drop-shadow(1px 0 rgba(255, 42, 109, .6)); }
-    100% { transform: translateZ(15px) scale(1.03); filter: none; }
+    100% { opacity: 1; transform: translateZ(15px) scale(1.03); clip-path: inset(-20px); filter: none; }
   }
   .BasicUI .appportrait_InRecentGames.Focusable:focus {
-    animation: ng-glitch-card 220ms steps(6, end);
+    animation: ng-glitch-card calc(var(--ng-gdur) * .7) steps(2, end);
   }
 
   /* ── Terminal cursor after the big "// TITLE" headers ── */
