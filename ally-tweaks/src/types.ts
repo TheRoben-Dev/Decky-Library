@@ -1,4 +1,4 @@
-export type LightMode = "off" | "solid" | "pulse" | "duality" | "rainbow" | "spiral";
+export type LightMode = "off" | "solid" | "split" | "pulse" | "duality" | "rainbow" | "spiral";
 export type Speed = "low" | "medium" | "high";
 export type Reactive = "none" | "battery" | "temperature" | "tdp";
 
@@ -63,6 +63,10 @@ export interface AppState {
     nintendo: boolean;
   };
   chargeBackend: "hhd" | "sysfs" | "none";
+  rgbBackend: "hhd" | "sysfs" | "none";
+  leds: { supported: boolean; name?: string; zones?: number; layout?: string };
+  inputplumber: boolean;
+  restoreUnit: boolean;
   settings: Settings;
   lightReason: string;
   screen: number | null;

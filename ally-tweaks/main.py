@@ -1,13 +1,17 @@
 """Ally Tweaks - Decky backend.
 
-Runs as root (plugin flag "_root") to reach Handheld Daemon's root-only socket
-and the documented asus-wmi / asus-armoury / power_supply sysfs files.
+Runs as root (plugin flag "_root") to write the documented kernel sysfs files
+(LED class, power_supply, asus-armoury), install the small restore unit, and
+reach Handheld Daemon's root-only socket on installs that still use HHD.
 
 Safety rules this plugin follows:
-  * Lighting, back buttons and charge limit go through Handheld Daemon's own
-    settings API, so HHD stays in charge of talking to the MCU.
-  * Direct writes only to documented kernel attributes: power_supply
-    charge_control_end_threshold, asus-armoury panel_overdrive / boot_sound.
+  * Bazzite 44+ (InputPlumber, no HHD): rings via the kernel's LED class
+    (hid-asus-ally does the MCU talking), charge limit via power_supply.
+  * With HHD: lighting, back buttons and charge limit go through HHD's own
+    settings API, so HHD stays in charge of the MCU.
+  * Direct writes only to documented kernel attributes: LED class
+    multi_intensity / brightness, power_supply charge_control_end_threshold,
+    asus-armoury panel_overdrive / boot_sound.
   * Nothing touches TDP, clocks, voltages, fans or thermal policy, and no raw
     MCU/EC commands or firmware updates are ever sent.
 """
@@ -20,7 +24,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "py
 
 import decky  # noqa: E402
 
-from ally import armoury, backlight, battery, buttons, device, hhd, rgb  # noqa: E402
+from ally import armoury, backlight, battery, buttons, device, hhd, leds, rgb  # noqa: E402
 from ally.engine import Engine  # noqa: E402
 
 
@@ -54,6 +58,10 @@ class Plugin:
             except Exception as ex:
                 out["hhd"]["error"] = str(ex)
         out["chargeBackend"] = battery.backend(st)
+        out["rgbBackend"] = e.rgb_backend(st)
+        out["leds"] = leds.status()
+        out["inputplumber"] = os.path.exists("/usr/bin/inputplumber")
+        out["restoreUnit"] = e.persist.installed()
         return out
 
     async def save_settings(self, patch: dict):
@@ -163,3 +171,7 @@ class Plugin:
             e.reapply_buttons()
         except Exception as ex:
             decky.logger.error(f"uninstall cleanup failed: {ex}")
+        try:
+            (self.engine or Engine()).persist.remove()
+        except Exception as ex:
+            decky.logger.error(f"restore unit removal failed: {ex}")

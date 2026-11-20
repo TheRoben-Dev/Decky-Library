@@ -1,11 +1,19 @@
 {
   "name": "Ally Tweaks",
   "author": "Roben",
-  "flags": ["_root"],
+  "flags": [
+    "_root"
+  ],
   "api_version": 1,
   "publish": {
-    "tags": ["rog-ally", "rgb", "battery", "hhd", "root"],
-    "description": "ROG Ally 2023 tweaks: ring RGB that persists through Handheld Daemon (per-game and reactive), charge limiter with one-tap full charge, per-game back buttons and panel options. No TDP, fan or MCU firmware changes.",
+    "tags": [
+      "rog-ally",
+      "rgb",
+      "battery",
+      "inputplumber",
+      "root"
+    ],
+    "description": "ROG Ally 2023 tweaks: ring RGB via the kernel LED driver (Bazzite 44+/InputPlumber) or Handheld Daemon, kept across reboots; per-game, reactive and follow-screen lighting; charge limiter with one-tap full charge; panel options. No TDP, fan or MCU firmware changes.",
     "image": "https://opengraph.githubassets.com/1/SteamDeckHomebrew/PluginLoader"
   }
 }

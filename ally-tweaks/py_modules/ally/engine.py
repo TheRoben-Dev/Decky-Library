@@ -13,7 +13,8 @@ import time
 
 import decky
 
-from . import backlight, battery, buttons, hhd, rgb, sensors, settings
+from . import backlight, battery, buttons, hhd, leds, rgb, sensors, settings
+from .persist import Persist
 
 DEFAULTS = {
     "rgb": {
@@ -60,6 +61,7 @@ class Engine:
         self.last_ac = None
         self.reason = ""
         self.temp_bin = None
+        self.persist = Persist()
         self.screen = None          # debounced backlight fraction
         self._screen_seen = None
 
@@ -147,19 +149,46 @@ class Engine:
                 self.reason = f"TDP mode: {m}"
         return light
 
+    def rgb_backend(self, state: dict | None = None) -> str:
+        """'hhd' when Handheld Daemon is running and owns the rings (older
+        Bazzite, other distros), else 'sysfs' (kernel LED class, Bazzite 44+
+        with InputPlumber), else 'none'."""
+        if hhd.available():
+            try:
+                st = state if state is not None else hhd.get_state()
+                if "hhd.settings.rgb" in st:
+                    return "hhd"
+            except Exception:
+                pass
+        return "sysfs" if leds.available() else "none"
+
+    def _apply_light(self, target, state, force):
+        be = self.rgb_backend(state)
+        if be == "hhd":
+            key = ("hhd", tuple(sorted(rgb.to_state(target).items())))
+            if force or key != self.last_light:
+                rgb.apply(target, state)
+                self.last_light = key
+        elif be == "sysfs":
+            vals = leds.to_values(target)
+            key = ("sysfs", tuple(sorted((vals or {}).items())))
+            if force or key != self.last_light:
+                leds.apply(target)
+                self.last_light = key
+                # Same values come back at boot / after resume via the unit.
+                self.persist.update(RGB_INTENSITY=vals.get("intensity"),
+                                    RGB_BRIGHTNESS=vals.get("brightness"),
+                                    KBD_LEVEL=vals.get("kbd"))
+
     def tick(self, force=False):
         with self.lock:
             try:
                 snap = battery.snapshot()
                 self._travel(snap)
-                if not self.conf["rgb"]["managed"] or not hhd.available():
+                if not self.conf["rgb"]["managed"]:
                     return
-                state = hhd.get_state()
-                target = self._target(snap, state)
-                key = rgb.to_state(target)
-                if force or key != self.last_light:
-                    rgb.apply(target, state)
-                    self.last_light = key
+                state = hhd.get_state() if hhd.available() else None
+                self._apply_light(self._target(snap, state), state, force)
             except Exception as e:
                 decky.logger.error(f"tick failed: {e}")
 
@@ -167,10 +196,11 @@ class Engine:
         """On unload: leave a non-changing light behind (no stale low-battery pulse)."""
         with self.lock:
             try:
-                if self.conf["rgb"]["managed"] and hhd.available():
+                if self.conf["rgb"]["managed"]:
                     appid = (self.game or {}).get("appid")
                     g = self.conf["rgb"]["perGame"].get(appid) if appid else None
-                    rgb.apply(g["light"] if g else self.conf["rgb"]["base"])
+                    state = hhd.get_state() if hhd.available() else None
+                    self._apply_light(self._scaled(g["light"] if g else self.conf["rgb"]["base"]), state, True)
             except Exception as e:
                 decky.logger.error(f"apply_static failed: {e}")
 
@@ -180,7 +210,14 @@ class Engine:
             c = self.conf["charge"]
             limit = 100 if c["travel"] else int(c["limit"])
             state = hhd.get_state() if hhd.available() else None
-            return battery.set_limit(limit, state)
+            be = battery.set_limit(limit, state)
+            # Kernel path: asus-wmi forgets the limit on reboot, so the
+            # restore unit re-applies it. HHD re-applies its own.
+            try:
+                self.persist.update(CHARGE_LIMIT=limit if be == "sysfs" and limit < 100 else None)
+            except Exception as e:
+                decky.logger.error(f"persist charge failed: {e}")
+            return be
 
     def _travel(self, snap):
         ac = snap.get("ac")

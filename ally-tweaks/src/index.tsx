@@ -40,7 +40,12 @@ function Swatch({ h, s }: { h: number; s: number }) {
   return <div style={{ width: 22, height: 22, borderRadius: 11, background: hsl(h, s), border: "2px solid #ffffff55" }} />;
 }
 
-const MODES: { data: LightMode; label: string }[] = [
+const MODES_SYSFS: { data: LightMode; label: string }[] = [
+  { data: "solid", label: "Solid" },
+  { data: "split", label: "Left / right colors" },
+  { data: "off", label: "Off" },
+];
+const MODES_HHD: { data: LightMode; label: string }[] = [
   { data: "solid", label: "Solid" },
   { data: "pulse", label: "Pulse" },
   { data: "duality", label: "Two colors" },
@@ -76,14 +81,18 @@ const LIMITS = [70, 80, 85, 90, 95, 100];
 function LightEditor({ light }: { light: Light }) {
   const c = controller;
   const follow = !!c.settings?.rgb.followScreen;
-  const colored = ["solid", "pulse", "duality"].includes(light.mode);
+  const hhdMode = c.state?.rgbBackend === "hhd";
+  const modes = hhdMode ? MODES_HHD : MODES_SYSFS;
+  // A light saved under the other backend falls back to Solid here.
+  const shown = modes.some((m) => m.data === light.mode) ? light.mode : "solid";
+  const colored = ["solid", "pulse", "duality", "split"].includes(shown);
   return (
     <>
       <PanelSectionRow>
         <DropdownItem
           label="Effect"
-          rgOptions={MODES}
-          selectedOption={light.mode}
+          rgOptions={modes}
+          selectedOption={shown}
           onChange={(o) => c.editLight((l) => { l.mode = o.data; })}
         />
       </PanelSectionRow>
@@ -109,15 +118,15 @@ function LightEditor({ light }: { light: Light }) {
             <SliderField label="Saturation" value={light.saturation} min={0} max={100} step={10} showValue
               onChange={(v) => c.editLight((l) => { l.saturation = v; })} />
           </PanelSectionRow>
-          {light.mode === "duality" && (
+          {(shown === "duality" || shown === "split") && (
             <PanelSectionRow>
-              <SliderField label="Second hue" value={light.hue2} min={0} max={360} step={5} showValue
+              <SliderField label={shown === "split" ? "Right ring hue" : "Second hue"} value={light.hue2} min={0} max={360} step={5} showValue
                 onChange={(v) => c.editLight((l) => { l.hue2 = v; })} />
             </PanelSectionRow>
           )}
         </>
       )}
-      {light.mode !== "off" && (
+      {shown !== "off" && (
         <PanelSectionRow>
           <SliderField
             label={follow ? "Max brightness" : "Brightness"}
@@ -134,13 +143,13 @@ function LightEditor({ light }: { light: Light }) {
           />
         </PanelSectionRow>
       )}
-      {["pulse", "duality", "spiral"].includes(light.mode) && (
+      {["pulse", "duality", "spiral"].includes(shown) && (
         <PanelSectionRow>
           <DropdownItem label="Speed" rgOptions={SPEEDS} selectedOption={light.speed}
             onChange={(o) => c.editLight((l) => { l.speed = o.data; })} />
         </PanelSectionRow>
       )}
-      {light.mode === "spiral" && (
+      {shown === "spiral" && (
         <PanelSectionRow>
           <DropdownItem label="Direction"
             rgOptions={[{ data: "left", label: "Counter-clockwise" }, { data: "right", label: "Clockwise" }]}
@@ -161,12 +170,14 @@ function Lighting() {
   const r = st.rgb;
   return (
     <PanelSection title="Ring lighting">
-      {!st.hhd.running && <Note warning>Handheld Daemon isn't running, so lighting and buttons can't be changed. Bazzite starts it by default.</Note>}
+      {st.rgbBackend === "none" && <Note warning>No ring LED control found: neither the kernel's joystick-ring LED nor Handheld Daemon is available on this system.</Note>}
       {r?.controllerOwnsLeds && <Note warning>HHD's Dualsense "LED Support" is on, so games control the rings. Turn it off in HHD to use these settings.</Note>}
       {r && !r.hhdRgbEnabled && <Note>RGB support is off in HHD. Changing a setting here turns it on.</Note>}
       <PanelSectionRow>
         <ToggleField label="Manage ring lighting" checked={s.managed}
-          description="Saved in Handheld Daemon, so it stays on when this plugin or Decky isn't loaded."
+          description={st.rgbBackend === "hhd"
+            ? "Saved in Handheld Daemon, so it stays on when this plugin or Decky isn't loaded."
+            : "Set through the kernel LED driver. A small restore service brings it back after reboot and sleep, even without Decky."}
           onChange={(v) => c.setRgb({ managed: v })} />
       </PanelSectionRow>
       {s.managed && (
@@ -182,7 +193,9 @@ function Lighting() {
           <LightEditor light={light} />
           {!gameLight && (
             <PanelSectionRow>
-              <DropdownItem label="Color follows" rgOptions={REACTIVE} selectedOption={s.reactive}
+              <DropdownItem label="Color follows"
+                rgOptions={REACTIVE.filter((r) => r.data !== "tdp" || st.rgbBackend === "hhd")}
+                selectedOption={s.reactive === "tdp" && st.rgbBackend !== "hhd" ? "none" : s.reactive}
                 description="Changes the hue of Solid/Pulse automatically. Needs the plugin running."
                 onChange={(o) => c.setRgb({ reactive: o.data })} />
             </PanelSectionRow>
@@ -280,7 +293,14 @@ function Buttons() {
   const c = useController();
   const st = c.state!;
   const b = st.buttons;
-  if (!b?.supported) return null;
+  if (!b?.supported) {
+    if (!st.inputplumber) return null;
+    return (
+      <PanelSection title="Back buttons (M1 / M2)">
+        <Note>InputPlumber presents M1/M2 as Xbox Elite back paddles, so Steam already lets you bind them per game: the game's controller layout in Steam, under the back paddles. Keys, macros and action-layer shifts all work there, with nothing extra running.</Note>
+      </PanelSection>
+    );
+  }
   const game = c.appid ? st.settings.buttons.perGame[c.appid] : undefined;
   const opts = b.paddleOptions.map((o) => ({ data: o, label: PADDLES[o] ?? o }));
   return (
