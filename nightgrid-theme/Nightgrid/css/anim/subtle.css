@@ -67,73 +67,79 @@
     animation: ng-in-right var(--ng-dur-slow) var(--ng-ease);
   }
 
-  /* ── Home spotlight: glitch cut between games ─────────
-   * The incoming hero art (Steam marks it MoveLeft/MoveRight) tears in: horizontal bands thrown
-   * 20-60 px sideways, a hard cyan/magenta channel split, skew/scale stutter, a blackout flicker
-   * and a scanline burst, then settles. Strength and length come from the Glitch option
-   * (--ng-gi multiplier, --ng-gdur; defaults = Strong). Same selectors/specificity as Steam's own
-   * incoming animation, which this replaces. Runs once per move; nothing loops. */
-  @keyframes ng-glitch-art {
-    0%   { opacity: 0; }
-    4%   { opacity: 1;
-           transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * 60px)) skewX(calc(var(--ng-gi) * -12deg)) scale(1.06);
-           clip-path: inset(10% 0 62% 0);
-           filter: var(--ng-hero-filter) drop-shadow(calc(var(--ng-gi) * -14px) 0 rgba(0, 229, 255, .9)) drop-shadow(calc(var(--ng-gi) * 14px) 0 rgba(255, 42, 109, .9));
-           -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 3px, rgba(0, 0, 0, .2) 3px 5px); }
-    10%  { transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * -40px)) skewX(calc(var(--ng-gi) * 8deg)) scale(1.02);
-           clip-path: inset(46% 0 22% 0); }
-    16%  { opacity: .12;
-           transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * 22px)); clip-path: inset(0 0 0 0); }
-    22%  { opacity: 1;
-           transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * -55px)) skewX(calc(var(--ng-gi) * -6deg)) scale(.97);
-           clip-path: inset(70% 0 4% 0); }
-    30%  { transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * 32px)) scale(1.04);
-           clip-path: inset(0 0 72% 0);
-           -webkit-mask-image: none; }
-    38%  { transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * -20px)) skewX(calc(var(--ng-gi) * 4deg));
-           clip-path: inset(28% 0 40% 0);
-           filter: var(--ng-hero-filter) drop-shadow(calc(var(--ng-gi) * -9px) 0 rgba(0, 229, 255, .85)) drop-shadow(calc(var(--ng-gi) * 9px) 0 rgba(255, 42, 109, .85)); }
-    46%  { opacity: .45;
-           transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * 12px));
-           clip-path: inset(0 0 0 0);
-           -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 2px, rgba(0, 0, 0, .35) 2px 4px); }
-    54%  { opacity: 1;
-           transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * -8px));
-           clip-path: inset(55% 0 25% 0);
-           -webkit-mask-image: none; }
-    64%  { transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * 4px));
-           clip-path: inset(0 0 0 0);
-           filter: var(--ng-hero-filter) drop-shadow(calc(var(--ng-gi) * -4px) 0 rgba(0, 229, 255, .7)) drop-shadow(calc(var(--ng-gi) * 4px) 0 rgba(255, 42, 109, .7)); }
-    76%  { transform: translateX(calc(var(--ng-gx) * var(--ng-gi) * -2px));
-           filter: var(--ng-hero-filter) drop-shadow(-2px 0 rgba(0, 229, 255, .5)) drop-shadow(2px 0 rgba(255, 42, 109, .5)); }
-    88%, 100% { opacity: 1; transform: none; clip-path: inset(0 0 0 0); filter: var(--ng-hero-filter); -webkit-mask-image: none; }
+  /* ── Home spotlight: signal-static cut between games ──
+   * The frame never moves: no slide, skew or scale. The incoming hero art (Steam marks it
+   * MoveLeft/MoveRight and stacks it on top) starts as blown-out TV snow scattered over the
+   * old art, then breaks through in growing static and rolling signal bars with colour-channel
+   * corruption, until the static is gone and only the new game is left. Strength comes from the
+   * Glitch option (--ng-gi scales contrast, channel split and colour corruption; --ng-gdur is the
+   * length; defaults = Strong). Replaces Steam's own slide-in (same selectors). Runs once per move.
+   * Mask layers: static noise + rolling bars, unioned. */
+  @keyframes ng-static-art {
+    0%   { -webkit-mask-image: var(--ng-static-1), linear-gradient(transparent, transparent);
+           -webkit-mask-size: 480px 240px, 100% 100%; -webkit-mask-position: 0 0, 0 0;
+           filter: grayscale(1) contrast(calc(1 + 4 * var(--ng-gi))) brightness(1.9); }
+    7%   { -webkit-mask-image: var(--ng-static-2), linear-gradient(transparent, transparent);
+           -webkit-mask-position: 170px 90px, 0 0;
+           filter: grayscale(1) contrast(calc(1 + 5 * var(--ng-gi))) brightness(2.1); }
+    14%  { -webkit-mask-image: var(--ng-static-1), repeating-linear-gradient(to bottom, transparent 0 41px, #000 41px 47px, transparent 47px 96px, #000 96px 98px);
+           -webkit-mask-size: 480px 240px, 100% 137px; -webkit-mask-position: -90px 30px, 0 12px;
+           filter: var(--ng-hero-filter) saturate(calc(1 + 2.5 * var(--ng-gi))) hue-rotate(calc(var(--ng-gi) * 140deg))
+                   drop-shadow(calc(var(--ng-gi) * -16px) 0 rgba(0, 229, 255, .95)) drop-shadow(calc(var(--ng-gi) * 16px) 0 rgba(255, 42, 109, .95)); }
+    21%  { -webkit-mask-image: var(--ng-static-2), linear-gradient(transparent, transparent);
+           -webkit-mask-size: 480px 240px, 100% 100%; -webkit-mask-position: 60px -110px, 0 0;
+           filter: grayscale(1) contrast(calc(1 + 5 * var(--ng-gi))) brightness(2); }
+    28%  { -webkit-mask-image: var(--ng-static-3), repeating-linear-gradient(to bottom, transparent 0 23px, #000 23px 35px, transparent 35px 71px, #000 71px 74px);
+           -webkit-mask-size: 480px 240px, 100% 113px; -webkit-mask-position: 220px 40px, 0 58px;
+           filter: var(--ng-hero-filter) saturate(calc(1 + 2 * var(--ng-gi))) hue-rotate(calc(var(--ng-gi) * -100deg)) contrast(calc(1 + .8 * var(--ng-gi)))
+                   drop-shadow(calc(var(--ng-gi) * 12px) 0 rgba(0, 229, 255, .9)) drop-shadow(calc(var(--ng-gi) * -12px) 0 rgba(255, 42, 109, .9)); }
+    35%  { -webkit-mask-image: var(--ng-static-2), repeating-linear-gradient(to bottom, transparent 0 41px, #000 41px 47px, transparent 47px 96px, #000 96px 98px);
+           -webkit-mask-size: 480px 240px, 100% 137px; -webkit-mask-position: -150px 160px, 0 81px;
+           filter: grayscale(.6) contrast(calc(1 + 3 * var(--ng-gi))) brightness(1.6)
+                   drop-shadow(calc(var(--ng-gi) * -10px) 0 rgba(0, 229, 255, .8)) drop-shadow(calc(var(--ng-gi) * 10px) 0 rgba(255, 42, 109, .8)); }
+    43%  { -webkit-mask-image: var(--ng-static-3), repeating-linear-gradient(to bottom, transparent 0 23px, #000 23px 35px, transparent 35px 71px, #000 71px 74px);
+           -webkit-mask-size: 480px 240px, 100% 113px; -webkit-mask-position: 30px -60px, 0 7px;
+           filter: var(--ng-hero-filter) saturate(calc(1 + 1.5 * var(--ng-gi))) hue-rotate(calc(var(--ng-gi) * 60deg))
+                   drop-shadow(calc(var(--ng-gi) * -9px) 0 rgba(0, 229, 255, .85)) drop-shadow(calc(var(--ng-gi) * 9px) 0 rgba(255, 42, 109, .85)); }
+    51%  { -webkit-mask-image: var(--ng-static-4), repeating-linear-gradient(to bottom, transparent 0 41px, #000 41px 47px, transparent 47px 96px, #000 96px 98px);
+           -webkit-mask-size: 480px 240px, 100% 137px; -webkit-mask-position: 190px 120px, 0 103px;
+           filter: grayscale(.4) contrast(calc(1 + 2 * var(--ng-gi))) brightness(1.4)
+                   drop-shadow(calc(var(--ng-gi) * 7px) 0 rgba(0, 229, 255, .8)) drop-shadow(calc(var(--ng-gi) * -7px) 0 rgba(255, 42, 109, .8)); }
+    59%  { -webkit-mask-image: var(--ng-static-3), linear-gradient(transparent, transparent);
+           -webkit-mask-size: 480px 240px, 100% 100%; -webkit-mask-position: -40px 200px, 0 0;
+           filter: var(--ng-hero-filter) saturate(calc(1 + var(--ng-gi))) hue-rotate(calc(var(--ng-gi) * -40deg))
+                   drop-shadow(calc(var(--ng-gi) * -6px) 0 rgba(0, 229, 255, .75)) drop-shadow(calc(var(--ng-gi) * 6px) 0 rgba(255, 42, 109, .75)); }
+    67%  { -webkit-mask-image: var(--ng-static-4), repeating-linear-gradient(to bottom, transparent 0 23px, #000 23px 35px, transparent 35px 71px, #000 71px 74px);
+           -webkit-mask-size: 480px 240px, 100% 113px; -webkit-mask-position: 120px 20px, 0 40px;
+           filter: var(--ng-hero-filter) contrast(calc(1 + .5 * var(--ng-gi)))
+                   drop-shadow(calc(var(--ng-gi) * 4px) 0 rgba(0, 229, 255, .7)) drop-shadow(calc(var(--ng-gi) * -4px) 0 rgba(255, 42, 109, .7)); }
+    75%  { -webkit-mask-image: var(--ng-static-4), linear-gradient(#000, #000);
+           -webkit-mask-size: 480px 240px, 100% 100%; -webkit-mask-position: -200px -80px, 0 0;
+           filter: var(--ng-hero-filter) drop-shadow(calc(var(--ng-gi) * -3px) 0 rgba(0, 229, 255, .6)) drop-shadow(calc(var(--ng-gi) * 3px) 0 rgba(255, 42, 109, .6)); }
+    84%  { -webkit-mask-image: none;
+           filter: var(--ng-hero-filter) grayscale(.3) contrast(1.3) drop-shadow(-2px 0 rgba(0, 229, 255, .5)) drop-shadow(2px 0 rgba(255, 42, 109, .5)); }
+    92%, 100% { -webkit-mask-image: none; filter: var(--ng-hero-filter); }
   }
-  .gamepadhomerecentgames_RecentGamesBackgroundImage.gamepadhomerecentgames_MoveRight:not(.gamepadhomerecentgames_OffScreen) {
-    --ng-gx: 1;
-    animation: ng-glitch-art var(--ng-gdur) steps(3, end);
-  }
+  .gamepadhomerecentgames_RecentGamesBackgroundImage.gamepadhomerecentgames_MoveRight:not(.gamepadhomerecentgames_OffScreen),
   .gamepadhomerecentgames_RecentGamesBackgroundImage.gamepadhomerecentgames_MoveLeft:not(.gamepadhomerecentgames_OffScreen) {
-    --ng-gx: -1;
-    animation: ng-glitch-art var(--ng-gdur) steps(3, end);
+    animation: ng-static-art var(--ng-gdur) steps(1, end);
   }
-  /* The newly focused cover tears the same way, smaller and quicker. */
-  @keyframes ng-glitch-card {
-    0%   { transform: translateZ(15px) scale(1.03) translateX(calc(var(--ng-gi) * -12px)) skewX(calc(var(--ng-gi) * -8deg));
-           clip-path: inset(12% -20px 58% -20px);
-           filter: drop-shadow(calc(var(--ng-gi) * -6px) 0 rgba(0, 229, 255, .95)) drop-shadow(calc(var(--ng-gi) * 6px) 0 rgba(255, 42, 109, .95)); }
-    15%  { transform: translateZ(15px) scale(1.07) translateX(calc(var(--ng-gi) * 10px)) skewX(calc(var(--ng-gi) * 6deg));
-           clip-path: inset(50% -20px 18% -20px); }
-    28%  { opacity: .2; transform: translateZ(15px) scale(1.0) translateX(calc(var(--ng-gi) * -6px)); clip-path: inset(-20px); }
-    40%  { opacity: 1; transform: translateZ(15px) scale(1.05) translateX(calc(var(--ng-gi) * 8px));
-           clip-path: inset(0 -20px 66% -20px); }
-    55%  { transform: translateZ(15px) scale(1.03) translateX(calc(var(--ng-gi) * -4px)); clip-path: inset(-20px);
-           filter: drop-shadow(calc(var(--ng-gi) * -3px) 0 rgba(0, 229, 255, .8)) drop-shadow(calc(var(--ng-gi) * 3px) 0 rgba(255, 42, 109, .8)); }
-    75%  { transform: translateZ(15px) scale(1.03) translateX(calc(var(--ng-gi) * 2px));
-           filter: drop-shadow(-1px 0 rgba(0, 229, 255, .6)) drop-shadow(1px 0 rgba(255, 42, 109, .6)); }
-    100% { opacity: 1; transform: translateZ(15px) scale(1.03); clip-path: inset(-20px); filter: none; }
+  /* The newly focused cover gets a short burst of the same static; its lift/scale stays put. */
+  @keyframes ng-static-card {
+    0%   { -webkit-mask-image: var(--ng-static-3); -webkit-mask-size: 240px 120px; -webkit-mask-position: 0 0;
+           filter: grayscale(1) contrast(calc(1 + 4 * var(--ng-gi))) brightness(1.9); }
+    20%  { -webkit-mask-image: var(--ng-static-2); -webkit-mask-position: 90px 40px;
+           filter: saturate(calc(1 + 2 * var(--ng-gi))) hue-rotate(calc(var(--ng-gi) * 120deg))
+                   drop-shadow(calc(var(--ng-gi) * -6px) 0 rgba(0, 229, 255, .95)) drop-shadow(calc(var(--ng-gi) * 6px) 0 rgba(255, 42, 109, .95)); }
+    40%  { -webkit-mask-image: var(--ng-static-4); -webkit-mask-position: -60px 70px;
+           filter: grayscale(.5) contrast(calc(1 + 2 * var(--ng-gi))) brightness(1.4)
+                   drop-shadow(calc(var(--ng-gi) * 4px) 0 rgba(0, 229, 255, .85)) drop-shadow(calc(var(--ng-gi) * -4px) 0 rgba(255, 42, 109, .85)); }
+    60%  { -webkit-mask-image: none;
+           filter: drop-shadow(calc(var(--ng-gi) * -2px) 0 rgba(0, 229, 255, .7)) drop-shadow(calc(var(--ng-gi) * 2px) 0 rgba(255, 42, 109, .7)); }
+    80%, 100% { -webkit-mask-image: none; filter: none; }
   }
   .BasicUI .appportrait_InRecentGames.Focusable:focus {
-    animation: ng-glitch-card calc(var(--ng-gdur) * .7) steps(2, end);
+    animation: ng-static-card calc(var(--ng-gdur) * .6) steps(1, end);
   }
 
   /* ── Terminal cursor after the big "// TITLE" headers ── */
