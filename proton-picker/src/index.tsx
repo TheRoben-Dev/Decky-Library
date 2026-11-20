@@ -9,7 +9,7 @@ import {
   staticClasses,
 } from "@decky/ui";
 import { definePlugin, toaster } from "@decky/api";
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer } from "react";
 import { FaFlask } from "react-icons/fa";
 import { controller, FAMILY_LABEL } from "./controller";
 import { effectiveTier, TIER_COLOR } from "./recommend";
@@ -50,12 +50,13 @@ function GameSection() {
   const c = useController();
   const running = steam.runningAppId();
   const games = steam.installedGames();
-  const [appid, setAppid] = useState<string | null>(c.selected ?? running ?? games[0]?.appid ?? null);
+  // Selection lives in the controller, not in component state: Steam can
+  // remount the Quick Access panel while the dropdown menu is open, which
+  // threw away local state and snapped the picker back to the first game.
+  const appid = c.currentSelection(running, games[0]?.appid ?? null);
 
   useEffect(() => {
-    if (!appid) return;
-    c.selected = appid;
-    c.loadGame(appid);
+    if (appid) c.loadGame(appid);
   }, [appid]);
 
   const recent = games.slice(0, 40);
@@ -90,7 +91,7 @@ function GameSection() {
           label={running === appid ? "Running now" : "Game"}
           rgOptions={recent.map((g) => ({ data: g.appid, label: g.name }))}
           selectedOption={appid}
-          onChange={(o) => setAppid(String(o.data))}
+          onChange={(o) => c.selectGame(String(o.data))}
         />
       </PanelSectionRow>
       {!appid && <Note>No installed games found.</Note>}

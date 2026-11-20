@@ -27,6 +27,7 @@ class Controller {
   pdb: Record<string, ProtonDBSummary | null | "error"> = {};
   infos: Record<string, GameInfo> = {};
   selected: string | null = null;
+  private lastRunning: string | null = null;
   sweeping = false;
   sweepNote = "";
   private listeners = new Set<Listener>();
@@ -190,6 +191,21 @@ class Controller {
   }
 
   // ------------------------------------------------------------------ games
+  /** Game shown in the panel: the user's pick, switching to a game when it starts. */
+  currentSelection(running: string | null, fallback: string | null): string | null {
+    if (running && running !== this.lastRunning) this.selected = running;
+    this.lastRunning = running;
+    if (!this.selected) this.selected = running ?? fallback;
+    return this.selected;
+  }
+
+  selectGame(appid: string) {
+    if (appid === this.selected) return;
+    this.selected = appid;
+    this.emit();
+    this.loadGame(appid);
+  }
+
   record(appid: string): GameRecord {
     return this.settings.games[appid] ?? newRecord();
   }
