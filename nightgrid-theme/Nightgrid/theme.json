@@ -1,29 +1,84 @@
 {
   "name": "Nightgrid",
   "author": "TheRoben-Dev",
-  "version": "v0.1.0",
-  "description": "Retro-terminal Game Mode theme based on the Nightgrid homelab app: near-black canvas with a faint grid, cyan data accents, magenta outlined selection, uppercase letter-spaced labels and JetBrains Mono. Options: palette (Nightgrid / Ice / Bloodline), custom colors, grid, font, glow, scanlines.",
+  "version": "v0.2.0",
+  "description": "Retro-terminal Game Mode theme based on the Nightgrid homelab app: near-black canvas with a faint grid, cyan data accents, magenta outlined selection, uppercase letter-spaced labels and JetBrains Mono. Covers Home, Library, game pages, Settings, menus, Quick Access, Friends & Chat, Store, Downloads, Search, Media, Achievements, keyboard and notifications. Options: palette (Nightgrid / Ice / Bloodline), custom colors, grid, font, glow, scanlines.",
   "target": "System-Wide",
   "manifest_version": 9,
   "tabs": {
-    "sp": ["bigpicture"],
-    "menu": ["MainMenu"],
-    "qam": ["QuickAccess"],
-    "toasts": ["notificationtoasts_.*"],
-    "all": ["bigpicture", "MainMenu", "QuickAccess", "notificationtoasts_.*"],
-    "default": ["all"]
+    "sp": [
+      "bigpicture"
+    ],
+    "menu": [
+      "MainMenu"
+    ],
+    "qam": [
+      "QuickAccess"
+    ],
+    "toasts": [
+      "notificationtoasts_.*"
+    ],
+    "web": [
+      "store"
+    ],
+    "all": [
+      "bigpicture",
+      "MainMenu",
+      "QuickAccess",
+      "notificationtoasts_.*"
+    ],
+    "default": [
+      "all",
+      "web"
+    ]
   },
   "inject": {
     "css/tokens.css": [],
     "css/fonts.css": [],
-    "css/accents.css": ["sp", "menu", "qam"],
-    "css/controls.css": ["sp", "menu", "qam"],
-    "css/labels.css": ["sp", "menu", "qam"],
-    "css/canvas.css": ["sp"],
-    "css/shell.css": ["sp"],
-    "css/mainmenu.css": ["menu"],
-    "css/qam.css": ["qam"],
-    "css/toasts.css": ["sp", "qam", "toasts"]
+    "css/accents.css": [
+      "sp",
+      "menu",
+      "qam"
+    ],
+    "css/controls.css": [
+      "sp",
+      "menu",
+      "qam"
+    ],
+    "css/labels.css": [
+      "sp",
+      "menu",
+      "qam"
+    ],
+    "css/canvas.css": [
+      "sp"
+    ],
+    "css/shell.css": [
+      "sp"
+    ],
+    "css/mainmenu.css": [
+      "menu"
+    ],
+    "css/qam.css": [
+      "qam"
+    ],
+    "css/toasts.css": [
+      "sp",
+      "qam",
+      "toasts"
+    ],
+    "css/chat.css": [
+      "sp",
+      "qam"
+    ],
+    "css/pages.css": [
+      "sp",
+      "menu",
+      "qam"
+    ],
+    "css/store.css": [
+      "web"
+    ]
   },
   "patches": {
     "Palette": {
@@ -31,8 +86,12 @@
       "default": "Nightgrid",
       "values": {
         "Nightgrid": {},
-        "Ice": { "css/options/palette-ice.css": [] },
-        "Bloodline": { "css/options/palette-bloodline.css": [] }
+        "Ice": {
+          "css/options/palette-ice.css": []
+        },
+        "Bloodline": {
+          "css/options/palette-bloodline.css": []
+        }
       }
     },
     "Colors": {
@@ -40,7 +99,9 @@
       "default": "From palette",
       "values": {
         "From palette": {},
-        "Custom": { "css/options/custom-colors.css": [] }
+        "Custom": {
+          "css/options/custom-colors.css": []
+        }
       },
       "components": [
         {
@@ -74,17 +135,31 @@
       "default": "Dots + grid",
       "values": {
         "Dots + grid": {},
-        "Lines": { "css/options/grid-lines.css": [] },
-        "Off": { "css/options/grid-off.css": [] }
+        "Lines": {
+          "css/options/grid-lines.css": []
+        },
+        "Off": {
+          "css/options/grid-off.css": []
+        }
       }
     },
     "Font": {
       "type": "dropdown",
       "default": "Mono labels",
       "values": {
-        "Mono labels": { "css/font-labels.css": ["sp", "menu", "qam"] },
+        "Mono labels": {
+          "css/font-labels.css": [
+            "sp",
+            "menu",
+            "qam"
+          ]
+        },
         "Mono everywhere": {
-          "css/font-labels.css": ["sp", "menu", "qam"],
+          "css/font-labels.css": [
+            "sp",
+            "menu",
+            "qam"
+          ],
           "css/options/font-all.css": []
         },
         "Steam default": {}
@@ -94,7 +169,9 @@
       "type": "checkbox",
       "default": "Yes",
       "values": {
-        "No": { "css/options/glow-off.css": [] },
+        "No": {
+          "css/options/glow-off.css": []
+        },
         "Yes": {}
       }
     },
@@ -103,7 +180,11 @@
       "default": "No",
       "values": {
         "No": {},
-        "Yes": { "css/options/scanlines.css": ["sp"] }
+        "Yes": {
+          "css/options/scanlines.css": [
+            "sp"
+          ]
+        }
       }
     }
   }

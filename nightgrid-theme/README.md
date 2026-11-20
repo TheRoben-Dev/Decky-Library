@@ -35,13 +35,29 @@ Made for an ASUS ROG Ally (1080p) on Bazzite, works the same on any SteamOS-styl
 |---|---|---|
 | Tokens, fonts | all | `css/tokens.css`, `css/fonts.css` |
 | Steam color variables (grey/blue/green scales, sliders, progress, presence) | bigpicture, MainMenu, QuickAccess | `css/accents.css` |
-| Buttons, toggles, sliders, dialogs, context menus, settings rows and sidebar | bigpicture, MainMenu, QuickAccess | `css/controls.css` |
+| Buttons, toggles, sliders, dialogs, context menus (incl. the power menu), settings + game properties | bigpicture, MainMenu, QuickAccess | `css/controls.css` |
 | Uppercase labels, `// ` and `> ` header markers | bigpicture, MainMenu, QuickAccess | `css/labels.css` |
-| Canvas + grid, Library, game page panels, placeholders | bigpicture | `css/canvas.css` |
+| Home, Library, game page panels, placeholders, grid canvas | bigpicture | `css/canvas.css` |
 | Top bar, bottom button bar, tab strips, focus ring, covers, Play/Install button | bigpicture | `css/shell.css` |
-| STEAM menu (rail) | MainMenu | `css/mainmenu.css` |
-| Quick Access menu, friends list | QuickAccess | `css/qam.css` |
-| Notification toasts | bigpicture, QuickAccess, toasts | `css/toasts.css` |
+| STEAM menu, incl. the in-game version (game column, guides) | MainMenu | `css/mainmenu.css` |
+| Quick Access menu (and Decky's panel inside it) | QuickAccess | `css/qam.css` |
+| Friends list and chat windows | QuickAccess, bigpicture | `css/chat.css` |
+| Downloads, Search, Media, Achievements (page, game tab, in-game menu), on-screen keyboard, volume pop-in | bigpicture, MainMenu, QuickAccess | `css/pages.css` |
+| Notification toasts and the notification list | bigpicture, QuickAccess, toasts | `css/toasts.css` |
+| Steam Store and Steam Community pages opened in Game Mode | store | `css/store.css` |
+
+The in-game overlay is covered through the STEAM menu and Quick Access windows (that's what Game Mode
+shows over a running game), plus toasts and the keyboard.
+
+### What CSS can't reach
+- **The game itself and anything a game draws** (its own menus, in-game overlays like MangoHud).
+- **The boot/splash video and the gamescope layer** (performance overlay, scaling), which aren't web pages.
+- **The lock screen / PIN pad.** Not targeted yet: no verified class names for it. If you use a PIN, send
+  me a screenshot over CEF debugging and I can add it.
+- **Store fonts.** The store is a different web origin, so the bundled JetBrains Mono can't load there; the
+  store gets the colors and shapes, and Steam's fonts.
+- **Colors a page sets inline** (sale pages, category art, branded events) are left alone on purpose.
+- **Points Shop keyboard themes** keep their own look; only Steam's default keyboard is restyled.
 
 Color roles follow the app: **magenta** = what's selected/focused, **cyan** = data and "on" states,
 **green** = ready/online/Play, **yellow** = accent, **red** = destructive. Bright fills (focused Play /
@@ -59,8 +75,10 @@ rewrites to Steam's hashed classes when injecting, so the theme survives Steam u
 table is updated. Theme format and tab names were checked against the CSS Loader source
 (DeckThemes/SDH-CssLoader 2.1.3: `css_theme.py`, `css_themepatch.py`, `css_themepatchcomponent.py`,
 `css_inject.py`). Every stable name used here also appears in recent themes verified on hardware in
-Nov 2026 — mainly [Slate](https://github.com/rrambul/slate-steam-deck) (MIT, its `docs/selectors.md`
-records each selector as captured over CEF DevTools) and tvOS Deck. Lessons reused from there:
+Oct–Nov 2026 — mainly [Slate](https://github.com/rrambul/slate-steam-deck) (MIT, its `docs/selectors.md`
+records each selector as captured over CEF DevTools), tvOS Deck and Windows 95 for Deck. Store pages and
+a few Steam components have no stable names; those are matched by hash substring (`[class*="…-"]`),
+which simply stops matching if Valve renames them. Lessons reused from there:
 - MainMenu and QuickAccess load Steam's CSS *after* CSS Loader's, so rules carry a `.BasicUI` prefix.
 - Class names like `Play`/`Launch` collide with CSS Loader translation names; they're matched with
   partial-word substrings instead.
