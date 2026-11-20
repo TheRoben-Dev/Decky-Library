@@ -60,14 +60,17 @@ class Controller {
     else this.onNoGame();
   }
 
-  /** Which TDP/GPU path to use; "auto" avoids fighting HHD or other TDP plugins. */
+  /** Which TDP path to use. "auto" prefers Steam's own slider (Bazzite 44+ routes it
+   *  through steamos-manager/PowerStation), then PowerStation directly, then sysfs.
+   *  Handheld Daemon (retired in Bazzite 44) is only used when picked by hand. */
   resolvedBackend(): PowerBackend {
     const b = this.settings.powerBackend;
     if (b !== "auto") return b;
     const env = this.env;
     if (env?.conflicts.plugins.some((p) => /TDP/.test(p.controls))) return "off";
     if (steam.getLimits().tdpMax > 0) return "steam";
-    if (env?.hhd.running) return env.hhd.tdpEnabled ? "hhd" : "off";
+    if (env?.powerstation.running && !env.powerstation.tdpUnsupported) return "powerstation";
+    if (env?.hhd.running) return "off"; // legacy HHD owns the hardware; don't fight it
     if (env?.power.sysfsTdp) return "sysfs";
     return "off";
   }
