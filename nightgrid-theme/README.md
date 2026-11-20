@@ -47,6 +47,7 @@ by victor-borges (CSS Loader → Store, then set **Handheld** to *ASUS ROG Ally*
 | Buttons, toggles, sliders, dialogs, context menus (incl. the power menu), settings + game properties | bigpicture, MainMenu, QuickAccess | `css/controls.css` |
 | Uppercase labels, `// ` and `> ` header markers | bigpicture, MainMenu, QuickAccess | `css/labels.css` |
 | Home, Library, game page panels, placeholders, grid canvas | bigpicture | `css/canvas.css` |
+| Home spotlight: focused game's hero art brighter and wider, magenta-framed focused cover, `// RECENT GAMES` header | bigpicture | `css/home.css` |
 | Top bar, bottom button bar, tab strips, focus ring, covers, Play/Install button | bigpicture | `css/shell.css` |
 | STEAM menu, incl. the in-game version (game column, guides) | MainMenu | `css/mainmenu.css` |
 | Quick Access menu (and Decky's panel inside it) | QuickAccess | `css/qam.css` |
@@ -80,6 +81,7 @@ Install / primary buttons) use dark text, since white on cyan or green fails con
 |---|---|---|
 | Focus | focus ring fades in; tabs, buttons, menu rows "lock on" with a tiny scale | soft magenta pulse on the focus ring |
 | Tabs | newly selected tab fades up with its magenta bar | |
+| Home | moving between recent games cuts the hero art in with a ~260 ms glitch (slices, cyan/magenta split, jitter) and jolts the newly focused cover | |
 | Panels | dialogs slide up, context/power menus scale in, settings pages fade, Quick Access title slides in, toasts slide in from the right, keyboard rises | |
 | Headers | blinking `_` cursor after the Quick Access and Downloads titles; section headers wipe in | typewriter-style reveal |
 | Progress | | moving stripes on running download bars (the bar's box isn't touched) |

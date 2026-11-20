@@ -67,6 +67,42 @@
     animation: ng-in-right var(--ng-dur-slow) var(--ng-ease);
   }
 
+  /* ── Home spotlight: glitch cut between games ─────────
+   * The incoming hero art (Steam marks it MoveLeft/MoveRight) cuts in through horizontal
+   * slices with a cyan/magenta channel split and a little horizontal jitter, ~260 ms, once.
+   * Same selectors/specificity as Steam's own incoming animation, which this replaces. */
+  @keyframes ng-glitch-art {
+    0%   { opacity: 0;   transform: translateX(calc(var(--ng-gx) * 24px)); clip-path: inset(0 0 0 0);
+           filter: var(--ng-hero-filter) drop-shadow(-6px 0 rgba(0, 229, 255, .65)) drop-shadow(6px 0 rgba(255, 42, 109, .65)); }
+    18%  { opacity: .9;  transform: translateX(calc(var(--ng-gx) * -10px)); clip-path: inset(18% 0 52% 0); }
+    34%  { opacity: 1;   transform: translateX(calc(var(--ng-gx) * 8px));   clip-path: inset(58% 0 10% 0); }
+    50%  {               transform: translateX(calc(var(--ng-gx) * -4px)); clip-path: inset(0 0 66% 0);
+           filter: var(--ng-hero-filter) drop-shadow(-3px 0 rgba(0, 229, 255, .55)) drop-shadow(3px 0 rgba(255, 42, 109, .55)); }
+    66%  {               transform: translateX(calc(var(--ng-gx) * 2px));  clip-path: inset(32% 0 28% 0); }
+    80%  {               transform: none;                                   clip-path: inset(0 0 0 0); filter: var(--ng-hero-filter); }
+    100% { opacity: 1;   transform: none;                                   clip-path: inset(0 0 0 0); filter: var(--ng-hero-filter); }
+  }
+  .gamepadhomerecentgames_RecentGamesBackgroundImage.gamepadhomerecentgames_MoveRight:not(.gamepadhomerecentgames_OffScreen) {
+    --ng-gx: 1;
+    animation: ng-glitch-art 260ms linear;
+  }
+  .gamepadhomerecentgames_RecentGamesBackgroundImage.gamepadhomerecentgames_MoveLeft:not(.gamepadhomerecentgames_OffScreen) {
+    --ng-gx: -1;
+    animation: ng-glitch-art 260ms linear;
+  }
+  /* The newly focused cover jolts with the same channel split as focus lands on it. */
+  @keyframes ng-glitch-card {
+    0%   { transform: translateZ(15px) scale(1.03) translateX(-3px);
+           filter: drop-shadow(-3px 0 rgba(0, 229, 255, .8)) drop-shadow(3px 0 rgba(255, 42, 109, .8)); }
+    35%  { transform: translateZ(15px) scale(1.03) translateX(3px); }
+    65%  { transform: translateZ(15px) scale(1.03) translateX(-1px);
+           filter: drop-shadow(-1px 0 rgba(0, 229, 255, .6)) drop-shadow(1px 0 rgba(255, 42, 109, .6)); }
+    100% { transform: translateZ(15px) scale(1.03); filter: none; }
+  }
+  .BasicUI .appportrait_InRecentGames.Focusable:focus {
+    animation: ng-glitch-card 220ms steps(6, end);
+  }
+
   /* ── Terminal cursor after the big "// TITLE" headers ── */
   /* Only on the two headers Nightgrid fully owns; Steam's DialogHeader keeps its own ::after. */
   .BasicUI :is(.quickaccessmenu_Title, .downloads_Title)::after {
