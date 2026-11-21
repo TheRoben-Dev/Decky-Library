@@ -134,27 +134,20 @@ class RateLimit(unittest.TestCase):
         self.assertEqual(api.retry_after({"Retry-After": "99999"}), 900)
 
 
-class ApiFallback(unittest.TestCase):
-    def test_query_and_filters(self):
-        self.assertEqual(browse.fallback_query("role-playing", []), "rpg")
-        self.assertEqual(browse.fallback_query("", ["Pixel Art"]), "pixel art")
-        self.assertEqual(browse.fallback_query("", [], "gamepad"), "controller")
-        found = {"items": [
-            {"id": 1, "title": "A", "platforms": ["linux"], "min_price": 0, "url": "u1"},
-            {"id": 2, "title": "B", "platforms": ["windows"], "min_price": 999, "url": "u2"},
-            {"id": 3, "title": "C", "platforms": ["windows"], "min_price": 0, "url": "u3"}], "page": 1, "more": False}
-        with mock.patch.object(browse, "search", return_value=found) as s:
-            r = browse.browse_via_api("k", price="free", platform="windows", genre="puzzle", tags=[])
-        s.assert_called_once_with("k", "puzzle", 1)
-        self.assertEqual([i["id"] for i in r["items"]], [3])
-        self.assertTrue(r["fallback"])
-        self.assertIn("controller support", r["notice"])
-        self.assertEqual(r["web"], "https://itch.io/games/free/genre-puzzle/input-gamepad/platform-windows")
-
-    def test_adult_query_needs_opt_in(self):
-        with mock.patch.object(browse, "search", return_value={"items": [], "page": 1, "more": False}) as s:
-            browse.browse_via_api("k", tags=["nsfw"])
-        s.assert_called_once_with("k", "game", 1)
+class Unfiltered(unittest.TestCase):
+    def test_unfiltered_list_ignores_cooldown_once(self):
+        browse._cache.clear()
+        browse.SITE_THROTTLE.until = time.time() + 300
+        with mock.patch.object(api, "_opener") as op:
+            op.return_value.open.return_value.__enter__.return_value = mock.Mock(
+                read=mock.Mock(return_value=FEED), headers={"Content-Type": "application/rss+xml"}, status=200)
+            r = browse.browse_unfiltered(1, "https://itch.io/games/input-gamepad")
+        self.assertEqual(op.return_value.open.call_args[0][0].full_url, "https://itch.io/games.xml")
+        self.assertTrue(r["unfiltered"])
+        self.assertEqual(r["web"], "https://itch.io/games/input-gamepad")
+        self.assertEqual(len(r["items"]), 3)
+        browse.SITE_THROTTLE.until = 0
+        browse.SITE_THROTTLE.strikes = 0
 
 
 class Backoff(unittest.TestCase):

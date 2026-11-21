@@ -36,7 +36,7 @@ def _err(e: BaseException) -> dict:
     if not isinstance(e, (api.ApiError, install.InstallError)):
         decky.logger.error(f"unexpected error: {e!r}")
     return {"ok": False, "error": str(e) or e.__class__.__name__, "status": getattr(e, "status", 0),
-            "retry_after": getattr(e, "retry_after", 0), "detail": getattr(e, "detail", "")}
+            "retry_after": getattr(e, "retry_after", 0), "detail": getattr(e, "detail", ""), "web": getattr(e, "web", "")}
 
 
 def steam_root(home: str) -> str:
@@ -315,10 +315,21 @@ class Plugin:
             try:
                 res = await asyncio.to_thread(browse.browse, *args, **more)
             except browse.BrowseError as e:
-                if e.status not in browse.BLOCKED or not self.settings.data.get("key"):
+                if e.status not in browse.BLOCKED:
                     raise
-                decky.logger.warning(f"browse feed blocked ({e.status}: {e.detail}); using API search instead")
-                res = await asyncio.to_thread(browse.browse_via_api, self._key(), *args, **more)
+                web = browse.feed_url(*args, **more).replace(".xml", "", 1)
+                plain = browse.feed_url(controller="", page=args[5])
+                if browse.feed_url(*args, **more) == plain:
+                    e.web = web
+                    raise
+                decky.logger.warning(f"filtered browse refused ({e.status}: {e.detail}); trying the unfiltered list")
+                try:
+                    res = await asyncio.to_thread(browse.browse_unfiltered, args[5], web)
+                except browse.BrowseError as e2:
+                    e2.web = web
+                    if e2.status in browse.BLOCKED:
+                        e2.args = (f"{e2} Search still works for games you name, or open itch.io in Steam's browser.",)
+                    raise e2 from None
                 res["detail"] = e.detail
             return {"ok": True, **res}
         except Exception as e:

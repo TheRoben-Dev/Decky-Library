@@ -123,13 +123,15 @@ def feed_url(sort: str = "", price: str = "", genre: str = "", controller: str =
     return SITE + path + q
 
 
-def _get(url: str, max_bytes: int, timeout: float = 20) -> bytes:
+def _get(url: str, max_bytes: int, timeout: float = 20, bypass: bool = False) -> bytes:
     u = urllib.parse.urlparse(url)
     if u.scheme != "https" or not (u.hostname == "itch.io" or (u.hostname or "").endswith(".itch.io")):
         raise BrowseError("Refusing a URL outside itch.io")
     req = urllib.request.Request(url, headers={"User-Agent": api.UA,
                                                "Accept": "application/rss+xml, application/xml;q=0.9, */*;q=0.8"})
     try:
+        if bypass:      # one deliberate request despite a cooldown (the unfiltered fallback)
+            SITE_THROTTLE.until = 0
         SITE_THROTTLE.wait()
     except api.ApiError as e:
         raise BrowseError(str(e), 429, e.retry_after, "Waiting out itch.io's earlier rate limit; nothing was sent.") from None
@@ -308,43 +310,25 @@ def search(key: str, query: str, page: int = 1) -> dict:
     return res
 
 
-# When itch.io's website won't serve this device (HTTP 429/403 on every feed request), Browse falls
-# back to the official API, which the key is meant for: a search built from the chosen genre/tags,
-# with price and platform applied here. Controller support and sorting aren't in the API's data.
-GENRE_WORDS = {"role-playing": "rpg", "card-game": "card game", "interactive-fiction": "interactive fiction",
-               "visual-novel": "visual novel", "other": "game"}
+# When a filtered browse page is refused (HTTP 429/403/503), Browse tries itch.io's normal, unfiltered
+# browse list once instead. No search terms are made up: Search only ever uses what the user typed.
 BLOCKED = (403, 429, 503)
 
 
-def fallback_query(genre: str = "", tags=(), controller: str = "") -> str:
-    tag = next((tag_slug(str(t)) for t in (tags or []) if tag_slug(str(t))), "")
-    if tag:
-        return tag.replace("-", " ")
-    if genre in GENRES and genre:
-        return GENRE_WORDS.get(genre, genre)
-    return "controller" if controller else "game"
-
-
-def browse_via_api(key: str, sort="", price="", genre="", controller="gamepad", platform="", page=1, tags=(),
-                   adult: bool = False, **_ignored) -> dict:
-    q = fallback_query(genre, tags, controller)
-    if not adult and tag_slug(q) in ADULT_TAGS:
-        q = "game"
-    res = search(key, q, page)
-    items = []
-    for i in res["items"]:
-        mp = int(i.get("min_price") or 0)
-        if price == "free" and mp:
-            continue
-        if price == "store" and not mp:
-            continue
-        if price in ("5-dollars-or-less", "15-dollars-or-less") and mp > (500 if price.startswith("5") else 1500):
-            continue
-        if platform and i["platforms"] and platform not in i["platforms"]:
-            continue
-        items.append(i)
-    skipped = [n for n, v in (("sort", sort), ("controller support", controller), ("on-sale", price == "on-sale")) if v]
-    note = (f"itch.io's browse pages aren't answering this device right now, so these are API search results for "
-            f"“{q}”" + (f" ({', '.join(skipped)} can't be applied this way)" if skipped else "") + ".")
-    web = feed_url(sort, price, genre, controller, platform, page, tags=tags, adult=adult, **_ignored).replace(".xml", "", 1)
-    return {**res, "items": items, "notice": note, "fallback": True, "web": web}
+def browse_unfiltered(page=1, web: str = "") -> dict:
+    url = feed_url(controller="", page=page)
+    hit = _cache.get(url)
+    if hit and time.time() - hit[0] < CACHE_TTL:
+        raw = None
+    else:
+        raw = _get(url, MAX_FEED, bypass=True)
+    if raw is None:
+        res = hit[1]
+    else:
+        items = parse_feed(raw)
+        shown = [i for i in items if not i["platforms"] or "linux" in i["platforms"] or "windows" in i["platforms"]]
+        res = {"items": shown, "page": int(page), "more": len(items) >= 20, "source": url}
+        _cache[url] = (time.time(), res)
+    return {**res, "web": web or url.replace(".xml", "", 1), "unfiltered": True,
+            "notice": "itch.io isn't answering filtered browsing from this device right now, so this is its normal "
+                      "browse list without filters."}
