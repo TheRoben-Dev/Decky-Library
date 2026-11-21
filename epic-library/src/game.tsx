@@ -63,9 +63,11 @@ function Viewer({ shots, start, closeModal }: { shots: string[]; start: number; 
   const go = (d: number) => setI((n) => (n + d + shots.length) % shots.length);
   return (
     <ModalRoot onCancel={closeModal} closeModal={closeModal}>
-      <div className="ep-viewer">
-        <img src={sized(shots[i], 1280, 720)} draggable={false} />
-        <Focusable className="ep-row" flow-children="row" style={{ justifyContent: "center" }}>
+      {/* Modals render outside the page's <style>, so the viewer styles itself inline. */}
+      <div style={{ background: C.bg0, display: "flex", flexDirection: "column", gap: 12, alignItems: "center", padding: 4 }}>
+        <img src={sized(shots[i], 1280, 720)} draggable={false}
+          style={{ display: "block", maxWidth: "100%", maxHeight: "68vh", objectFit: "contain", border: `1px solid ${C.line}`, background: C.bg1 }} />
+        <Focusable flow-children="row" style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "center" }}>
           <DialogButton style={{ minWidth: 0, width: 90 }} disabled={shots.length < 2} onClick={() => go(-1)}>◀</DialogButton>
           <span style={{ fontFamily: "monospace", fontSize: 13, color: C.text1, minWidth: 64, textAlign: "center" }}>{i + 1} / {shots.length}</span>
           <DialogButton style={{ minWidth: 0, width: 90 }} disabled={shots.length < 2} onClick={() => go(1)}>▶</DialogButton>
