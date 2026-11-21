@@ -214,6 +214,60 @@ class Catalog(unittest.TestCase):
         self.assertEqual(out[0]["price"], "Free")
 
 
+class StoreDetails(unittest.TestCase):
+    def test_plain(self):
+        t = catalog.plain("# Title\n\n**Bold** text with [a link](https://x) ![img](https://y)<br>next&amp;more\n\n- one\n- two")
+        self.assertEqual(t, "Title\n\nBold text with a link\nnext&more\n\n• one\n• two")
+
+    def test_details_merges_sources_and_caches(self):
+        cache = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, cache, True)
+        offer = {"title": "G", "longDescription": "Long **story**", "developerDisplayName": "Dev", "publisherDisplayName": "Pub",
+                 "releaseDate": "2020-09-17T15:00:00.000Z",
+                 "keyImages": [{"type": "OfferImageWide", "url": "https://cdn1.epicgames.com/w.jpg"},
+                               {"type": "Screenshot", "url": "https://cdn1.epicgames.com/s0.jpg"}],
+                 "tags": [{"name": "Action", "groupName": "genre"}, {"name": "Controller Support", "groupName": "feature"},
+                          {"name": "Windows", "groupName": "platform"}, {"name": "Odd", "groupName": "other"}],
+                 "price": {"totalPrice": {"discountPrice": 0, "fmtPrice": {"discountPrice": "0", "originalPrice": "$24.99"}}}}
+        cms = {"pages": [{"type": "productHome", "data": {
+            "gallery": {"galleryImages": [{"src": "https://cdn1.epicgames.com/s1.jpg"}, {"src": "https://cdn1.epicgames.com/s0.jpg"}]},
+            "requirements": {"systems": [{"systemType": "Windows", "details": [{"title": "OS", "minimum": "Windows 10", "recommended": ""}]}]}}}]}
+        calls = []
+
+        def gql(query, v):
+            calls.append(query)
+            if "getProductResult" in query:
+                return {"RatingsPolls": {"getProductResult": {"averageRating": 4.666}}}
+            return {"Catalog": {"catalogOffer": offer}}
+        with mock.patch.object(catalog, "_graphql", side_effect=gql), mock.patch.object(catalog, "_request", return_value=cms):
+            d = catalog.details("ns1", "o1", "hades", "se", "en-US", cache)
+            catalog.details("ns1", "o1", "hades", "se", "en-US", cache)
+        self.assertEqual(len(calls), 2)                      # second call came from the cache
+        self.assertEqual(d["description"], "Long story")
+        self.assertEqual(d["shots"], ["https://cdn1.epicgames.com/s0.jpg", "https://cdn1.epicgames.com/s1.jpg"])
+        self.assertEqual((d["genres"], d["features"], d["platforms"]), (["Action"], ["Controller Support"], ["Windows"]))
+        self.assertEqual(d["requirements"], [["OS", "Windows 10", ""]])
+        self.assertEqual((d["rating"], d["released"], d["price"], d["developer"]), (4.7, "2020-09-17", "Free", "Dev"))
+
+    def test_details_survives_missing_sources(self):
+        cache = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, cache, True)
+
+        def gql(query, v):
+            if "longDescription" in query:
+                raise catalog.CatalogError('Epic store: Cannot query field "longDescription"')
+            if "getProductResult" in query:
+                raise catalog.CatalogError("nope")
+            return {"Catalog": {"catalogOffer": {"title": "G", "description": "Short",
+                                                 "keyImages": [{"type": "OfferImageWide", "url": "https://cdn1.epicgames.com/w.jpg"}]}}}
+        with mock.patch.object(catalog, "_graphql", side_effect=gql), \
+                mock.patch.object(catalog, "_request", side_effect=catalog.CatalogError("404", 404)):
+            d = catalog.details("ns1", "o2", "", "US", "en-US", cache)
+        self.assertEqual((d["description"], d["shots"], d["rating"]), ("Short", ["https://cdn1.epicgames.com/w.jpg"], 0.0))
+        with self.assertRaises(catalog.CatalogError):
+            catalog.details("../x", "o", "", "US", "en-US", cache)
+
+
 class PluginFlow(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

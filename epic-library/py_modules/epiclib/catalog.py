@@ -5,6 +5,7 @@ Filters: sort, price (free / on sale), genre and features are Epic's own catalog
 looked up by name from Epic's tag list once a week rather than hardcoded, so "Controller Support"
 keeps working if Epic renumbers it.
 """
+import html
 import json
 import os
 import re
@@ -12,16 +13,20 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 GRAPHQL = "https://store.epicgames.com/graphql"
 FREE_FEED = "https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale={locale}&country={country}&allowCountries={country}"
 STORE_PAGE = "https://store.epicgames.com/{locale}/p/{slug}"
 CHECKOUT = "https://store.epicgames.com/purchase?offers=1-{ns}-{id}"
+CMS_PRODUCT = "https://store-content-ipv4.ak.epicgames.com/api/{locale}/content/products/{slug}"
 STORE_SEARCH = "https://store.epicgames.com/{locale}/browse?q={q}&sortBy=relevancy&sortDir=DESC&count=40"
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
 TIMEOUT = 20
 PAGE = 40
 TAGS_TTL = 7 * 24 * 3600
+DETAILS_TTL = 12 * 3600
+MAX_SHOTS = 12
 CATEGORY = "games/edition/base|bundles/games|games/edition|editors"
 
 # Shown in the Genre dropdown when Epic's tag list has them (matched by name).
@@ -191,6 +196,7 @@ def item(e: dict, controller_tag: str, locale: str) -> dict | None:
         "description": (e.get("description") or "").strip()[:500],
         "tall": tall, "wide": wide,
         "url": url,
+        "slug": slug,
         # Epic's direct checkout for this offer: opens straight on "Place order" (free = claim).
         "checkout": CHECKOUT.format(ns=urllib.parse.quote(str(e.get("namespace") or "")), id=urllib.parse.quote(str(e.get("id") or "")))
         if e.get("namespace") and e.get("id") else "",
@@ -293,3 +299,185 @@ def free_now(country: str, locale: str = "en-US") -> list:
             it["until"] = (active.get("endDate") or "")[:10]
             out.append(it)
     return out
+
+
+# ------------------------------------------------------------------ store page details
+#
+# What the store page shows, fetched when a game is opened in Browse and cached on disk for 12h.
+# Three public sources, each optional: the catalog offer (long description, developer, publisher,
+# release, genres/features, images), the store CMS page for the product (screenshot gallery and
+# system requirements; newer games may not have one) and Epic's player ratings. Whatever answers
+# is shown; a source that fails just leaves its section out.
+
+OFFER_FIELDS = """title description longDescription developerDisplayName publisherDisplayName releaseDate
+        keyImages { type url } seller { name } tags { id name groupName }
+        price(country: $country) { totalPrice { discountPrice originalPrice fmtPrice(locale: $locale) { originalPrice discountPrice } } }"""
+OFFER_BASIC = """title description keyImages { type url } seller { name }"""
+OFFER_QUERY = """query getCatalogOffer($namespace: String!, $id: String!, $locale: String, $country: String!) {
+  Catalog { catalogOffer(namespace: $namespace, id: $id, locale: $locale) { %FIELDS% } }
+}"""
+RATING_QUERY = """query getProductResult($sandboxId: String!, $locale: String!) {
+  RatingsPolls { getProductResult(namespace: $sandboxId, locale: $locale) { averageRating } }
+}"""
+SHOT_TYPES = ("Screenshot", "screenshot", "featuredMedia", "DieselStoreFrontWide", "OfferImageWide")
+TAG_GROUPS = {"genre": "genres", "feature": "features", "platform": "platforms", "epicfeature": "features"}
+
+
+def plain(text: str, limit: int = 5000) -> str:
+    """Epic descriptions are markdown with bits of HTML. Plain paragraphs for the page."""
+    t = str(text or "")
+    t = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", t)                 # images
+    t = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", t)              # links -> text
+    t = re.sub(r"(?i)<br\s*/?>|</p>|</h\d>|</li>|</div>", "\n", t)
+    t = re.sub(r"(?i)<li[^>]*>", "• ", t)
+    t = re.sub(r"<[^>]+>", "", t)
+    t = html.unescape(t)
+    t = re.sub(r"(?m)^[ \t]{0,3}#{1,6}[ \t]*", "", t)                # headings
+    t = re.sub(r"(?m)^[ \t]*[-*][ \t]+", "• ", t)                    # bullets
+    t = re.sub(r"\*\*|__|(?<!\w)[*_](?=\S)|(?<=\S)[*_](?!\w)", "", t)
+    t = re.sub(r"[ \t]+", " ", t)
+    t = re.sub(r" ?\n ?", "\n", t)
+    t = re.sub(r"\n\s*\n\s*(\n\s*)+", "\n\n", t).strip()
+    if len(t) > limit:
+        t = t[:limit].rsplit(" ", 1)[0] + "…"
+    return t
+
+
+def _offer(ns: str, oid: str, country: str, locale: str) -> dict:
+    v = {"namespace": ns, "id": oid, "locale": locale, "country": country}
+    try:
+        d = _graphql(OFFER_QUERY.replace("%FIELDS%", OFFER_FIELDS), v)
+    except CatalogError as e:
+        if e.status:          # HTTP failure: the smaller query won't fare better
+            raise
+        # A field this store version doesn't know: ask for the basics (no $country, it'd be unused).
+        q = OFFER_QUERY.replace("%FIELDS%", OFFER_BASIC).replace(", $country: String!", "")
+        d = _graphql(q, {k: val for k, val in v.items() if k != "country"})
+    return ((d.get("Catalog") or {}).get("catalogOffer")) or {}
+
+
+def _cms(slug: str, locale: str) -> dict:
+    """Gallery and requirements from the product's store CMS page ({} when it has none)."""
+    if not slug or not re.fullmatch(r"[a-z0-9][a-z0-9-]*", slug):
+        return {}
+    try:
+        d = _request(CMS_PRODUCT.format(locale=locale, slug=slug))
+    except CatalogError:
+        return {}
+    pages = d.get("pages") if isinstance(d.get("pages"), list) else []
+    page = next((p for p in pages if isinstance(p, dict) and p.get("type") == "productHome"), pages[0] if pages else {})
+    data = (page or {}).get("data") or {}
+    shots = []
+    for g in ((data.get("gallery") or {}).get("galleryImages")) or []:
+        if isinstance(g, dict) and g.get("src"):
+            shots.append(g["src"])
+    for c in ((data.get("carousel") or {}).get("items")) or []:
+        src = ((c or {}).get("image") or {}).get("src") if isinstance(c, dict) else None
+        if src:
+            shots.append(src)
+    reqs = []
+    for sysd in ((data.get("requirements") or {}).get("systems")) or []:
+        if not isinstance(sysd, dict) or "windows" not in str(sysd.get("systemType") or "").lower():
+            continue
+        for r in sysd.get("details") or []:
+            if isinstance(r, dict) and r.get("title") and (r.get("minimum") or r.get("recommended")):
+                reqs.append([plain(r["title"], 40), plain(r.get("minimum") or "", 160), plain(r.get("recommended") or "", 160)])
+        break
+    about = data.get("about") or {}
+    return {"shots": shots, "requirements": reqs[:12],
+            "about": about.get("description") or "", "developer": about.get("developerAttribution") or "",
+            "publisher": about.get("publisherAttribution") or ""}
+
+
+def _rating(ns: str, locale: str) -> float:
+    try:
+        d = _graphql(RATING_QUERY, {"sandboxId": ns, "locale": locale})
+        r = ((d.get("RatingsPolls") or {}).get("getProductResult") or {}).get("averageRating")
+        return round(float(r), 1) if r else 0.0
+    except (CatalogError, TypeError, ValueError):
+        return 0.0
+
+
+def details(ns: str, oid: str, slug: str, country: str, locale: str, cache_dir: str) -> dict:
+    ns, oid, slug = str(ns or ""), str(oid or ""), str(slug or "")
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", ns) or not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", oid):
+        raise CatalogError("This store item has no Epic id")
+    country = re.sub(r"[^A-Z]", "", str(country or "US").upper())[:2] or "US"
+    locale = locale if re.fullmatch(r"[a-z]{2}(-[A-Z]{2})?", str(locale or "")) else "en-US"
+    path = os.path.join(cache_dir, "offers", f"{ns}_{oid}_{country}.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            c = json.load(f)
+        if time.time() - float(c.get("at", 0)) < DETAILS_TTL:
+            return c
+    except (OSError, ValueError):
+        pass
+    with ThreadPoolExecutor(3) as ex:
+        f_offer = ex.submit(_offer, ns, oid, country, locale)
+        f_cms = ex.submit(_cms, slug, locale)
+        f_rate = ex.submit(_rating, ns, locale)
+        cms, rating = f_cms.result(), f_rate.result()
+        try:
+            o = f_offer.result()
+        except CatalogError:
+            if not cms:
+                raise
+            o = {}
+    shots = []
+    for i in o.get("keyImages") or []:
+        if isinstance(i, dict) and i.get("type") in ("Screenshot", "screenshot") and i.get("url"):
+            shots.append(i["url"])
+    shots += cms.get("shots") or []
+    if not shots:   # no gallery anywhere: at least the wide key art
+        imgs = {i.get("type"): i.get("url") for i in o.get("keyImages") or [] if isinstance(i, dict)}
+        shots = [imgs[t] for t in SHOT_TYPES if imgs.get(t)][:1]
+    seen, gallery = set(), []
+    for u in shots:
+        if isinstance(u, str) and u.startswith("https://") and u not in seen:
+            seen.add(u)
+            gallery.append(u)
+    groups = {"genres": [], "features": [], "platforms": []}
+    for t in o.get("tags") or []:
+        if not isinstance(t, dict) or not t.get("name"):
+            continue
+        g = TAG_GROUPS.get(str(t.get("groupName") or "").lower())
+        if g and t["name"] not in groups[g]:
+            groups[g].append(str(t["name"]))
+    tp = ((o.get("price") or {}).get("totalPrice")) or {}
+    fmt = tp.get("fmtPrice") or {}
+    out = {
+        "at": time.time(),
+        "description": plain(o.get("longDescription") or cms.get("about") or o.get("description") or ""),
+        "developer": o.get("developerDisplayName") or cms.get("developer") or "",
+        "publisher": o.get("publisherDisplayName") or cms.get("publisher") or ((o.get("seller") or {}).get("name") or ""),
+        "released": (o.get("releaseDate") or "")[:10],
+        "shots": gallery[:MAX_SHOTS],
+        "genres": groups["genres"][:6], "features": groups["features"][:10], "platforms": groups["platforms"][:4],
+        "requirements": cms.get("requirements") or [],
+        "rating": rating,
+        "price": "Free" if tp.get("discountPrice") == 0 else (fmt.get("discountPrice") or ""),
+        "original": fmt.get("originalPrice") or "",
+    }
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        _prune(os.path.dirname(path))
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(out, f)
+    except OSError:
+        pass
+    return out
+
+
+def _prune(folder: str, keep: int = 150):
+    """Drops expired store pages once the folder holds more than `keep`."""
+    names = [n for n in os.listdir(folder) if n.endswith(".json")]
+    if len(names) <= keep:
+        return
+    old = time.time() - DETAILS_TTL
+    for n in names:
+        p = os.path.join(folder, n)
+        try:
+            if os.path.getmtime(p) < old:
+                os.remove(p)
+        except OSError:
+            pass

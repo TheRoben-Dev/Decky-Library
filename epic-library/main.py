@@ -357,6 +357,15 @@ class Plugin:
         self.free_cache = {"key": key, "at": time.time(), "items": items}
         return {"ok": True, "items": items}
 
+    async def offer_details(self, ns: str, offer: str, slug: str = "", country: str = "US"):
+        """Store page details for a Browse item (description, screenshots, rating...), cached 12h."""
+        try:
+            d = await asyncio.to_thread(catalog.details, ns, offer, slug, country, "en-US",
+                                        os.path.join(self.data, "cache"))
+            return {"ok": True, "details": d}
+        except Exception as e:
+            return _err(e)
+
     async def image(self, url: str):
         """An Epic CDN image as base64, for drawing Steam artwork on a canvas without tainting it."""
         u = urllib.parse.urlparse(url or "")

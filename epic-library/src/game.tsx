@@ -4,15 +4,17 @@
  *   games: repair, cloud saves, re-adding to Steam, fresh artwork and Uninstall (with an opt-in to
  *   delete the Proton prefix, which holds most Windows saves).
  * Offer page: /epic-library/offer   (a store game you don't own)
- *   Price, Get/Buy on Epic in Steam's browser or on your phone, and "I got it" to refresh.
+ *   A store page: price, Get/Buy (or Claim free) in Steam's browser or on your phone, "I got it" to
+ *   refresh, then screenshots, rating, genres, features, the full description and PC requirements,
+ *   fetched when the page opens (cached 12h on disk, and for the session here).
  */
 import { ConfirmModal, DialogButton, Focusable, ModalRoot, Navigation, showModal, SteamSpinner, useParams } from "@decky/ui";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { Fragment, ReactNode, useEffect, useRef, useState } from "react";
 import { addToSteam, cancelJob, loadLibrary, refreshInstalled, removeGame, startInstall } from "./actions";
-import { discard, Game, getGame, installInfo, syncSaves } from "./backend";
+import { discard, Game, getGame, installInfo, OfferDetails, offerDetails, StoreItem, syncSaves } from "./backend";
 import { Qr } from "./signin";
 import { gamePath } from "./routes";
-import { fmtBytes, jobFor, jobLine, ownedByNs, sized, useStore } from "./state";
+import { country, fmtBytes, jobFor, jobLine, ownedByNs, sized, useStore } from "./state";
 import { applyArt, openInSteam, shortcutExists, toast } from "./steam";
 import { Bar, C, Chip, PAGE_CSS } from "./ui";
 
@@ -53,6 +55,92 @@ function BuyQr({ url, title, onBought, closeModal }: { url: string; title: strin
         </div>
       </div>
     </ModalRoot>
+  );
+}
+
+function Viewer({ shots, start, closeModal }: { shots: string[]; start: number; closeModal?: () => void }) {
+  const [i, setI] = useState(start);
+  const go = (d: number) => setI((n) => (n + d + shots.length) % shots.length);
+  return (
+    <ModalRoot onCancel={closeModal} closeModal={closeModal}>
+      <div className="ep-viewer">
+        <img src={sized(shots[i], 1280, 720)} draggable={false} />
+        <Focusable className="ep-row" flow-children="row" style={{ justifyContent: "center" }}>
+          <DialogButton style={{ minWidth: 0, width: 90 }} disabled={shots.length < 2} onClick={() => go(-1)}>◀</DialogButton>
+          <span style={{ fontFamily: "monospace", fontSize: 13, color: C.text1, minWidth: 64, textAlign: "center" }}>{i + 1} / {shots.length}</span>
+          <DialogButton style={{ minWidth: 0, width: 90 }} disabled={shots.length < 2} onClick={() => go(1)}>▶</DialogButton>
+          <DialogButton style={{ minWidth: 0, width: 110 }} onClick={() => closeModal?.()}>Close</DialogButton>
+        </Focusable>
+      </div>
+    </ModalRoot>
+  );
+}
+
+const detailCache = new Map<string, OfferDetails>();
+
+function useOfferDetails(it: StoreItem | null) {
+  const key = it ? `${it.ns}/${it.id}` : "";
+  const [d, setD] = useState<OfferDetails | null>(() => detailCache.get(key) ?? null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    if (!it || !it.ns || !it.id) return;
+    const hit = detailCache.get(key);
+    if (hit) { setD(hit); return; }
+    let live = true;
+    setD(null); setErr(null);
+    country().then((c) => offerDetails(it.ns, it.id, it.slug ?? "", c)).then((r) => {
+      if (!live) return;
+      if (r.ok) { detailCache.set(key, r.details); setD(r.details); } else setErr(r.error);
+    }).catch((e) => live && setErr(String(e)));
+    return () => { live = false; };
+  }, [key]);
+  return { d, err, loading: !!it?.ns && !!it?.id && !d && !err };
+}
+
+function StoreDetails({ d }: { d: OfferDetails }) {
+  const paras = d.description ? d.description.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean) : [];
+  return (
+    <>
+      {d.shots.length > 0 && <>
+        <div className="ep-sec">Screenshots</div>
+        <Focusable className="ep-shots" flow-children="row">
+          {d.shots.map((u, i) => (
+            <Focusable key={u} className="ep-shot" focusClassName="ep-focus" onActivate={() => showModal(<Viewer shots={d.shots} start={i} />)}
+              onClick={() => showModal(<Viewer shots={d.shots} start={i} />)} onOKActionDescription="View">
+              <img src={sized(u, 480, 270)} loading="lazy" decoding="async" draggable={false} />
+            </Focusable>
+          ))}
+        </Focusable>
+      </>}
+      {(d.genres.length > 0 || d.features.length > 0) && (
+        <div className="ep-row">
+          {d.genres.map((g) => <Chip key={`g-${g}`} color={C.accent}>{g.toUpperCase()}</Chip>)}
+          {d.features.map((f) => <Chip key={`f-${f}`}>{f.toUpperCase()}</Chip>)}
+        </div>
+      )}
+      <div className="ep-panel ep-kv">
+        {d.rating > 0 && <><span className="k">Rating</span><span className="v" style={{ color: C.data }}>★ {d.rating.toFixed(1)} / 5 <span style={{ color: C.text1 }}>(Epic players)</span></span></>}
+        {d.developer && <><span className="k">Developer</span><span className="v">{d.developer}</span></>}
+        {d.publisher && d.publisher !== d.developer && <><span className="k">Publisher</span><span className="v">{d.publisher}</span></>}
+        {d.released && <><span className="k">Released</span><span className="v">{d.released}</span></>}
+        {d.platforms.length > 0 && <><span className="k">Platforms</span><span className="v">{d.platforms.join(", ")}</span></>}
+      </div>
+      {paras.length > 0 && <>
+        <div className="ep-sec">About</div>
+        <Focusable className="ep-about" flow-children="column">
+          {paras.map((p, i) => <Focusable key={i} className="para" focusClassName="ep-focus" noFocusRing onActivate={() => {}}><p>{p}</p></Focusable>)}
+        </Focusable>
+      </>}
+      {d.requirements.length > 0 && <>
+        <div className="ep-sec">PC requirements</div>
+        <Focusable className="ep-panel" noFocusRing onActivate={() => {}}>
+          <div className="ep-reqs">
+            <span /><span className="h">Minimum</span><span className="h">Recommended</span>
+            {d.requirements.map(([t, mn, rc], i) => <Fragment key={i}><span className="t">{t}</span><span>{mn || "—"}</span><span>{rc || "—"}</span></Fragment>)}
+          </div>
+        </Focusable>
+      </>}
+    </>
   );
 }
 
@@ -235,11 +323,14 @@ export function OfferPage() {
   const s = useStore();
   const it = s.offer;
   const [busy, setBusy] = useState(false);
+  const details = useOfferDetails(it);
   if (!it) {
     return <Shell title=""><div className="ep-msg">Nothing selected.<div style={{ marginTop: 16 }}>
       <DialogButton className="ep-btn" onClick={() => Navigation.NavigateBack()}>Back</DialogButton></div></div></Shell>;
   }
   const mine = ownedByNs(it.ns);
+  const price = it.price || details.d?.price || "";
+  const original = it.original || details.d?.original || "";
   const got = async () => {
     setBusy(true);
     try {
@@ -274,7 +365,7 @@ export function OfferPage() {
                 <div className="ep-row" style={{ justifyContent: "space-between" }}>
                   <span className="k">Price</span>
                   <span className="v" style={{ fontFamily: "monospace", color: it.free ? C.ok : C.accent }}>
-                    {it.price || "See store"}{it.sale > 0 && it.original ? `  (was ${it.original}, -${it.sale}%)` : ""}{it.until ? ` until ${it.until}` : ""}
+                    {price || "See store"}{it.sale > 0 && original ? `  (was ${original}, -${it.sale}%)` : ""}{it.until ? ` until ${it.until}` : ""}
                   </span>
                 </div>
                 <Focusable className="ep-row" flow-children="row">
@@ -297,6 +388,9 @@ export function OfferPage() {
               </>
             )}
           </div>
+          {details.d && <StoreDetails d={details.d} />}
+          {details.loading && <div style={{ height: 60 }}><SteamSpinner background="transparent" /></div>}
+          {details.err && <div className="ep-msg err" style={{ padding: 0 }}>Couldn't load the store page details: {details.err}</div>}
         </Focusable>
       </div>
     </Shell>
