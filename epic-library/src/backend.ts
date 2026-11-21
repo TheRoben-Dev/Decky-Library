@@ -22,7 +22,7 @@ export interface Game {
 /** A Browse/Search result from the Epic store. */
 export interface StoreItem {
   id: string; ns: string; title: string; seller: string; description: string;
-  tall: string; wide: string; url: string;
+  tall: string; wide: string; url: string; checkout: string;
   free: boolean | null; price: string; original: string; sale: number;
   controller: boolean; released: string; until?: string;
 }

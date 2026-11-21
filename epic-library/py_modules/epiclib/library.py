@@ -18,11 +18,32 @@ def _attr(ca: dict, key: str) -> str:
     return str(v.get("value") or "") if isinstance(v, dict) else ""
 
 
+# Epic catalog category paths of things that aren't games: Unreal Engine / Fab assets, engine
+# plugins, the engine itself, software and add-ons. An item is a game if any of its categories is
+# "games" (or below it); items without categories are kept, since Legendary only lists apps.
+NON_GAME = ("engines", "assets", "plugins", "digitalextras", "applications", "software", "addons", "tools",
+            "unrealengine", "fab", "audio", "music", "videos")
+NON_GAME_NS = ("ue", "89efe5924d3d467c839449ab6ab52e7f")   # Unreal Engine marketplace / Fab
+
+
+def is_game(md: dict) -> bool:
+    if (md.get("namespace") or "") in NON_GAME_NS:
+        return False
+    paths = [str(c.get("path") or "").lower() for c in md.get("categories") or [] if isinstance(c, dict)]
+    if not paths:
+        return True
+    if any(p == "games" or p.startswith("games/") for p in paths):
+        return True
+    return not any(p.split("/")[0] in NON_GAME for p in paths)
+
+
 def trim(g: dict, versions: dict) -> dict | None:
     if not isinstance(g, dict) or not g.get("app_name"):
         return None
     md = g.get("metadata") if isinstance(g.get("metadata"), dict) else {}
     if "mainGameItem" in md:          # DLC: listed under its game, not on its own
+        return None
+    if not is_game(md):               # UE/Fab assets, plugins, tools, software
         return None
     imgs = {}
     for i in md.get("keyImages") or []:

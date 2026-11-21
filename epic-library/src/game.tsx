@@ -250,6 +250,8 @@ export function OfferPage() {
     } finally { setBusy(false); }
   };
   const verb = it.free ? "Get" : "Buy";
+  const claimable = !!it.free && !!it.checkout;
+  const openWeb = (url: string) => { Navigation.CloseSideMenus(); Navigation.NavigateToExternalWeb(url); };
   return (
     <Shell title={it.title}>
       <div className="ep-detail">
@@ -276,12 +278,20 @@ export function OfferPage() {
                   </span>
                 </div>
                 <Focusable className="ep-row" flow-children="row">
-                  <DialogButton className="ep-btn primary" onClick={() => { Navigation.CloseSideMenus(); Navigation.NavigateToExternalWeb(it.url); }}>{verb} on Epic</DialogButton>
-                  <DialogButton className="ep-btn" onClick={() => showModal(<BuyQr url={it.url} title={it.title} onBought={got} />)}>{verb} on phone</DialogButton>
+                  {claimable ? <>
+                    <DialogButton className="ep-btn primary" onClick={() => openWeb(it.checkout)}>Claim free</DialogButton>
+                    <DialogButton className="ep-btn" onClick={() => showModal(<BuyQr url={it.checkout} title={it.title} onBought={got} />)}>Claim on phone</DialogButton>
+                    <DialogButton className="ep-btn" onClick={() => openWeb(it.url)}>Store page</DialogButton>
+                  </> : <>
+                    <DialogButton className="ep-btn primary" onClick={() => openWeb(it.url)}>{verb} on Epic</DialogButton>
+                    <DialogButton className="ep-btn" onClick={() => showModal(<BuyQr url={it.url} title={it.title} onBought={got} />)}>{verb} on phone</DialogButton>
+                  </>}
                   <DialogButton className="ep-btn" disabled={busy} onClick={got}>{busy ? "Checking…" : "I got it"}</DialogButton>
                 </Focusable>
                 <div style={{ fontSize: 12, color: C.text1 }}>
-                  {it.free ? "Free games still have to be claimed on Epic's store page (sign in there with your Epic account). " : "Buy it on the game's Epic store page with your Epic account. "}
+                  {claimable
+                    ? "Claim free opens Epic's checkout for this game in Steam's browser: sign in to Epic there once and press Place Order (it's free, nothing is charged). Epic may ask you to solve a captcha. "
+                    : it.free ? "Free games still have to be claimed on Epic's store page (sign in there with your Epic account). " : "Buy it on the game's Epic store page with your Epic account. "}
                   Then press I got it: it moves to your library and installs from there.
                 </div>
               </>

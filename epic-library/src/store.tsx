@@ -47,13 +47,15 @@ export function openOffer(it: be.StoreItem) {
 function StoreTile({ it, until }: { it: be.StoreItem; until?: boolean }) {
   const mine = ownedByNs(it.ns);
   const rec = mine ? state.installed[mine.app] : undefined;
-  const quick = mine && mine.installable && !rec ? () => startInstall(mine.app) : undefined;
+  const claim = !mine && it.free && it.checkout
+    ? () => { Navigation.CloseSideMenus(); Navigation.NavigateToExternalWeb(it.checkout); } : undefined;
+  const quick = mine && mine.installable && !rec ? () => startInstall(mine.app) : claim;
   const badge = rec ? "INSTALLED" : mine ? "OWNED" : it.free ? "FREE" : it.sale ? `-${it.sale}%` : "";
   const open = () => openOffer(it);
   return (
     <Focusable className="ep-tile" focusClassName="ep-focus" onActivate={open} onClick={open}
       onOKActionDescription={mine ? "Details" : "Store page"}
-      onSecondaryButton={quick} onSecondaryActionDescription={quick ? "Install" : undefined}>
+      onSecondaryButton={quick} onSecondaryActionDescription={quick ? (claim && quick === claim ? "Claim free" : "Install") : undefined}>
       <div className="art">
         {it.tall || it.wide ? <img src={sized(it.tall || it.wide, 300, 400)} loading="lazy" decoding="async" draggable={false} /> : <div className="none">{it.title}</div>}
         {badge && <div className={`badge${rec || mine ? "" : it.free ? " dl" : " upd"}`}>{badge}</div>}
@@ -80,7 +82,7 @@ function FreeNow() {
   if (!items?.length) return null;
   return (
     <>
-      <div className="ep-h2">Free this week · claim on the store page, then it's yours to keep</div>
+      <div className="ep-h2">Free this week · X claims it (Epic checkout, nothing is charged), then it's yours to keep</div>
       <Focusable className="ep-strip" flow-children="row">{items.map((it) => <StoreTile key={`free-${it.id}`} it={it} until />)}</Focusable>
     </>
   );
