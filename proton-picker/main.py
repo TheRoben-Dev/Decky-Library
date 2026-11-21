@@ -9,6 +9,7 @@ Steam's own client API, SteamClient.Apps.SpecifyCompatTool.
 import asyncio
 import os
 import sys
+import urllib.error
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "py_modules"))
 
@@ -48,14 +49,26 @@ class Plugin:
             return {"ok": False, "error": str(e)}
 
     async def protondb_summaries(self, appids: list, force: bool = False):
-        """Batch lookup; returns {appid: summary|None}. Errors map to 'error'."""
+        """Batch lookup; returns {appid: summary|None}. Errors map to 'error'.
+        If ProtonDB can't be reached at all (offline, DNS, timeout), the rest of the batch is
+        marked 'error' right away instead of waiting out a timeout per game."""
         out = {}
-        for a in appids[:200]:
+        offline = False
+        ids = [str(a) for a in (appids or [])[:200]]
+        for a in ids:
+            if offline:
+                out[a] = "error"
+                continue
             try:
-                out[str(a)] = await asyncio.to_thread(protondb.summary, str(a), force)
+                out[a] = await asyncio.to_thread(protondb.summary, a, force, False)
+            except urllib.error.HTTPError as e:
+                decky.logger.warning(f"protondb {a}: HTTP {e.code}")
+                out[a] = "error"
             except Exception as e:
-                decky.logger.warning(f"protondb {a}: {e}")
-                out[str(a)] = "error"
+                decky.logger.warning(f"protondb {a}: {e}; treating ProtonDB as unreachable for this batch")
+                out[a] = "error"
+                offline = True
+        await asyncio.to_thread(protondb.flush)
         return out
 
     async def log(self, msg: str):

@@ -1,6 +1,6 @@
 {
   "name": "proton-picker",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Per-game Proton version picker for Decky Loader",
   "type": "module",
   "scripts": {

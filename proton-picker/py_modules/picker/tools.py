@@ -53,7 +53,7 @@ def read_tool_dir(path: str):
         "dir": path,
         "family": family_of(internal),
         "owned": os.path.exists(os.path.join(path, OWNED_MARK)),
-        "system": not path.startswith(steampaths.user_compat_dir()),
+        "system": os.path.dirname(os.path.realpath(path)) != os.path.realpath(steampaths.user_compat_dir()),
     }
 
 

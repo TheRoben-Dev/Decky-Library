@@ -50,7 +50,7 @@ def _save():
         decky.logger.warning(f"protondb cache save failed: {e}")
 
 
-def summary(appid: str, force: bool = False):
+def summary(appid: str, force: bool = False, save: bool = True):
     _load()
     appid = str(appid)
     hit = _mem.get(appid)
@@ -67,5 +67,11 @@ def summary(appid: str, force: bool = False):
             raise
         data = None
     _mem[appid] = {"at": time.time(), "data": data}
-    _save()
+    if save:
+        _save()
     return data
+
+
+def flush():
+    """Writes the cache once after a batch of summary(..., save=False) calls."""
+    _save()
