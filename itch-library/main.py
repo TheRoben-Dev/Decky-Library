@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "py
 
 import decky  # noqa: E402
 
-from itchlib import api, browse, install  # noqa: E402
+from itchlib import api, browse, install, page  # noqa: E402
 from itchlib.handoff import Handoff  # noqa: E402
 from itchlib.store import Installed, Settings, read_json, write_json  # noqa: E402
 
@@ -302,6 +302,17 @@ class Plugin:
         return {"ok": True, **base, "uploads": ups, "best": best["id"] if best else 0, "usable": len(usable)}
 
     # ------------------------------------------------------------ store
+
+    async def store_page(self, game_id: int):
+        """Description, screenshots and info panel from the game's itch.io page (cached a day)."""
+        g = self._owned(game_id) or self._find_game(game_id)
+        if not g or not g.get("url"):
+            return {"ok": False, "error": "No itch.io page for this game"}
+        try:
+            res = await asyncio.to_thread(page.store_page, g["url"], os.path.join(self.runtime, "pages"))
+            return {"ok": True, **res}
+        except Exception as e:
+            return _err(e)
 
     async def browse(self, opts: dict):
         o = opts if isinstance(opts, dict) else {}

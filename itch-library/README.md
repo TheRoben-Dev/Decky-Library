@@ -10,7 +10,9 @@ Your itch.io library in Steam Game Mode, Nightgrid-styled and fully controller-d
   turn on *Show adult content in Browse* in Quick Access → Itch Library → Settings (off by default; itch.io itself also
   limits which adult games its browse pages list). **Controller support is on by default**
   (itch.io's "Gamepad (any)" input filter; switch to Xbox controller or All games). Search uses the on-screen keyboard.
-  Free games install directly (X on the tile). Paid games show their price and **Buy on itch.io** opens that game's
+  Opening a game shows a store page: screenshots (A to view full size), description, rating, trailer link and itch.io's
+  info panel (platforms, inputs, genre, length, languages...). These come from the game's public page, fetched once
+  when you open it and cached for a day. Free games install directly (X on the tile). Paid games show their price and **Buy on itch.io** opens that game's
   store page in Steam's browser, or **Buy on phone** shows a QR code; after buying, *I bought it* moves it to your
   library. Paid games' free demos can be installed too.
 - **Your library**: every game you bought or claimed in a full-screen grid: All, Installed, Updates, Downloads.

@@ -4,6 +4,7 @@
  * the launch file, re-adding to Steam, fresh artwork and Uninstall (with an opt-in to delete the
  * Proton prefix, which holds Windows saves).
  */
+import { StoreDetails, DETAILS_CSS } from "./details";
 import { ConfirmModal, DialogButton, Dropdown, Focusable, ModalRoot, Navigation, showModal, SteamSpinner, useParams } from "@decky/ui";
 import { ReactNode, useEffect, useState } from "react";
 import { addToSteam, cancelJob, loadLibrary, refreshInstalled, removeGame, startInstall } from "./actions";
@@ -190,7 +191,7 @@ export function GamePage() {
 
   return (
     <div className="il-page">
-      <style>{PAGE_CSS}</style>
+      <style>{PAGE_CSS + DETAILS_CSS}</style>
       <div className="il-inner">
         <div className="il-head">
           <span className="t">Itch Library</span>
@@ -232,6 +233,7 @@ export function GamePage() {
                   </Focusable>
                 </div>
               )}
+              <StoreDetails gameId={id} url={game.url} />
             </Focusable>
           </div>
         )}
