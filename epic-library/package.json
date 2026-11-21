@@ -1,6 +1,6 @@
 {
   "name": "epic-library",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Your Epic Games Store library in Steam Game Mode: browse, install, update and play, Nightgrid-styled",
   "type": "module",
   "scripts": {
