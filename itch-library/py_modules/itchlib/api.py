@@ -44,6 +44,7 @@ class Throttle:
         self.gap = gap
         self.last = 0.0
         self.until = 0.0
+        self.strikes = 0          # 429s in a row: each one doubles the wait (60 s, 2, 4 ... 30 min)
         self.lock = threading.Lock()
 
     def wait(self):
@@ -57,10 +58,14 @@ class Throttle:
             self.last = time.time()
 
     def limited(self, headers) -> int:
-        secs = retry_after(headers)
         with self.lock:
+            secs = max(retry_after(headers), min(1800, 60 * 2 ** (self.strikes - 1)) if self.strikes else 0)
+            self.strikes += 1
             self.until = max(self.until, time.time() + secs)
         return secs
+
+    def ok(self):
+        self.strikes = 0
 
 
 def retry_after(headers, default: int = 60) -> int:
@@ -157,6 +162,7 @@ def get(path: str, key: str, params: dict | None = None, timeout: float = 20) ->
     try:
         with _opener(True).open(req, timeout=timeout) as r:
             data = r.read(MAX_JSON + 1)
+        API_THROTTLE.ok()
     except urllib.error.HTTPError as e:
         if e.code == 429:
             secs = API_THROTTLE.limited(e.headers)

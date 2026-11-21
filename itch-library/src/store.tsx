@@ -43,21 +43,22 @@ function keyOf() {
   return st.query ? `q:${st.query}` : JSON.stringify({ ...st.opts, page: 0 });
 }
 
-type Loaded = { error: string; retry: number; notice: string } | null;
+type Loaded = { error: string; retry: number; notice: string; detail: string; web: string } | null;
 
 async function load(page: number): Promise<Loaded> {
   const st = state.store;
   const key = keyOf();
   const r = st.query ? await be.search(st.query, page) : await be.browse({ ...st.opts, page });
   if (keyOf() !== key) return null;   // filters changed meanwhile
-  if (!r.ok) return { error: r.error, retry: r.status === 429 ? r.retry_after || 60 : 0, notice: "" };
+  if (!r.ok) return { error: r.error, retry: r.status === 429 ? r.retry_after || 60 : 0, notice: "", detail: (r as any).detail ?? "", web: "" };
   st.items = page > 1 ? [...(st.items ?? []), ...r.items.filter((i) => !(st.items ?? []).some((x) => x.url === i.url))] : r.items;
   st.opts.page = page;
   st.more = r.more;
   st.key = key;
   changed();
-  const notice = (r as { notice?: string }).notice ?? "";
-  return notice ? { error: "", retry: 0, notice } : null;
+  const x = r as { notice?: string; detail?: string; web?: string };
+  st.web = x.web ?? "";
+  return x.notice ? { error: "", retry: 0, notice: x.notice, detail: x.detail ?? "", web: x.web ?? "" } : null;
 }
 
 async function idFor(it: be.StoreItem): Promise<number | null> {
@@ -106,17 +107,19 @@ export function BrowseTab() {
   const adult = !!s.settings?.adult;
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [detail, setDetail] = useState("");
   const [wait, setWait] = useState(0);          // seconds until itch.io accepts requests again
   const [loading, setLoading] = useState(false);
   const [draft, setDraft] = useState(st.query);
   const [tagDraft, setTagDraft] = useState("");
 
   const run = async (page: number) => {
-    setLoading(true); setError(null); setNotice(null);
+    setLoading(true); setError(null); setNotice(null); setDetail("");
     try {
       const r = await load(page);
       if (r?.error) setError(r.error);
       if (r?.notice) setNotice(r.notice);
+      setDetail(r?.detail ?? "");
       setWait(r?.retry ?? 0);
     } catch (e) { setError(String(e)); } finally { setLoading(false); }
   };
@@ -211,7 +214,13 @@ export function BrowseTab() {
       )}
       {st.query && <div className="il-msg" style={{ padding: "0 24px 10px" }}>
         Search results for “{st.query}”. Filters and controller support apply to browsing only.</div>}
-      {notice && <div className="il-msg" style={{ paddingTop: 0 }}>{notice}</div>}
+      {notice && (
+        <Focusable className="il-msg" style={{ paddingTop: 0, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <span>{notice}</span>
+          {st.web && <DialogButton className="il-btn" onClick={() => Navigation.NavigateToExternalWeb(st.web)}>Open these filters on itch.io</DialogButton>}
+        </Focusable>
+      )}
+      {detail && <div className="il-msg" style={{ paddingTop: 0, fontSize: 11, opacity: 0.7, wordBreak: "break-word" }}>itch.io said: {detail}</div>}
       {error && (
         <Focusable className="il-msg err" style={{ paddingTop: 0, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <span>{wait > 0 ? error.replace(/Try again in .*$/, `Try again in ${wait} s.`) : error}</span>

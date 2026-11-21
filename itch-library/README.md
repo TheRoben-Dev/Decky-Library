@@ -27,7 +27,9 @@ Your itch.io library in Steam Game Mode, Nightgrid-styled and fully controller-d
 
 Browse uses itch.io's public RSS feeds for its browse pages (the same filters as the website), search uses the
 official API. Pages are cached for 15 minutes, filter changes are batched, and if itch.io answers "too many requests"
-the plugin waits out its Retry-After before asking again (showing earlier results meanwhile). Nothing runs in the background: the library is fetched (and cached for 30 minutes) and updates are checked only when
+the plugin waits out its Retry-After before asking again (showing earlier results meanwhile). If itch.io's website
+won't serve the browse feed to your device at all, Browse falls back to the official API's search (built from your
+genre/tag choice, with price and platform applied) and offers to open the same filters on itch.io in Steam's browser. Nothing runs in the background: the library is fetched (and cached for 30 minutes) and updates are checked only when
 you open it. Downloads run one at a time and report progress only while they run.
 
 ## Signing in
