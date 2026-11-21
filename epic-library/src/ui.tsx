@@ -76,12 +76,13 @@ export const PAGE_CSS = `
 .ep-plat.windows { color: ${C.data}; border-color: color-mix(in srgb, ${C.data} 50%, transparent); }
 .ep-msg { font-family: ${MONO}; font-size: 13px; color: ${C.text1}; padding: 24px; white-space: normal; line-height: 1.5; }
 .ep-msg.err { color: ${C.warn}; }
-.ep-detail { display: flex; gap: 28px; padding: 8px 24px 32px; overflow-y: auto; flex: 1; min-height: 0; }
+.ep-detail { display: flex; align-items: flex-start; gap: 28px; padding: 8px 24px 32px; overflow-y: auto; flex: 1; min-height: 0; }
 .ep-detail .cover { flex: 0 0 300px; }
 .ep-detail .cover .frame { aspect-ratio: 3 / 4; border: 1px solid ${C.data}; box-shadow: 0 0 18px color-mix(in srgb, ${C.data} 30%, transparent);
   background: ${C.bg1}; overflow: hidden; position: relative; }
 .ep-detail .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ep-detail .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.ep-detail .info > * { flex-shrink: 0; }   /* a shrunk row lets its content spill under the next one */
 .ep-detail h1 { margin: 0; font-family: ${MONO}; font-size: 26px; letter-spacing: .04em; text-transform: uppercase; line-height: 1.15; }
 .ep-detail .by { color: ${C.text1}; font-size: 13px; }
 .ep-detail .short { color: ${C.text0}; opacity: .85; font-size: 14px; line-height: 1.45; }
@@ -97,10 +98,10 @@ export const PAGE_CSS = `
 .ep-steps ol { margin: 0; padding-left: 20px; color: ${C.text1}; }
 .ep-steps b { color: ${C.text0}; }
 .ep-sec { font-family: ${MONO}; font-size: 11px; color: ${C.text1}; text-transform: uppercase; letter-spacing: .12em; margin-top: 6px; }
-.ep-shots { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 8px; scroll-behavior: smooth; }
-.ep-shot { flex: 0 0 auto; height: 150px; aspect-ratio: 16 / 9; border: 1px solid ${C.line}; background: ${C.bg1}; overflow: hidden; transition: transform .1s; }
+.ep-shots { display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden; padding: 8px 8px 10px; margin: 0 -8px; scroll-behavior: smooth; }
+.ep-shot { position: relative; flex: 0 0 auto; height: 150px; aspect-ratio: 16 / 9; border: 1px solid ${C.line}; background: ${C.bg1}; overflow: hidden; transition: transform .1s; }
 .ep-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.ep-shot.ep-focus { border-color: ${C.active}; transform: scale(1.04); box-shadow: 0 0 14px color-mix(in srgb, ${C.active} 45%, transparent); }
+.ep-shot.ep-focus { z-index: 1; border-color: ${C.active}; transform: scale(1.04); box-shadow: 0 0 14px color-mix(in srgb, ${C.active} 45%, transparent); }
 .ep-about p { margin: 0 0 10px; font-size: 14px; line-height: 1.5; color: ${C.text0}; opacity: .9; white-space: pre-line; }
 .ep-about .ep-focus p, .ep-about p.ep-focus { opacity: 1; }
 .ep-about .para { padding: 2px 6px; margin: 0 -6px; border-left: 2px solid transparent; }
@@ -108,7 +109,7 @@ export const PAGE_CSS = `
 .ep-reqs { display: grid; grid-template-columns: max-content 1fr 1fr; gap: 4px 14px; font-size: 12px; }
 .ep-reqs .h { font-family: ${MONO}; font-size: 10px; color: ${C.text1}; text-transform: uppercase; letter-spacing: .1em; }
 .ep-reqs .t { color: ${C.text1}; }
-.ep-viewer { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.ep-viewer { background: ${C.bg0}; display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .ep-viewer img { max-width: 100%; max-height: 62vh; object-fit: contain; border: 1px solid ${C.line}; display: block; }
 .ep-code { font-family: ${MONO}; font-size: 12px; color: ${C.data}; word-break: break-all; }
 `;
