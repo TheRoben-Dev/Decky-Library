@@ -1,6 +1,6 @@
 {
   "name": "amazon-library",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Your Amazon Games library in Steam Game Mode: install, update and play, Nightgrid-styled",
   "type": "module",
   "scripts": {
