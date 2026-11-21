@@ -1,5 +1,5 @@
 // Renders movies.html into webm files with ffmpeg (VP9, 30 fps, 1920x1080, no audio).
-// usage: node render.js <outdir> [movie-id ...]      preview: node render.js --stills <outdir>
+// usage: node render.cjs <outdir> [movie-id ...]      preview: node render.cjs --stills <outdir>
 const { chromium } = require("playwright");
 const { spawn } = require("child_process");
 const path = require("path"), fs = require("fs");

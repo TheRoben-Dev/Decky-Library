@@ -38,6 +38,20 @@ def load_catalog(movies_dir: str) -> dict:
     return out
 
 
+SAVER_STYLES = ("random", "grid", "signal", "terminal", "clock")
+SAVER_MINUTES = (1, 2, 3, 5, 10, 15, 30)
+
+
+def clean_saver(d: dict) -> dict:
+    """Screensaver settings with defaults and only allowed values."""
+    m = d.get("minutes", 5)
+    return {
+        "enabled": bool(d.get("enabled", True)),
+        "minutes": m if m in SAVER_MINUTES else 5,
+        "style": d.get("style") if d.get("style") in SAVER_STYLES else "random",
+    }
+
+
 class Store:
     """settings.json: {"boot": id|"", "suspend": id|"", "shuffle": bool, "written": {filename: sha}}"""
 
@@ -52,6 +66,8 @@ class Store:
         self.data.setdefault("suspend", "")
         self.data.setdefault("shuffle", False)
         self.data.setdefault("written", {})
+        saver = self.data.get("saver") if isinstance(self.data.get("saver"), dict) else {}
+        self.data["saver"] = clean_saver(saver)
 
     def save(self):
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
@@ -140,7 +156,7 @@ def status(movies_dir: str, override_dir: str, store: Store) -> dict:
     # a selection whose files were replaced behind our back no longer counts as applied
     sel = {k: (store.data[k] if states[k] == "ours" else "") for k in TARGETS}
     return {"catalog": cat, "boot": sel["boot"], "suspend": sel["suspend"], "shuffle": bool(store.data["shuffle"]),
-            "states": states, "overrideDir": override_dir}
+            "states": states, "overrideDir": override_dir, "saver": store.data["saver"]}
 
 
 def restore_all(movies_dir: str, override_dir: str, store: Store):

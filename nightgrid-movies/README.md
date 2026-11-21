@@ -1,12 +1,16 @@
 # Nightgrid Movies
 
-Decky plugin with Nightgrid-styled **startup movies** and **sleep (suspend) animations** for
-Steam Game Mode, matching the [Nightgrid](../nightgrid-theme) CSS Loader theme. Pick them from
+Decky plugin with Nightgrid-styled **startup movies**, **sleep (suspend) animations** and an
+**idle screensaver** for Steam Game Mode, matching the [Nightgrid](../nightgrid-theme) CSS Loader theme. Pick them from
 Quick Access; install or update it from Library Hub.
 
 | Startup movie | |
 |---|---|
 | Boot Sequence | the grid draws in, a boot log types out, a static burst, then the wordmark locks in (6 s) |
+| Kernel Log | a fast kernel-style boot log scrolls past, then the wordmark types itself in (6 s) |
+| Login | terminal login, password dots, ACCESS GRANTED, then the wordmark (6 s) |
+| Diagnostics | a system check with filling bars, ALL SYSTEMS NOMINAL, then the wordmark (6 s) |
+| Decrypt | a hex scramble that locks into the wordmark letter by letter (5.5 s) |
 | Signal | TV static thins out and leaves the wordmark behind (5 s) |
 | Grid Run | a perspective grid runs at you and the wordmark rises over the horizon (5 s) |
 
@@ -16,6 +20,25 @@ Quick Access; install or update it from Library Hub.
 | Static Out | the wordmark breaks into static, then the static rolls away to black (2.4 s) |
 
 **Shuffle each boot** picks a different startup movie every time the plugin loads.
+
+## Screensaver
+After a set time with no input (1–30 min, default 5), a fullscreen Nightgrid animation covers
+Game Mode. Any button, stick, trigger or touch wakes it. The button that wakes it also does its
+normal job, so moving a stick is the safest way to wake it. It never shows while a game is
+running, and Steam's own dim and sleep timers still apply on top of it.
+
+| Style | |
+|---|---|
+| Grid Run | endless perspective grid with the wordmark and a clock over the horizon |
+| Signal | wordmark and clock drifting over a faint static, with a short glitch now and then |
+| Terminal | a slow standby log typing out, with the clock in the corner |
+| Clock | a big drifting clock and date on the grid |
+| Random | a different style each time |
+
+Everything that stays on screen drifts slowly. The art is drawn live
+(`src/saverArt.ts`, 960×540 canvas scaled up, max 30 fps). Idle detection uses
+`SteamClient.Input` controller callbacks plus touch, key and mouse events in the Game Mode window
+(`src/screensaver.tsx`).
 
 ## How it works
 Steam plays override videos from `~/.steam/root/config/uioverrides/movies`:
@@ -36,8 +59,8 @@ The videos are drawn in code (`render/movies.html`, canvas, seeded so every rend
 and encoded to 1280×720 VP9 at 30 fps with no audio:
 
 ```sh
-cd render && NODE_PATH=$(npm root -g) node render.js ../movies            # all
-NODE_PATH=$(npm root -g) node render.js --stills /tmp/stills signal       # 8 preview stills
+cd render && NODE_PATH=$(npm root -g) node render.cjs ../movies            # all
+NODE_PATH=$(npm root -g) node render.cjs --stills /tmp/stills signal       # 8 preview stills
 ```
 You need Playwright (Chromium) and ffmpeg. The rendered `.webm` files are committed, so the
 release build only runs `pnpm build` and `package.sh`.

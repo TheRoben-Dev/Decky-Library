@@ -70,6 +70,14 @@ class Core(unittest.TestCase):
         self.assertEqual(core.shuffle_boot(self.mov, self.ovr, self.store, random.Random(1)), "b")
         self.assertEqual(self.read("deck_startup.webm"), b"BBB")
 
+    def test_saver_settings(self):
+        self.assertEqual(self.store.data["saver"], {"enabled": True, "minutes": 5, "style": "random"})
+        self.assertEqual(core.clean_saver({"enabled": False, "minutes": 7, "style": "evil"}),
+                         {"enabled": False, "minutes": 5, "style": "random"})
+        self.store.data["saver"] = core.clean_saver({"minutes": 10, "style": "clock"})
+        self.store.save()
+        self.assertEqual(core.Store(self.store.path).data["saver"]["style"], "clock")
+
     def test_unknown(self):
         with self.assertRaises(ValueError):
             core.apply("boot", "nope", self.mov, self.ovr, self.store)

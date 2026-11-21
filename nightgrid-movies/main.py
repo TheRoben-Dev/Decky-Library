@@ -2,7 +2,8 @@
 
 Runs as the normal user (no "root" flag). Copies the bundled Nightgrid videos into Steam's
 override folder (~/.steam/root/config/uioverrides/movies) as the startup movie and the suspend
-animation; see py_modules/ngmovies/core.py for the file rules.
+animation; see py_modules/ngmovies/core.py for the file rules. The idle screensaver runs in the
+frontend (src/screensaver.tsx); only its settings are kept here.
 """
 import asyncio
 import os
@@ -47,6 +48,15 @@ class Plugin:
         s.data["shuffle"] = bool(on)
         s.save()
         return True
+
+    async def get_saver(self):
+        return _store().data["saver"]
+
+    async def set_saver(self, saver: dict):
+        s = _store()
+        s.data["saver"] = core.clean_saver(saver or {})
+        s.save()
+        return s.data["saver"]
 
     async def _main(self):
         s = _store()

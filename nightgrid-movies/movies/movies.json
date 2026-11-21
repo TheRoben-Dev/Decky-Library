@@ -1,11 +1,60 @@
 {
   "boot": [
-    { "id": "boot-sequence", "name": "Boot Sequence", "file": "boot-sequence.webm", "about": "Grid draws in, a boot log types out, static burst, wordmark locks in (6 s)" },
-    { "id": "signal",        "name": "Signal",        "file": "signal.webm",        "about": "TV static that thins out and leaves the wordmark behind (5 s)" },
-    { "id": "grid-run",      "name": "Grid Run",      "file": "grid-run.webm",      "about": "Perspective grid runs at you, wordmark rises over the horizon (5 s)" }
+    {
+      "id": "boot-sequence",
+      "name": "Boot Sequence",
+      "file": "boot-sequence.webm",
+      "about": "Grid draws in, a boot log types out, static burst, wordmark locks in (6 s)"
+    },
+    {
+      "id": "kernel-log",
+      "name": "Kernel Log",
+      "file": "kernel-log.webm",
+      "about": "A fast kernel-style boot log scrolls past, then the wordmark types itself in (6 s)"
+    },
+    {
+      "id": "login",
+      "name": "Login",
+      "file": "login.webm",
+      "about": "Terminal login, password dots, ACCESS GRANTED, wordmark (6 s)"
+    },
+    {
+      "id": "diagnostics",
+      "name": "Diagnostics",
+      "file": "diagnostics.webm",
+      "about": "System check with filling bars, ALL SYSTEMS NOMINAL, wordmark (6 s)"
+    },
+    {
+      "id": "decrypt",
+      "name": "Decrypt",
+      "file": "decrypt.webm",
+      "about": "Hex scramble that locks letter by letter into the wordmark (5.5 s)"
+    },
+    {
+      "id": "signal",
+      "name": "Signal",
+      "file": "signal.webm",
+      "about": "TV static that thins out and leaves the wordmark behind (5 s)"
+    },
+    {
+      "id": "grid-run",
+      "name": "Grid Run",
+      "file": "grid-run.webm",
+      "about": "Perspective grid runs at you, wordmark rises over the horizon (5 s)"
+    }
   ],
   "suspend": [
-    { "id": "power-down", "name": "Power Down", "file": "power-down.webm", "about": "Old-CRT switch-off: collapses to a line, then a dot (2.4 s)" },
-    { "id": "static-out", "name": "Static Out", "file": "static-out.webm", "about": "Wordmark breaks into static, static rolls away to black (2.4 s)" }
+    {
+      "id": "power-down",
+      "name": "Power Down",
+      "file": "power-down.webm",
+      "about": "Old-CRT switch-off: collapses to a line, then a dot (2.4 s)"
+    },
+    {
+      "id": "static-out",
+      "name": "Static Out",
+      "file": "static-out.webm",
+      "about": "Wordmark breaks into static, static rolls away to black (2.4 s)"
+    }
   ]
 }

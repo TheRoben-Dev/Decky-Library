@@ -9,9 +9,10 @@
       "startup",
       "boot",
       "animation",
+      "screensaver",
       "nightgrid"
     ],
-    "description": "Nightgrid-styled startup movies and suspend (sleep) animations for Game Mode, picked from Quick Access.",
+    "description": "Nightgrid-styled startup movies, sleep animations and an idle screensaver for Game Mode, set from Quick Access.",
     "image": "https://opengraph.githubassets.com/1/SteamDeckHomebrew/PluginLoader"
   }
 }

@@ -1,14 +1,55 @@
-import { DropdownItem, Field, PanelSectionRow, staticClasses, ToggleField } from "@decky/ui";
-import { definePlugin } from "@decky/api";
+import { ButtonItem, DropdownItem, Field, Navigation, PanelSectionRow, staticClasses, ToggleField } from "@decky/ui";
+import { definePlugin, routerHook } from "@decky/api";
 import { useEffect, useState } from "react";
 import { FaFilm } from "react-icons/fa";
-import { applyMovie, getStatus, Kind, setShuffle, Status } from "./backend";
+import { applyMovie, getSaver, getStatus, Kind, SaverSettings, setSaver, setShuffle, Status } from "./backend";
+import { DEFAULT_SAVER, previewSaver, SaverConfig, ScreensaverHost, setSaverConfig, watchController } from "./screensaver";
+import { STYLES } from "./saverArt";
 import { sectionFactory } from "./section";
 
 const Section = sectionFactory("nightgrid-movies");
 
 const note = { fontSize: "12px", lineHeight: "16px", opacity: 0.75, whiteSpace: "normal" as const };
 const warn = { ...note, color: "#FF9F1C", opacity: 1 };
+
+const MINUTES = [1, 2, 3, 5, 10, 15, 30];
+const styleName = (id: string) => id === "random" ? "Random" : STYLES.find((x) => x.id === id)?.name ?? id;
+
+function SaverSection({ s, setS }: { s: Status; setS: (s: Status) => void }) {
+  const v = s.saver;
+  const save = async (next: SaverSettings) => {
+    setS({ ...s, saver: next });
+    const stored = await setSaver(next);
+    setSaverConfig(stored as SaverConfig);
+  };
+  return (
+    <Section id="saver" title="Screensaver" defaultOpen
+      summary={v.enabled ? `${styleName(v.style)} after ${v.minutes} min` : "Off"}>
+      <PanelSectionRow>
+        <ToggleField label="Screensaver" description="Covers Game Mode when nothing's pressed for a while. Never over a running game."
+          checked={v.enabled} onChange={(on) => save({ ...v, enabled: on })} />
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <DropdownItem label="Start after" disabled={!v.enabled} selectedOption={v.minutes}
+          rgOptions={MINUTES.map((m) => ({ data: m, label: `${m} min` }))}
+          onChange={(o) => save({ ...v, minutes: o.data as number })} />
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <DropdownItem label="Style" disabled={!v.enabled} selectedOption={v.style}
+          rgOptions={[{ data: "random", label: "Random" }, ...STYLES.map((x) => ({ data: x.id, label: x.name }))]}
+          onChange={(o) => save({ ...v, style: o.data as string })} />
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <ButtonItem layout="below" onClick={() => { Navigation.CloseSideMenus(); setTimeout(previewSaver, 400); }}>
+          Preview
+        </ButtonItem>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <div style={note}>Any button, stick or touch wakes it. Steam's own dim and sleep timers still apply.</div>
+      </PanelSectionRow>
+    </Section>
+  );
+}
 
 const nameOf = (s: Status, kind: Kind) => s.catalog[kind].find((m) => m.id === s[kind])?.name ?? "Steam default";
 
@@ -94,6 +135,8 @@ function Content() {
         </PanelSectionRow>
       </Section>
 
+      <SaverSection s={s} setS={setS} />
+
       <Section id="about" title="About" summary="Where the files go">
         <PanelSectionRow>
           <div style={note}>
@@ -106,9 +149,19 @@ function Content() {
   );
 }
 
-export default definePlugin(() => ({
-  name: "Nightgrid Movies",
-  titleView: <div className={staticClasses.Title}>Nightgrid Movies</div>,
-  content: <Content />,
-  icon: <FaFilm />,
-}));
+export default definePlugin(() => {
+  setSaverConfig(DEFAULT_SAVER);
+  getSaver().then((c) => setSaverConfig(c as SaverConfig)).catch(() => { /* keep defaults */ });
+  const stopController = watchController();
+  routerHook.addGlobalComponent("NightgridScreensaver", ScreensaverHost);
+  return {
+    name: "Nightgrid Movies",
+    titleView: <div className={staticClasses.Title}>Nightgrid Movies</div>,
+    content: <Content />,
+    icon: <FaFilm />,
+    onDismount() {
+      routerHook.removeGlobalComponent("NightgridScreensaver");
+      stopController();
+    },
+  };
+});
