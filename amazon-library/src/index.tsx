@@ -5,6 +5,7 @@ import { FaAmazon } from "react-icons/fa";
 import { cancelJob, listen, loadSettings, refreshInstalled } from "./actions";
 import { getQueue, getRoots, Root, setOptions, Settings, signOut } from "./backend";
 import { GamePage } from "./game";
+import { OFFER_ROUTE, OfferPage } from "./offer";
 import { GAME_ROUTE, LIBRARY_ROUTE, LibraryPage } from "./page";
 import { sectionFactory } from "./section";
 import { changed, fmtBytes, jobLine, state, updateCount, useStore } from "./state";
@@ -111,6 +112,7 @@ function Content() {
 export default definePlugin(() => {
   routerHook.addRoute(LIBRARY_ROUTE, LibraryPage, { exact: true });
   routerHook.addRoute(GAME_ROUTE, GamePage, { exact: true });
+  routerHook.addRoute(OFFER_ROUTE, OfferPage, { exact: true });
   const unlisten = listen();
   return {
     name: "Amazon Library",
@@ -121,6 +123,7 @@ export default definePlugin(() => {
       unlisten();
       routerHook.removeRoute(LIBRARY_ROUTE);
       routerHook.removeRoute(GAME_ROUTE);
+      routerHook.removeRoute(OFFER_ROUTE);
     },
   };
 });

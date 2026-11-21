@@ -25,6 +25,7 @@ from amzlib import api, install, manifest  # noqa: E402
 from amzlib.handoff import Handoff  # noqa: E402
 from amzlib.store import Installed, Settings, read_json, write_json  # noqa: E402
 
+CACHE_VERSION = 2                # bump when the cached game shape changes
 LIBRARY_TTL = 30 * 60          # owned-games list is refreshed on open after this
 UPDATE_TTL = 6 * 3600          # automatic update check on open at most this often
 OFFERS_TTL = 6 * 3600
@@ -273,10 +274,10 @@ class Plugin:
         token = self._token()
         cache = read_json(self._library_path(), {})
         uid = (self.settings.data["auth"].get("user") or {}).get("id")
-        fresh = cache.get("user") == uid and time.time() - float(cache.get("at", 0)) < LIBRARY_TTL
+        fresh = cache.get("user") == uid and cache.get("v") == CACHE_VERSION and time.time() - float(cache.get("at", 0)) < LIBRARY_TTL
         if refresh or not fresh or not isinstance(cache.get("games"), list):
             games = api.entitlements(token, self._serial())
-            cache = {"at": time.time(), "user": uid, "games": games}
+            cache = {"at": time.time(), "user": uid, "v": CACHE_VERSION, "games": games}
             write_json(self._library_path(), cache)
         return {"games": cache["games"], "at": cache["at"]}
 
@@ -300,7 +301,8 @@ class Plugin:
             return {"id": game_id, "entitlement": rec.get("entitlement", ""), "sku": rec.get("sku", ""),
                     "title": rec.get("title", ""), "icon": rec.get("icon", ""), "cover": rec.get("cover", ""),
                     "background": rec.get("background", ""), "logo": rec.get("logo", ""), "short": "",
-                    "developer": "", "publisher": "", "genres": [], "released": "", "screenshot": "", "added": ""}
+                    "developer": "", "publisher": "", "genres": [], "released": "", "screenshot": "", "added": "",
+                    "description": "", "screenshots": [], "modes": [], "rating": "", "website": ""}
         return None
 
     async def game(self, game_id: str):

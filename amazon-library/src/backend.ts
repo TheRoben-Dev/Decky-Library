@@ -12,12 +12,15 @@ export interface Game {
   id: string; entitlement: string; sku: string; title: string;
   icon: string; cover: string; background: string; logo: string;
   short: string; developer: string; publisher: string; genres: string[]; released: string; screenshot: string; added: string;
+  description?: string; screenshots?: string[]; modes?: string[]; rating?: string; website?: string;
 }
 
 /** A free game with Prime (Prime Gaming / Luna). `direct` ones land in the Amazon library once claimed. */
 export interface Offer {
   id: string; title: string; ends: string; direct: boolean; image: string; publisher: string; short: string;
   claimed: boolean; can_claim: boolean; prime: boolean; link_needed: boolean;
+  description?: string; screenshots?: string[]; developer?: string; genres?: string[]; modes?: string[]; released?: string;
+  rating?: string; website?: string; logo?: string; background?: string;
 }
 
 export interface Installed {

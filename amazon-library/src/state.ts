@@ -62,3 +62,4 @@ export function jobLine(j: Job): string {
 }
 
 export const gamePath = (id: string) => `/amazon-library/game/${encodeURIComponent(id)}`;
+export const offerPath = (id: string) => `/amazon-library/offer/${encodeURIComponent(id)}`;

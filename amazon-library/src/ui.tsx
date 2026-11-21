@@ -92,4 +92,10 @@ export const PAGE_CSS = `
 .al-chip.free { color: ${C.ok}; border-color: color-mix(in srgb, ${C.ok} 50%, transparent); }
 .al-chip.code { color: ${C.data}; border-color: color-mix(in srgb, ${C.data} 50%, transparent); }
 .al-chip.done { color: ${C.accent}; border-color: color-mix(in srgb, ${C.accent} 50%, transparent); }
+.al-shots { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 8px; scroll-behavior: smooth; }
+.al-shot { flex: 0 0 auto; width: 260px; aspect-ratio: 16 / 9; background: ${C.bg2}; border: 1px solid ${C.line}; overflow: hidden;
+  transition: border-color 80ms linear, transform 80ms linear; }
+.al-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.al-shot.al-focus { border-color: ${C.active}; transform: scale(1.03); box-shadow: 0 0 14px color-mix(in srgb, ${C.active} 45%, transparent); }
+.al-about { font-size: 14px; line-height: 1.55; color: ${C.text0}; opacity: .9; white-space: pre-line; }
 `;
