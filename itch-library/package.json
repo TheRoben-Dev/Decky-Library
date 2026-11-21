@@ -1,6 +1,6 @@
 {
   "name": "itch-library",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Your itch.io library in Steam Game Mode: install, update and play, Nightgrid-styled",
   "type": "module",
   "scripts": {

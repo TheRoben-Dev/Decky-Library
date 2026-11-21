@@ -21,6 +21,7 @@ export const state = {
     opts: { sort: "", price: "", genre: "", controller: "gamepad", platform: "", page: 1, released: "", duration: "",
       multiplayer: "", accessibility: "", engine: "", tags: [], demo: false } as BrowseOpts,
     moreFilters: false,
+    web: "",      // the same browse page on itch.io's website
     query: "",
     items: null as StoreItem[] | null,
     more: false,

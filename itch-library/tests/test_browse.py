@@ -132,3 +132,36 @@ class RateLimit(unittest.TestCase):
         self.assertEqual(api.retry_after({"Retry-After": "1"}), 5)
         self.assertEqual(api.retry_after({}), 60)
         self.assertEqual(api.retry_after({"Retry-After": "99999"}), 900)
+
+
+class ApiFallback(unittest.TestCase):
+    def test_query_and_filters(self):
+        self.assertEqual(browse.fallback_query("role-playing", []), "rpg")
+        self.assertEqual(browse.fallback_query("", ["Pixel Art"]), "pixel art")
+        self.assertEqual(browse.fallback_query("", [], "gamepad"), "controller")
+        found = {"items": [
+            {"id": 1, "title": "A", "platforms": ["linux"], "min_price": 0, "url": "u1"},
+            {"id": 2, "title": "B", "platforms": ["windows"], "min_price": 999, "url": "u2"},
+            {"id": 3, "title": "C", "platforms": ["windows"], "min_price": 0, "url": "u3"}], "page": 1, "more": False}
+        with mock.patch.object(browse, "search", return_value=found) as s:
+            r = browse.browse_via_api("k", price="free", platform="windows", genre="puzzle", tags=[])
+        s.assert_called_once_with("k", "puzzle", 1)
+        self.assertEqual([i["id"] for i in r["items"]], [3])
+        self.assertTrue(r["fallback"])
+        self.assertIn("controller support", r["notice"])
+        self.assertEqual(r["web"], "https://itch.io/games/free/genre-puzzle/input-gamepad/platform-windows")
+
+    def test_adult_query_needs_opt_in(self):
+        with mock.patch.object(browse, "search", return_value={"items": [], "page": 1, "more": False}) as s:
+            browse.browse_via_api("k", tags=["nsfw"])
+        s.assert_called_once_with("k", "game", 1)
+
+
+class Backoff(unittest.TestCase):
+    def test_repeated_429_doubles_wait(self):
+        t = api.Throttle(0)
+        self.assertEqual(t.limited({"Retry-After": "10"}), 10)
+        self.assertEqual(t.limited({"Retry-After": "10"}), 60)
+        self.assertEqual(t.limited({"Retry-After": "10"}), 120)
+        t.ok()
+        self.assertEqual(t.strikes, 0)

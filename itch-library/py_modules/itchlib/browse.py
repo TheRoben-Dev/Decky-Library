@@ -9,6 +9,7 @@ in memory for a few minutes.
 """
 import html
 import json
+import logging
 import re
 import time
 import urllib.error
@@ -53,7 +54,32 @@ def is_adult_tag(tag: str) -> bool:
 
 
 class BrowseError(api.ApiError):
-    pass
+    def __init__(self, msg: str, status: int = 0, retry_after: int = 0, detail: str = ""):
+        super().__init__(msg, status, retry_after)
+        self.detail = detail      # what itch.io actually sent, shown small under the message
+
+
+log = logging.getLogger("itch-library")
+
+
+def _snippet(body: bytes, headers=None) -> str:
+    """A short, readable trace of a response: server, content type and the start of its text."""
+    text = body.decode("utf-8", "replace")
+    title = re.search(r"<title[^>]*>(.*?)</title>", text, re.S | re.I)
+    text = re.sub(r"<script.*?</script>|<style.*?</style>", " ", text, flags=re.S | re.I)
+    text = html.unescape(re.sub(r"<[^>]+>", " ", text))
+    text = re.sub(r"\s+", " ", text).strip()
+    bits = []
+    if headers is not None:
+        for h in ("Server", "Content-Type", "Retry-After", "CF-Ray"):
+            v = headers.get(h)
+            if v:
+                bits.append(f"{h}: {v[:60]}")
+    if title:
+        bits.append("title: " + re.sub(r"\s+", " ", html.unescape(title.group(1))).strip()[:80])
+    if text:
+        bits.append(text[:160])
+    return " · ".join(bits)
 
 
 def feed_url(sort: str = "", price: str = "", genre: str = "", controller: str = "gamepad",
@@ -101,23 +127,37 @@ def _get(url: str, max_bytes: int, timeout: float = 20) -> bytes:
     u = urllib.parse.urlparse(url)
     if u.scheme != "https" or not (u.hostname == "itch.io" or (u.hostname or "").endswith(".itch.io")):
         raise BrowseError("Refusing a URL outside itch.io")
-    req = urllib.request.Request(url, headers={"User-Agent": api.UA, "Accept": "application/rss+xml, application/json, */*"})
+    req = urllib.request.Request(url, headers={"User-Agent": api.UA,
+                                               "Accept": "application/rss+xml, application/xml;q=0.9, */*;q=0.8"})
     try:
         SITE_THROTTLE.wait()
     except api.ApiError as e:
-        raise BrowseError(str(e), 429, e.retry_after) from None
+        raise BrowseError(str(e), 429, e.retry_after, "Waiting out itch.io's earlier rate limit; nothing was sent.") from None
     try:
         with api._opener(True).open(req, timeout=timeout) as r:
             data = r.read(max_bytes + 1)
+            ctype = r.headers.get("Content-Type", "")
+            log.info(f"GET {url} -> {r.status} {ctype} {len(data)} bytes")
+        SITE_THROTTLE.ok()
     except urllib.error.HTTPError as e:
+        try:
+            body = e.read(8192)
+        except Exception:
+            body = b""
+        detail = f"HTTP {e.code} for {url} · " + _snippet(body, e.headers)
+        log.warning(f"GET {url} -> {detail}")
         if e.code == 429:
             secs = SITE_THROTTLE.limited(e.headers)
-            raise BrowseError(api.limited_message(secs), 429, secs) from None
-        raise BrowseError(f"itch.io answered HTTP {e.code}", e.code) from None
+            raise BrowseError(api.limited_message(secs), 429, secs, detail) from None
+        if e.code in (403, 503):
+            raise BrowseError(f"itch.io refused the request (HTTP {e.code}). It may be blocking automated requests "
+                              "right now; Search (which uses itch.io's API) still works.", e.code, 0, detail) from None
+        raise BrowseError(f"itch.io answered HTTP {e.code}", e.code, 0, detail) from None
     except urllib.error.URLError as e:
-        raise BrowseError(f"Can't reach itch.io ({getattr(e, 'reason', e)})") from None
+        log.warning(f"GET {url} -> {e!r}")
+        raise BrowseError(f"Can't reach itch.io ({getattr(e, 'reason', e)})", 0, 0, url) from None
     except TimeoutError:
-        raise BrowseError("itch.io didn't answer in time") from None
+        raise BrowseError("itch.io didn't answer in time", 0, 0, url) from None
     if len(data) > max_bytes:
         raise BrowseError("itch.io sent an unexpectedly large answer")
     return data
@@ -158,7 +198,7 @@ def parse_feed(data: bytes) -> list:
     package, and these feeds are flat (one level of children, plus <platforms>)."""
     text = data.decode("utf-8", "replace")
     if "<rss" not in text[:2000] and "<channel" not in text[:4000]:
-        raise BrowseError("itch.io sent a feed that couldn't be read")
+        raise BrowseError("itch.io sent a web page instead of the game feed", 0, 0, _snippet(data))
     out = []
     for body in _ITEM.findall(text):
         f: dict = {}
@@ -206,16 +246,19 @@ def browse(sort="", price="", genre="", controller="gamepad", platform="", page=
     if hit and time.time() - hit[0] < CACHE_TTL:
         return hit[1]
     try:
-        items = parse_feed(_get(url, MAX_FEED))
+        raw = _get(url, MAX_FEED)
+        items = parse_feed(raw)
     except BrowseError as e:
         if e.status == 429 and hit and time.time() - hit[0] < STALE_TTL:
             return {**hit[1], "notice": f"Showing results from earlier. {e}"}
         if e.status == 404:
             raise BrowseError("itch.io has no page for that combination of filters. Try removing one.", 404) from None
         raise
+    if not items and b"<item" in raw:
+        raise BrowseError("itch.io's feed had games this plugin couldn't read", 0, 0, _snippet(raw[:3000]))
     # Web-only games can't be installed: keep what has a Linux/Windows build, or unknown platforms.
     shown = [i for i in items if not i["platforms"] or "linux" in i["platforms"] or "windows" in i["platforms"]]
-    res = {"items": shown, "page": int(page), "more": len(items) >= 20, "source": url}
+    res = {"items": shown, "page": int(page), "more": len(items) >= 20, "source": url, "web": url.replace(".xml", "", 1)}
     _cache[url] = (time.time(), res)
     if len(_cache) > 40:
         for k in sorted(_cache, key=lambda k: _cache[k][0])[:10]:
@@ -263,3 +306,45 @@ def search(key: str, query: str, page: int = 1) -> dict:
     res = {"items": items, "page": int(page), "more": len(games) >= per}
     _cache[ck] = (time.time(), res)
     return res
+
+
+# When itch.io's website won't serve this device (HTTP 429/403 on every feed request), Browse falls
+# back to the official API, which the key is meant for: a search built from the chosen genre/tags,
+# with price and platform applied here. Controller support and sorting aren't in the API's data.
+GENRE_WORDS = {"role-playing": "rpg", "card-game": "card game", "interactive-fiction": "interactive fiction",
+               "visual-novel": "visual novel", "other": "game"}
+BLOCKED = (403, 429, 503)
+
+
+def fallback_query(genre: str = "", tags=(), controller: str = "") -> str:
+    tag = next((tag_slug(str(t)) for t in (tags or []) if tag_slug(str(t))), "")
+    if tag:
+        return tag.replace("-", " ")
+    if genre in GENRES and genre:
+        return GENRE_WORDS.get(genre, genre)
+    return "controller" if controller else "game"
+
+
+def browse_via_api(key: str, sort="", price="", genre="", controller="gamepad", platform="", page=1, tags=(),
+                   adult: bool = False, **_ignored) -> dict:
+    q = fallback_query(genre, tags, controller)
+    if not adult and tag_slug(q) in ADULT_TAGS:
+        q = "game"
+    res = search(key, q, page)
+    items = []
+    for i in res["items"]:
+        mp = int(i.get("min_price") or 0)
+        if price == "free" and mp:
+            continue
+        if price == "store" and not mp:
+            continue
+        if price in ("5-dollars-or-less", "15-dollars-or-less") and mp > (500 if price.startswith("5") else 1500):
+            continue
+        if platform and i["platforms"] and platform not in i["platforms"]:
+            continue
+        items.append(i)
+    skipped = [n for n, v in (("sort", sort), ("controller support", controller), ("on-sale", price == "on-sale")) if v]
+    note = (f"itch.io's browse pages aren't answering this device right now, so these are API search results for "
+            f"“{q}”" + (f" ({', '.join(skipped)} can't be applied this way)" if skipped else "") + ".")
+    web = feed_url(sort, price, genre, controller, platform, page, tags=tags, adult=adult, **_ignored).replace(".xml", "", 1)
+    return {**res, "items": items, "notice": note, "fallback": True, "web": web}

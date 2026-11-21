@@ -36,7 +36,7 @@ def _err(e: BaseException) -> dict:
     if not isinstance(e, (api.ApiError, install.InstallError)):
         decky.logger.error(f"unexpected error: {e!r}")
     return {"ok": False, "error": str(e) or e.__class__.__name__, "status": getattr(e, "status", 0),
-            "retry_after": getattr(e, "retry_after", 0)}
+            "retry_after": getattr(e, "retry_after", 0), "detail": getattr(e, "detail", "")}
 
 
 def steam_root(home: str) -> str:
@@ -310,9 +310,16 @@ class Plugin:
             more = {k: str(o.get(k) or "") for k in ("released", "duration", "multiplayer", "accessibility", "engine")}
             more.update(tags=[str(t) for t in tags][:3] if isinstance(tags, list) else [],
                         demo=bool(o.get("demo")), adult=bool(self.settings.data.get("adult")))
-            res = await asyncio.to_thread(browse.browse, str(o.get("sort", "")), str(o.get("price", "")),
-                                          str(o.get("genre", "")), str(o.get("controller", "gamepad")),
-                                          str(o.get("platform", "")), int(o.get("page", 1) or 1), **more)
+            args = (str(o.get("sort", "")), str(o.get("price", "")), str(o.get("genre", "")),
+                    str(o.get("controller", "gamepad")), str(o.get("platform", "")), int(o.get("page", 1) or 1))
+            try:
+                res = await asyncio.to_thread(browse.browse, *args, **more)
+            except browse.BrowseError as e:
+                if e.status not in browse.BLOCKED or not self.settings.data.get("key"):
+                    raise
+                decky.logger.warning(f"browse feed blocked ({e.status}: {e.detail}); using API search instead")
+                res = await asyncio.to_thread(browse.browse_via_api, self._key(), *args, **more)
+                res["detail"] = e.detail
             return {"ok": True, **res}
         except Exception as e:
             return _err(e)
