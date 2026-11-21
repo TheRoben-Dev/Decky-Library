@@ -14,3 +14,14 @@ Install a theme by extracting its zip into `~/homebrew/themes/`, then refresh CS
 |---|---|
 | [library-hub](library-hub/) | Installs, updates and removes every plugin in this repo and the Nightgrid theme from Quick Access (SHA-256 checked, via Decky's own installer), offers CSS Loader if it's missing, and updates itself. |
 | [handheld-library](handheld-library/) | Keeps a "Handheld Ready" Library collection of games rated Deck Verified/Playable (optionally SteamOS Compatible, ProtonDB Gold+ or native) that have full or partial controller support, and lists your hidden games in Quick Access with Play and Unhide. |
+| [vex-performance](vex-performance/) | Per-game smart profiles: gamescope FSR, frame cap + matched refresh, TDP/GPU (Steam slider / PowerStation) and lsfg-vk frame gen, applied automatically on game launch. |
+| [proton-picker](proton-picker/) | Per-game Proton picker: ProtonDB/Deck-rating driven auto choice, installs GE-Proton / Proton-CachyOS, applies it with no launch options and rolls back if a game breaks. |
+
+## Building a plugin
+```
+cd <plugin-folder>
+pnpm install
+pnpm build
+./package.sh   # installable zip in out/
+```
+Install the zip from Decky → Developer → Install Plugin from Zip.
