@@ -24,8 +24,8 @@ function Viewer({ shots, start, closeModal }: { shots: { full: string; thumb: st
   const go = (n: number) => setI((i + n + shots.length) % shots.length);
   return (
     <ModalRoot onCancel={closeModal} closeModal={closeModal}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
-        <img src={shots[i].full} style={{ maxWidth: "100%", maxHeight: "62vh", objectFit: "contain", border: `1px solid ${C.line}` }}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", background: C.bg0, padding: 8 }}>
+        <img src={shots[i].full} style={{ maxWidth: "100%", maxHeight: "70vh", objectFit: "contain", border: `1px solid ${C.line}` }}
           onError={(e) => { const t = e.currentTarget; if (t.src !== shots[i].thumb) t.src = shots[i].thumb; }} />
         <Focusable style={{ display: "flex", gap: 8, alignItems: "center" }} flow-children="row">
           <DialogButton style={{ minWidth: 0, width: "auto", padding: "6px 18px" }} onClick={() => go(-1)}>◀ Previous</DialogButton>
