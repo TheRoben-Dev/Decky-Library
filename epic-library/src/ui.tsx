@@ -109,7 +109,5 @@ export const PAGE_CSS = `
 .ep-reqs { display: grid; grid-template-columns: max-content 1fr 1fr; gap: 4px 14px; font-size: 12px; }
 .ep-reqs .h { font-family: ${MONO}; font-size: 10px; color: ${C.text1}; text-transform: uppercase; letter-spacing: .1em; }
 .ep-reqs .t { color: ${C.text1}; }
-.ep-viewer { background: ${C.bg0}; display: flex; flex-direction: column; gap: 12px; align-items: center; }
-.ep-viewer img { max-width: 100%; max-height: 62vh; object-fit: contain; border: 1px solid ${C.line}; display: block; }
 .ep-code { font-family: ${MONO}; font-size: 12px; color: ${C.data}; word-break: break-all; }
 `;
