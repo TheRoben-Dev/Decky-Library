@@ -5,7 +5,7 @@ import { changed, state } from "./state";
 import { ensureShortcut, removeShortcut, toast } from "./steam";
 
 export async function loadSettings() {
-  const s = await be.getSettings();
+  const s = await be.within(be.getSettings(), 30000, "The Itch Library backend");
   state.settings = s;
   changed();
   if (s.imported) toast(s.imported);
@@ -13,7 +13,9 @@ export async function loadSettings() {
 }
 
 export async function loadLibrary(refresh = false): Promise<string | null> {
-  const r = await be.getLibrary(refresh);
+  let r: Awaited<ReturnType<typeof be.getLibrary>>;
+  try { r = await be.within(be.getLibrary(refresh), 120000, "Loading your itch.io library"); }
+  catch (e) { changed(); return e instanceof Error ? e.message : String(e); }
   if (!r.ok) { changed(); return r.error; }
   state.games = r.games;
   state.libraryAt = r.at;

@@ -7,7 +7,8 @@ answers only on that random path, accepts one key and shuts down after it (or af
 """
 import html
 import http.server
-import secrets
+import base64
+import os
 import socket
 import threading
 import time
@@ -58,6 +59,7 @@ class Handoff:
         self.url = ""
         self.started = 0.0
         self.received = False
+        self.visited = False
         self.lock = threading.Lock()
 
     def start(self) -> dict:
@@ -68,8 +70,9 @@ class Handoff:
             ip = lan_ip()
             if not ip or ip.startswith("127."):
                 return {"ok": False, "error": "Not connected to a network"}
-            self.token = secrets.token_urlsafe(12)
+            self.token = base64.urlsafe_b64encode(os.urandom(12)).decode().rstrip("=")
             self.received = False
+            self.visited = False
             handoff = self
 
             class H(http.server.BaseHTTPRequestHandler):
@@ -96,6 +99,7 @@ class Handoff:
                     if not self._mine():
                         self.send_error(404)
                         return
+                    handoff.visited = True
                     if handoff.received:
                         self._send(200, '<p class="ok">Already signed in. You can close this page.</p>')
                         return
@@ -143,7 +147,7 @@ class Handoff:
 
     def status(self) -> dict:
         live = self.server is not None
-        return {"ok": live, "url": self.url if live else "", "received": self.received,
+        return {"ok": live, "url": self.url if live else "", "received": self.received, "visited": self.visited,
                 "expires": int(self.started + TTL) if live else 0}
 
     def _stop_locked(self):
