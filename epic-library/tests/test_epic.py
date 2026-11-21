@@ -142,6 +142,15 @@ class Helpers(unittest.TestCase):
         self.assertFalse(out[1]["installable"])
         self.assertEqual(out[1]["third_party"], "Origin")
 
+    def test_non_games_excluded(self):
+        raw = [{"app_name": "G", "app_title": "Game", "metadata": {"namespace": "a", "categories": [{"path": "games"}, {"path": "applications"}]}},
+               {"app_name": "Asset", "app_title": "Rock pack", "metadata": {"namespace": "b", "categories": [{"path": "assets/textures"}]}},
+               {"app_name": "Plug", "app_title": "Plugin", "metadata": {"namespace": "c", "categories": [{"path": "plugins/engine"}]}},
+               {"app_name": "App", "app_title": "Some app", "metadata": {"namespace": "d", "categories": [{"path": "applications"}]}},
+               {"app_name": "UE", "app_title": "UE thing", "metadata": {"namespace": "ue"}},
+               {"app_name": "Bare", "app_title": "No categories", "metadata": {"namespace": "e"}}]
+        self.assertEqual([g["app"] for g in library.build(raw, {})], ["G", "Bare"])
+
     def test_installed_view(self):
         v = library.installed_view({"A": {"install_path": "/g/A", "title": "A", "version": "1", "executable": "\\bin\\a.exe"},
                                     "X": {"is_dlc": True}}, {"A": {"appid": 5}}, {"A": "2"}, lambda p: True)
@@ -161,6 +170,7 @@ class Catalog(unittest.TestCase):
         it = catalog.item(self.EL, "9", "en-US")
         self.assertEqual(it["url"], "https://store.epicgames.com/en-US/p/pad-game")
         self.assertEqual((it["price"], it["sale"], it["controller"], it["free"]), ("$5.00", 50, True, False))
+        self.assertEqual(it["checkout"], "https://store.epicgames.com/purchase?offers=1-ns1-o1")
         e = dict(self.EL, productSlug=None, urlSlug="0123456789abcdef0123456789abcdef", customAttributes=[])
         self.assertIn("browse?q=Pad%20Game", catalog.item(e, "", "en-US")["url"])
 

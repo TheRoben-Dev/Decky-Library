@@ -9,9 +9,12 @@ Your Epic Games Store library in Steam Game Mode, Nightgrid-styled and fully con
   Newest, price, A–Z), price (Free, On sale) and genre. **Controller support is on by default** (Epic's own
   *Controller Support* tag); switch to *All games* to see everything. Filters also apply to search.
   Games you own open their library page. Others show their price: **Get/Buy on Epic** opens that game's store page in
-  Steam's browser, or **on phone** shows a QR code. Free games have to be claimed there too. Then press *I got it*:
-  the game moves to your library.
-- **Your library**: every game you own in a full-screen grid: Library, Installed, Updates, Downloads.
+  Steam's browser, or **on phone** shows a QR code. **Free games (this week's giveaways too) can be claimed in one
+  step**: X on the tile or *Claim free* opens Epic's own checkout for that game in Steam's browser (sign in to Epic
+  there once, press Place Order; nothing is charged, Epic may show a captcha), or *Claim on phone* as a QR code. Then
+  press *I got it*: the game moves to your library.
+- **Your library**: every game you own in a full-screen grid (Unreal Engine / Fab assets, plugins and other
+  non-games are left out): Library, Installed, Updates, Downloads.
   L1/R1 switch tabs, A opens a game, X installs or plays it right from the grid.
 - **Install** through Proton (Epic games are Windows builds). The game page shows the size before you install. DLC you
   own is installed with the game (setting). Downloads can be **paused and resumed**; a paused download can be discarded.

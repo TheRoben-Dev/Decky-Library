@@ -35,6 +35,7 @@ from epiclib.store import Meta, Settings, read_json, write_json  # noqa: E402
 PLUGIN_DIR = os.path.dirname(os.path.realpath(__file__))
 CODE_RE = re.compile(r"\b[0-9a-f]{32}\b")
 LIBRARY_TTL = 30 * 60
+LIBRARY_FORMAT = 2               # bump when library.build() changes what it keeps
 UPDATE_TTL = 6 * 3600
 FREE_TTL = 30 * 60
 MAX_IMAGE = 8 * 1024 * 1024
@@ -285,11 +286,11 @@ class Plugin:
         if not u:
             raise LegendaryError("Not signed in", 401)
         cache = read_json(self._library_path(), {})
-        fresh = cache.get("user") == u["id"] and time.time() - float(cache.get("at", 0)) < LIBRARY_TTL
+        fresh = cache.get("v") == LIBRARY_FORMAT and cache.get("user") == u["id"] and time.time() - float(cache.get("at", 0)) < LIBRARY_TTL
         if refresh or not fresh or not isinstance(cache.get("games"), list):
             raw = self.lgd.owned()
             self.versions = self.lgd.latest_versions()
-            cache = {"at": time.time(), "user": u["id"], "games": library.build(raw, self.versions)}
+            cache = {"v": LIBRARY_FORMAT, "at": time.time(), "user": u["id"], "games": library.build(raw, self.versions)}
             write_json(self._library_path(), cache)
         games = cache["games"]
         if not self.settings.data["show_all"]:

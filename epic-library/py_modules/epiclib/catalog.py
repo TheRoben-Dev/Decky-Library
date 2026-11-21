@@ -16,6 +16,7 @@ import urllib.request
 GRAPHQL = "https://store.epicgames.com/graphql"
 FREE_FEED = "https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale={locale}&country={country}&allowCountries={country}"
 STORE_PAGE = "https://store.epicgames.com/{locale}/p/{slug}"
+CHECKOUT = "https://store.epicgames.com/purchase?offers=1-{ns}-{id}"
 STORE_SEARCH = "https://store.epicgames.com/{locale}/browse?q={q}&sortBy=relevancy&sortDir=DESC&count=40"
 UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
 TIMEOUT = 20
@@ -190,6 +191,9 @@ def item(e: dict, controller_tag: str, locale: str) -> dict | None:
         "description": (e.get("description") or "").strip()[:500],
         "tall": tall, "wide": wide,
         "url": url,
+        # Epic's direct checkout for this offer: opens straight on "Place order" (free = claim).
+        "checkout": CHECKOUT.format(ns=urllib.parse.quote(str(e.get("namespace") or "")), id=urllib.parse.quote(str(e.get("id") or "")))
+        if e.get("namespace") and e.get("id") else "",
         "free": free,
         "price": "Free" if free else (fmt.get("discountPrice") or ""),
         "original": fmt.get("originalPrice") or "",
