@@ -51,6 +51,7 @@ export const getSettings = callable<[], Settings>("settings_get");
 export const setKey = callable<[key: string], { ok: boolean; message: string; settings: Settings }>("set_key");
 export const signOut = callable<[], Settings>("sign_out");
 export const handoffStart = callable<[], { ok: boolean; url?: string; error?: string; expires?: number }>("handoff_start");
+export const handoffStatus = callable<[], { ok: boolean; url: string; received: boolean; visited: boolean; signedIn: boolean }>("handoff_status");
 export const handoffStop = callable<[], boolean>("handoff_stop");
 export const setOptions = callable<[opts: Partial<Settings>], { ok: true; settings: Settings } | Fail>("set_options");
 export const getRoots = callable<[], Root[]>("roots");
@@ -76,3 +77,11 @@ export const setExe = callable<[gameId: number, path: string], { ok: true; insta
 export const uninstall = callable<[gameId: number, deletePrefix: boolean], { ok: true; appid: number } | Fail>("uninstall");
 export const checkUpdates = callable<[], { ok: true; updates: number; checked: number; installed: Record<string, Installed> } | Fail>("check_updates");
 export const getInstalled = callable<[], Record<string, Installed>>("installed_list");
+
+/** Rejects with a readable message if the backend doesn't answer in time (e.g. it failed to start). */
+export function within<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
+  return new Promise<T>((ok, fail) => {
+    const t = setTimeout(() => fail(new Error(`${what} didn't answer in ${Math.round(ms / 1000)} s. Restart Decky (Quick Access → Decky → settings) or reinstall the plugin, then try again.`)), ms);
+    p.then((v) => { clearTimeout(t); ok(v); }, (e) => { clearTimeout(t); fail(e); });
+  });
+}

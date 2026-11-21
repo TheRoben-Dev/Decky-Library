@@ -4,13 +4,11 @@ Pure Python (zipfile/tarfile) for the common archive types; 7-Zip, bsdtar, unrar
 are used only when an archive needs them and they're installed. Every extracted path is checked to
 stay inside the game's folder. Nothing here runs unless a download/install was asked for.
 """
-import math
 import os
 import re
 import shutil
 import stat
 import subprocess
-import tarfile
 import threading
 import time
 import zipfile
@@ -210,6 +208,15 @@ def _unzip(src: str, dest: str, cancel: threading.Event) -> None:
 
 
 def _untar(src: str, dest: str, cancel: threading.Event) -> None:
+    try:
+        import tarfile
+    except ImportError:
+        tar = which("tar", "bsdtar")
+        if not tar:
+            raise InstallError("Can't unpack .tar archives on this system")
+        _run([tar, "-xf", src, "-C", dest], "tar", cancel)
+        _check_tree(dest)
+        return
     with tarfile.open(src) as t:
         members = []
         for m in t:
@@ -290,7 +297,9 @@ def unpack(src: str, dest: str, filename: str, cancel: threading.Event) -> dict:
     elif kind in ("tar", "zstd"):
         try:
             _untar(src, dest, cancel)
-        except (tarfile.TarError, OSError) as e:
+        except Exception as e:
+            if isinstance(e, (Cancelled, InstallError)):
+                raise
             if kind == "zstd" or "compression" in str(e).lower():
                 _external(src, dest, "tar.zst", cancel)
                 _check_tree(dest)
@@ -448,7 +457,7 @@ def scan(root: str, title: str, targets: list, prefer: str = "") -> list:
             except OSError:
                 size = 0
             score -= depth * 10
-            score += min(20.0, math.log2(max(size, 1)) - 10)
+            score += min(20.0, max(size, 1).bit_length() - 11)
             stem = _norm(os.path.splitext(n)[0])
             if tnorm and stem and (stem in tnorm or tnorm in stem):
                 score += 30

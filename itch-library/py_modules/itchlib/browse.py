@@ -14,7 +14,6 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-import xml.etree.ElementTree as ET
 
 from . import api
 
@@ -81,10 +80,6 @@ _IMG = re.compile(r"""<img[^>]+src=["']([^"']+)["']""", re.I)
 PLATFORM_WORDS = {"windows": "windows", "linux": "linux", "osx": "mac", "macos": "mac", "mac": "mac", "android": "android"}
 
 
-def _local(tag: str) -> str:
-    return tag.rsplit("}", 1)[-1].lower()
-
-
 def _price(text: str) -> tuple:
     """('$4.99', False) / ('Free', True) from whatever price text the feed carries."""
     t = (text or "").strip()
@@ -95,28 +90,41 @@ def _price(text: str) -> tuple:
     return t, False
 
 
+_ITEM = re.compile(r"<item\b[^>]*>(.*?)</item>", re.S | re.I)
+_CHILD = re.compile(r"<([A-Za-z][\w:.-]*)\b[^>]*?(?:/>|>(.*?)</\1\s*>)", re.S)
+
+
+def _text(raw: str | None) -> str:
+    """Element text: CDATA unwrapped, entities decoded."""
+    if not raw:
+        return ""
+    raw = raw.strip()
+    m = re.fullmatch(r"<!\[CDATA\[(.*?)\]\]>", raw, re.S)
+    return (m.group(1) if m else html.unescape(raw)).strip()
+
+
 def parse_feed(data: bytes) -> list:
-    """Items of an itch.io browse feed: [{title, url, cover, price, free, platforms, author, sale}]."""
-    try:
-        root = ET.fromstring(data)
-    except ET.ParseError:
-        raise BrowseError("itch.io sent a feed that couldn't be read") from None
+    """Items of an itch.io browse feed: [{title, url, cover, price, free, platforms, author, sale}].
+
+    A small regex reader rather than xml.etree: Decky's bundled Python doesn't ship the xml
+    package, and these feeds are flat (one level of children, plus <platforms>)."""
+    text = data.decode("utf-8", "replace")
+    if "<rss" not in text[:2000] and "<channel" not in text[:4000]:
+        raise BrowseError("itch.io sent a feed that couldn't be read")
     out = []
-    for item in root.iter():
-        if _local(item.tag) != "item":
-            continue
+    for body in _ITEM.findall(text):
         f: dict = {}
         plats: list = []
-        for ch in item:
-            name = _local(ch.tag)
+        for tag, inner in _CHILD.findall(body):
+            name = tag.rsplit(":", 1)[-1].lower()
             if name == "platforms":
-                for p in ch:
-                    v = (p.text or "").strip().lower()
-                    key = PLATFORM_WORDS.get(_local(p.tag))
+                for ptag, pv in _CHILD.findall(inner or ""):
+                    key = PLATFORM_WORDS.get(ptag.lower())
+                    v = _text(pv).lower()
                     if key and v not in ("no", "false", "0") and key not in plats:
                         plats.append(key)
-            else:
-                f[name] = (ch.text or "").strip()
+            elif name not in f:
+                f[name] = _text(inner)
         link = f.get("link", "")
         if not link.startswith("https://"):
             continue
@@ -134,11 +142,11 @@ def parse_feed(data: bytes) -> list:
         price, free = _price(price_text)
         cover = f.get("imageurl", "")
         if not cover:
-            m = _IMG.search(html.unescape(f.get("description", "")))
+            m = _IMG.search(f.get("description", ""))
             cover = m.group(1) if m else ""
         host = urllib.parse.urlparse(link).hostname or ""
         author = host[: -len(".itch.io")] if host.endswith(".itch.io") else ""
-        out.append({"title": html.unescape(title), "url": link, "cover": cover if cover.startswith("https://") else "",
+        out.append({"title": title, "url": link, "cover": cover if cover.startswith("https://") else "",
                     "price": price, "free": free, "platforms": plats, "author": author,
                     "sale": f.get("salerate", "") or ""})
     return out

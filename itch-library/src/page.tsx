@@ -61,17 +61,27 @@ export function LibraryPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      const set = s.settings ?? await loadSettings().catch(() => null);
-      if (set?.signedIn) setError(await loadLibrary(false));
-    })();
-  }, []);
+  const [setErr, setSetErr] = useState<string | null>(null);
+  const start = async () => {
+    setSetErr(null);
+    let set = s.settings;
+    if (!set) {
+      try { set = await loadSettings(); }
+      catch (e) { setSetErr(e instanceof Error ? e.message : String(e)); return; }
+    }
+    if (set?.signedIn) setError(await loadLibrary(false));
+  };
+  useEffect(() => { start(); }, []);
 
   const refresh = async () => { setBusy(true); setError(await loadLibrary(true)); setBusy(false); };
 
   let body: ReactNode;
-  if (!s.settings) body = <SteamSpinner background="transparent" />;
+  if (!s.settings) body = setErr
+    ? <Focusable className="il-msg err" style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "flex-start" }}>
+        <div>{setErr}</div>
+        <DialogButton className="il-btn" style={{ width: "auto" }} onClick={start}>Retry</DialogButton>
+      </Focusable>
+    : <SteamSpinner background="transparent" />;
   else if (!s.settings.signedIn) body = <SignIn />;
   else if (!s.games) body = error ? <div className="il-msg err">{error}</div> : <SteamSpinner background="transparent" />;
   else {

@@ -167,6 +167,9 @@ class Plugin:
     async def handoff_start(self):
         return await asyncio.to_thread(self.handoff.start)
 
+    async def handoff_status(self):
+        return {**self.handoff.status(), "signedIn": bool(self.settings.data.get("key"))}
+
     async def handoff_stop(self):
         await asyncio.to_thread(self.handoff.stop)
         return True
