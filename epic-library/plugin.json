@@ -1,0 +1,16 @@
+{
+  "name": "Epic Library",
+  "author": "Roben",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": [
+      "epic",
+      "library",
+      "store",
+      "nightgrid"
+    ],
+    "description": "Your Epic Games Store library in Game Mode: sign in from your phone, browse the store (controller-supported games by default), install games through Proton, play them from Steam with their own artwork, update, repair, cloud saves and uninstall. Nothing runs in the background.",
+    "image": "https://opengraph.githubassets.com/1/TheRoben-Dev/Decky-Library"
+  }
+}
