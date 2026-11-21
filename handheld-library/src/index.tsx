@@ -311,23 +311,31 @@ function Content() {
   );
 }
 
+/** Run one startup step; a failure is logged and that feature stays off instead of failing the whole plugin. */
+function safely<T>(what: string, fn: () => T, fallback: T): T {
+  try { return fn(); } catch (e) {
+    console.error(`[Handheld Library] ${what} failed at startup`, e);
+    return fallback;
+  }
+}
+
 export default definePlugin(() => {
-  start();
-  startSleepWatch();
-  const qamOk = installQam({
+  safely("library sync", () => start(), undefined);
+  safely("sleep watch", () => startSleepWatch(), undefined);
+  const qamOk = safely("QAM tabs", () => installQam({
     title: <div className={staticClasses.Title}>Hidden games</div>,
     icon: <FaEyeSlash />,
     content: <HiddenTab />,
-  });
-  installLibrary();
+  }), false);
+  safely("library tabs", () => installLibrary(), false);
   const apply = () => {
     const s = snapshot().settings;
     if (!s) return;
-    if (qamOk) { setHiddenTabs(s.hiddenQamTabs); setPluginTabs(s.pluginTabs); }
-    setLibraryConfig({
+    if (qamOk) safely("QAM settings", () => { setHiddenTabs(s.hiddenQamTabs); setPluginTabs(s.pluginTabs); }, undefined);
+    safely("library settings", () => setLibraryConfig({
       hidden: new Set(s.hiddenLibraryTabs),
       readyTab: s.readyLibraryTab && s.collectionId && s.enabled ? { name: s.collectionName, collectionId: s.collectionId } : null,
-    });
+    }), undefined);
   };
   subscribe(apply);
   loadSettings().then(apply).catch(() => {});
@@ -336,6 +344,11 @@ export default definePlugin(() => {
     titleView: <div className={staticClasses.Title}>Handheld Library</div>,
     content: <Content />,
     icon: <FaFilter />,
-    onDismount() { stopSleepWatch(); uninstallLibrary(); uninstallQam(); stop(); },
+    onDismount() {
+      safely("sleep watch", stopSleepWatch, undefined);
+      safely("library tabs", uninstallLibrary, undefined);
+      safely("QAM tabs", uninstallQam, undefined);
+      safely("sync", stop, undefined);
+    },
   };
 });
