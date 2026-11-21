@@ -82,10 +82,11 @@ export const PAGE_CSS = `
   background: ${C.bg1}; overflow: hidden; position: relative; }
 .gl-detail .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .gl-detail .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.gl-detail .info > * { flex-shrink: 0; }   /* never squash panels: the page scrolls instead */
 .gl-detail h1 { margin: 0; font-family: ${MONO}; font-size: 26px; letter-spacing: .04em; text-transform: uppercase; line-height: 1.15; }
 .gl-detail .by { color: ${C.text1}; font-size: 13px; }
 .gl-detail .short { color: ${C.text0}; opacity: .85; font-size: 14px; line-height: 1.45; }
-.gl-panel { border: 1px solid ${C.line}; background: color-mix(in srgb, ${C.bg1} 88%, transparent); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.gl-panel { position: relative; border: 1px solid ${C.line}; background: color-mix(in srgb, ${C.bg1} 88%, transparent); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
 .gl-panel .k { font-family: ${MONO}; font-size: 11px; color: ${C.text1}; text-transform: uppercase; letter-spacing: .1em; }
 .gl-panel .v { font-size: 13px; word-break: break-all; }
 .gl-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }

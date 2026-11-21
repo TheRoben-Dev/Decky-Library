@@ -1,6 +1,6 @@
 {
   "name": "gog-library",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Your GOG library and the GOG store in Steam Game Mode: install, update and play, Nightgrid-styled",
   "type": "module",
   "scripts": {
