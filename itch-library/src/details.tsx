@@ -8,7 +8,7 @@ import { getStorePage, StorePage } from "./backend";
 import { C, MONO } from "./ui";
 
 export const DETAILS_CSS = `
-.il-shots { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 8px; scroll-snap-type: x mandatory; }
+.il-shots { flex-shrink: 0; position: relative; z-index: 1; display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 8px; scroll-snap-type: x mandatory; }
 .il-shot { flex: 0 0 auto; height: 150px; aspect-ratio: 16 / 9; border: 1px solid ${C.line}; background: ${C.bg1}; scroll-snap-align: start; }
 .il-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .il-shot.il-focus, .il-shot.gpfocus { border-color: ${C.active}; box-shadow: 0 0 14px color-mix(in srgb, ${C.active} 45%, transparent); }
@@ -19,7 +19,7 @@ export const DETAILS_CSS = `
 .il-desc img { max-width: 100%; max-height: 360px; object-fit: contain; align-self: flex-start; }
 .il-desc .fade { position: relative; max-height: 260px; overflow: hidden; }
 .il-desc .fade::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 60px; background: linear-gradient(transparent, ${C.bg1}); }
-.il-viewer { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.il-viewer { display: flex; flex-direction: column; align-items: center; gap: 10px; background: ${C.bg0}; padding: 12px; position: relative; z-index: 10; }
 .il-viewer img { max-width: 100%; max-height: 70vh; object-fit: contain; }
 `;
 
@@ -28,13 +28,16 @@ function Viewer({ shots, start, closeModal }: { shots: string[]; start: number; 
   const go = (d: number) => setI((n) => (n + d + shots.length) % shots.length);
   return (
     <ModalRoot onCancel={closeModal} closeModal={closeModal}>
-      <Focusable className="il-viewer">
-        <img src={shots[i]} draggable={false} />
+      {/* Modals render outside the page's stylesheet, so everything here is styled inline. */}
+      <Focusable className="il-viewer" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
+        background: C.bg0, padding: 12, position: "relative", zIndex: 10 }}>
+        <img src={shots[i]} draggable={false}
+          style={{ display: "block", maxWidth: "100%", maxHeight: "68vh", objectFit: "contain", background: "#000" }} />
         <div style={{ fontSize: 12, color: C.text1 }}>{i + 1} / {shots.length}</div>
         <Focusable flow-children="row" style={{ display: "flex", gap: 8 }}>
-          <DialogButton className="il-btn" onClick={() => go(-1)}>Previous</DialogButton>
-          <DialogButton className="il-btn" onClick={() => go(1)}>Next</DialogButton>
-          <DialogButton className="il-btn" onClick={closeModal}>Close</DialogButton>
+          <DialogButton className="il-btn" style={{ width: "auto", minWidth: 0, padding: "6px 16px" }} onClick={() => go(-1)}>Previous</DialogButton>
+          <DialogButton className="il-btn" style={{ width: "auto", minWidth: 0, padding: "6px 16px" }} onClick={() => go(1)}>Next</DialogButton>
+          <DialogButton className="il-btn" style={{ width: "auto", minWidth: 0, padding: "6px 16px" }} onClick={closeModal}>Close</DialogButton>
         </Focusable>
       </Focusable>
     </ModalRoot>
