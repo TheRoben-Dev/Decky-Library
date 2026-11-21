@@ -333,6 +333,7 @@ def set_game(appid: str, name: str, enabled: bool, multiplier: int, flow_scale: 
     owned = _owned()
 
     existing = next((p for p in profiles if appid in [str(x) for x in p.get("active_in", [])]), None)
+    name = (name or "").strip() or f"App {appid}"
     if enabled:
         if existing is None:
             pname = f"{name} ({appid})" if any(p.get("name") == name for p in profiles) else name

@@ -10,8 +10,17 @@ We talk to it with `busctl` (always present with systemd) so the plugin needs
 no Python D-Bus bindings.
 """
 import json
+import os
 import shutil
 import subprocess
+
+
+def _env():
+    # Decky's bundled Python sets LD_LIBRARY_PATH to its own libs, which can break
+    # system binaries like busctl (libsystemd/libc mismatches). Run them clean.
+    env = dict(os.environ)
+    env.pop("LD_LIBRARY_PATH", None)
+    return env
 
 BUS = "org.shadowblip.PowerStation"
 GPU_PATH = "/org/shadowblip/Performance/GPU"
@@ -22,7 +31,7 @@ TDP = "org.shadowblip.GPU.Card.TDP"
 def _busctl(*args, timeout=4):
     exe = shutil.which("busctl") or "/usr/bin/busctl"
     r = subprocess.run([exe, "--system", "--json=short", *args],
-                       capture_output=True, text=True, timeout=timeout)
+                       capture_output=True, text=True, timeout=timeout, env=_env())
     if r.returncode != 0:
         raise RuntimeError(r.stderr.strip() or f"busctl exit {r.returncode}")
     out = r.stdout.strip()
@@ -50,7 +59,7 @@ def _set(path, iface, prop, sig, value):
     v = ("true" if value else "false") if sig == "b" else str(value)
     subprocess_args = ["set-property", BUS, path, iface, prop, sig, v]
     exe = shutil.which("busctl") or "/usr/bin/busctl"
-    r = subprocess.run([exe, "--system", *subprocess_args], capture_output=True, text=True, timeout=4)
+    r = subprocess.run([exe, "--system", *subprocess_args], capture_output=True, text=True, timeout=4, env=_env())
     if r.returncode != 0:
         raise RuntimeError(r.stderr.strip() or f"busctl exit {r.returncode}")
 

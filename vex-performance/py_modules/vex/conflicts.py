@@ -15,7 +15,9 @@ KNOWN = {
 
 def _service_active(name):
     try:
-        r = subprocess.run(["systemctl", "is-active", name], capture_output=True, text=True, timeout=3)
+        env = dict(os.environ)
+        env.pop("LD_LIBRARY_PATH", None)   # Decky's bundled libs confuse systemctl
+        r = subprocess.run(["systemctl", "is-active", name], capture_output=True, text=True, timeout=3, env=env)
         return r.stdout.strip() == "active"
     except Exception:
         return False

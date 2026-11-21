@@ -11,6 +11,8 @@ class Controller {
   env: Environment | null = null;
   app: steam.RunningApp | null = null;
   lastApplied = "";
+  /** True while GPU clocks are pinned by us; only then do we hand them back to "auto". */
+  private gpuManual = false;
   private listeners = new Set<Listener>();
   private pollId?: number;
   private saveTimer?: number;
@@ -95,7 +97,9 @@ class Controller {
       be.log(`steam perf error ${e}`);
     }
     if (backend !== "off") {
-      const r = await be.applyPower(backend, p.power.tdpEnabled, p.power.tdp, p.power.gpuMode, p.power.gpuMin, p.power.gpuMax).catch((e) => ({ error: String(e) } as any));
+      const gpuMode = p.power.gpuMode === "auto" && !this.gpuManual ? "skip" : p.power.gpuMode;
+      const r = await be.applyPower(backend, p.power.tdpEnabled, p.power.tdp, gpuMode as any, p.power.gpuMin, p.power.gpuMax).catch((e) => ({ error: String(e) } as any));
+      if (gpuMode !== "skip" && r?.gpu === "ok") this.gpuManual = gpuMode !== "auto";
       if (backend !== "steam" && p.power.tdpEnabled && r?.tdp === "ok") parts.push(`${p.power.tdp} W`);
       if (p.power.gpuMode !== "auto" && r?.gpu === "ok") parts.push(`GPU ${p.power.gpuMode === "max" ? "≤" : ""}${p.power.gpuMax} MHz`);
       if (r?.error) be.log(`power error ${r.error}`);
@@ -111,7 +115,10 @@ class Controller {
 
   private async onNoGame() {
     const backend = this.resolvedBackend();
-    if (backend !== "off") await be.resetPower(backend).catch(() => {});
+    if (backend !== "off" && this.gpuManual) {
+      await be.resetPower(backend).catch(() => {});
+      this.gpuManual = false;
+    }
     this.lastApplied = "";
     this.emit();
   }

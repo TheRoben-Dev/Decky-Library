@@ -73,9 +73,12 @@ class Plugin:
                     result["tdp"] = hhd.set_tdp(int(tdp)) if hhd.available() else "hhd-unavailable"
                 elif backend == "sysfs":
                     result["tdp"] = power.set_tdp_sysfs(int(tdp))
-            route = self._gpu_route(backend)
-            result["gpuPath"] = route
-            result["gpu"] = self._set_gpu(route, gpu_mode, int(gpu_min), int(gpu_max))
+            # "skip": the profile leaves GPU clocks alone, so Steam's own GPU clock slider
+            # (or whatever the user set) isn't overwritten with "auto" on every launch.
+            if gpu_mode != "skip":
+                route = self._gpu_route(backend)
+                result["gpuPath"] = route
+                result["gpu"] = self._set_gpu(route, gpu_mode, int(gpu_min), int(gpu_max))
         except Exception as e:  # never let a power write break the UI
             decky.logger.error(f"apply_power failed: {e}")
             result["error"] = str(e)
