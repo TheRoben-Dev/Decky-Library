@@ -3,6 +3,7 @@ import { definePlugin, routerHook } from "@decky/api";
 import { useEffect, useState } from "react";
 import { FaImages } from "react-icons/fa";
 import { clearKey, getSettings, setKey, setOptions, Settings } from "./backend";
+import { patchGameMenu } from "./menu";
 import { ArtPage } from "./page";
 import { sectionFactory } from "./section";
 import { appInfo, focusedApp, libraryApps, runningApp } from "./steam";
@@ -130,7 +131,7 @@ function Content() {
         <PanelSectionRow>
           <div style={note}>
             Sets capsule, wide capsule, hero and logo art (plus icons for non-Steam shortcuts) through Steam's own custom
-            artwork feature, so it stays even without this plugin. Open a game's page and come here, or pick a game above.
+            artwork feature, so it stays even without this plugin. Pick Change artwork… in a game's menu (between Manage and Properties), or open a game's page and come here.
             Reset in the browser puts Steam's art back. Nothing runs in the background.
           </div>
         </PanelSectionRow>
@@ -141,11 +142,12 @@ function Content() {
 
 export default definePlugin(() => {
   routerHook.addRoute(ROUTE, ArtPage, { exact: true });
+  const menu = patchGameMenu();
   return {
     name: "Grid Art",
     titleView: <div className={staticClasses.Title}>Grid Art</div>,
     content: <Content />,
     icon: <FaImages />,
-    onDismount() { routerHook.removeRoute(ROUTE); },
+    onDismount() { menu.unpatch(); routerHook.removeRoute(ROUTE); },
   };
 });
