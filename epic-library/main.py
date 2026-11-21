@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "py
 import decky  # noqa: E402
 
 from epiclib import catalog, library  # noqa: E402
+from epiclib.device import DeviceLogin  # noqa: E402
 from epiclib.handoff import Handoff  # noqa: E402
 from epiclib.legendary import Cancelled, Legendary, LegendaryError, find_python  # noqa: E402
 from epiclib.store import Meta, Settings, read_json, write_json  # noqa: E402
@@ -87,6 +88,7 @@ class Plugin:
         self.job_lock = threading.Lock()
         self.worker = None
         self.handoff = Handoff(self._handoff_code)
+        self.device = DeviceLogin(self._device_code)
         self.versions: dict = {}      # app -> latest build version (from Legendary's asset list)
         self.last_update_check = 0.0
         self.free_cache: dict = {}
@@ -206,8 +208,32 @@ class Plugin:
     async def handoff_start(self):
         return await asyncio.to_thread(self.handoff.start)
 
+    async def handoff_status(self):
+        return {**self.handoff.status(), "signedIn": bool(self.lgd.user())}
+
     async def handoff_stop(self):
         await asyncio.to_thread(self.handoff.stop)
+        return True
+
+    def _device_code(self, exchange: str) -> tuple:
+        try:
+            u = self.lgd.auth_token(exchange)
+        except LegendaryError as e:
+            return False, str(e)
+        self._drop_library_cache()
+        self.versions = {}
+        decky.logger.info("signed in to Epic (device code)")
+        self._emit("epic_signed_in", self._public())
+        return True, f"Signed in as {u.get('name') or 'your Epic account'}."
+
+    async def device_start(self):
+        return await asyncio.to_thread(self.device.start)
+
+    async def device_status(self):
+        return self.device.status()
+
+    async def device_stop(self):
+        self.device.stop()
         return True
 
     async def set_options(self, opts: dict):
@@ -546,6 +572,7 @@ class Plugin:
         for j in self.jobs:
             j["cancel"].set()
         self.handoff.stop()
+        self.device.stop()
 
 
 def read_text(path: str) -> str:

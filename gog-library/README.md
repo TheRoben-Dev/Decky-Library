@@ -43,6 +43,21 @@ address, takes one sign-in and closes.
 The tokens are stored in `~/homebrew/settings/GOG Library/settings.json` (readable only by you), are only ever sent to
 `*.gog.com` over HTTPS, and never reach the plugin's UI. Sign out from Quick Access → GOG Library → Settings.
 
+## Phone sign-in won't open?
+
+The QR page is served by the handheld itself on port 47615 (up to 47619), so your phone has to be on the same Wi-Fi
+(not mobile data or a guest network, which keeps devices apart). Fedora-based systems such as Bazzite run a firewall;
+the plugin can't change it without root, but it reads the firewall's rules and puts the page on a port they already
+allow. If none is allowed, the sign-in screen says so and shows the one command that fixes it for every store
+plugin, to run once in Desktop Mode (Konsole):
+
+```
+sudo firewall-cmd --permanent --add-port=47615-47619/tcp && sudo firewall-cmd --reload
+```
+
+Your phone may label the page "Not secure". That's expected for a page on your own network (there are no
+certificates for local addresses); nothing on it goes through the internet, and it closes after you sign in.
+
 ## What gets installed where
 
 | | |
