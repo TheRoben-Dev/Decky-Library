@@ -1,0 +1,16 @@
+{
+  "name": "Nightgrid Sounds",
+  "author": "Roben",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": [
+      "sounds",
+      "audio",
+      "nightgrid",
+      "theme"
+    ],
+    "description": "Original Nightgrid UI sound packs for Game Mode, synthesized on the fly (no sound files). Per-sound overrides, volume, and Steam's own sounds one tap away.",
+    "image": "https://opengraph.githubassets.com/1/TheRoben-Dev/Decky-Library"
+  }
+}
