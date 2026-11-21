@@ -73,12 +73,13 @@ export const PAGE_CSS = `
 .il-plat.windows { color: ${C.data}; border-color: color-mix(in srgb, ${C.data} 50%, transparent); }
 .il-msg { font-family: ${MONO}; font-size: 13px; color: ${C.text1}; padding: 24px; white-space: normal; line-height: 1.5; }
 .il-msg.err { color: ${C.warn}; }
-.il-detail { display: flex; gap: 28px; padding: 8px 24px 32px; overflow-y: auto; flex: 1; min-height: 0; }
+.il-detail { display: flex; gap: 28px; padding: 8px 24px 32px; overflow-y: auto; flex: 1; min-height: 0; align-items: flex-start; }
 .il-detail .cover { flex: 0 0 380px; }
 .il-detail .cover .frame { aspect-ratio: 315 / 250; border: 1px solid ${C.data}; box-shadow: 0 0 18px color-mix(in srgb, ${C.data} 30%, transparent);
   background: ${C.bg1}; overflow: hidden; position: relative; }
 .il-detail .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .il-detail .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.il-detail .info > * { flex-shrink: 0; }   /* never squash panels/screenshots to fit the viewport: the page scrolls */
 .il-detail h1 { margin: 0; font-family: ${MONO}; font-size: 26px; letter-spacing: .04em; text-transform: uppercase; line-height: 1.15; }
 .il-detail .by { color: ${C.text1}; font-size: 13px; }
 .il-detail .short { color: ${C.text0}; opacity: .85; font-size: 14px; line-height: 1.45; }
