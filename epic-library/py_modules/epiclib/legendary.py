@@ -161,6 +161,14 @@ class Legendary:
             raise LegendaryError("Epic didn't accept that code. Codes work once and only for a few minutes; get a new one.", 401)
         return u
 
+    def auth_token(self, exchange_code: str) -> dict:
+        """Sign in with a one-time exchange code (from the device-code sign-in)."""
+        self.run(["auth", "--token", exchange_code, "--disable-webview"], timeout=60)
+        u = self.user()
+        if not u:
+            raise LegendaryError("Epic didn't accept the sign-in. Get a new code and try again.", 401)
+        return u
+
     def sign_out(self) -> None:
         try:
             self.run(["auth", "--delete"], timeout=30)

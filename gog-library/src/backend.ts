@@ -1,4 +1,5 @@
 import { callable } from "@decky/api";
+import type { LinkStatus } from "./phone";
 
 export type Platform = "linux" | "windows" | "mac";
 
@@ -51,7 +52,8 @@ export const getSettings = callable<[], Settings>("settings_get");
 export const signIn = callable<[pasted: string], { ok: boolean; message: string; settings: Settings }>("sign_in");
 export const loginUrl = callable<[], string>("login_url");
 export const signOut = callable<[], Settings>("sign_out");
-export const handoffStart = callable<[], { ok: boolean; url?: string; error?: string; expires?: number }>("handoff_start");
+export const handoffStart = callable<[], LinkStatus>("handoff_start");
+export const handoffStatus = callable<[], LinkStatus>("handoff_status");
 export const handoffStop = callable<[], boolean>("handoff_stop");
 export const setOptions = callable<[opts: Partial<Settings>], { ok: true; settings: Settings } | Fail>("set_options");
 export const getRoots = callable<[], Root[]>("roots");

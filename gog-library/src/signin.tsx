@@ -4,41 +4,21 @@
  * back there and the handheld finishes signing in. Pasting the address here also works.
  */
 import { DialogButton, Focusable, TextField } from "@decky/ui";
-import qrcode from "qrcode-generator";
-import { useEffect, useMemo, useState } from "react";
-import { loadLibrary } from "./actions";
-import { handoffStart, handoffStop, signIn } from "./backend";
+import { useState } from "react";
+import { loadLibrary, loadSettings } from "./actions";
+import { handoffStart, handoffStatus, handoffStop, signIn } from "./backend";
+import { PhoneLink, Qr as QrCode } from "./phone";
 import { changed, state } from "./state";
 
 export function Qr({ text }: { text: string }) {
-  const svg = useMemo(() => {
-    const q = qrcode(0, "M");
-    q.addData(text);
-    q.make();
-    return q.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
-  }, [text]);
-  // Inline styles too, so it also renders inside modals (outside the page's stylesheet).
-  return <div className="gl-qr" style={{ background: "#fff", padding: 14, lineHeight: 0, width: 240, height: 240, boxSizing: "content-box" }}
-    dangerouslySetInnerHTML={{ __html: svg.replace("<svg ", '<svg style="width:240px;height:240px;display:block" ') }} />;
+  return <QrCode text={text} prefix="gl" />;
 }
 
 export function SignIn() {
-  const [url, setUrl] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
   const [typing, setTyping] = useState(false);
   const [draft, setDraft] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    let live = true;
-    handoffStart().then((r) => {
-      if (!live) return;
-      if (r.ok && r.url) setUrl(r.url); else setErr(r.error ?? "Couldn't open the phone sign-in page");
-    }).catch((e) => live && setErr(String(e)));
-    // The page closes itself once signed in; leaving this screen closes it too.
-    return () => { live = false; handoffStop().catch(() => {}); };
-  }, []);
 
   const save = async () => {
     setBusy(true); setMsg(null);
@@ -51,10 +31,8 @@ export function SignIn() {
 
   return (
     <div className="gl-signin">
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px", alignItems: "center" }}>
-        {url ? <Qr text={url} /> : <div className="gl-qr" style={{ width: 240, height: 240, background: "#0D0F14" }} />}
-        <div className="gl-code" style={{ maxWidth: 270, textAlign: "center" }}>{url ?? err ?? "Opening…"}</div>
-      </div>
+      <PhoneLink prefix="gl" start={handoffStart} status={handoffStatus} stop={handoffStop} waitingFor="the address"
+        signedIn={() => !!state.settings?.signedIn} onSignedIn={async () => { await loadSettings(); state.games = null; changed(); await loadLibrary(true); }} />
       <div className="gl-steps">
         <div><b>Sign in with your phone</b></div>
         <ol>

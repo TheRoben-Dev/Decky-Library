@@ -2,8 +2,9 @@
 
 Your Epic Games Store library in Steam Game Mode, Nightgrid-styled and fully controller-driven.
 
-- **Sign in without typing.** Scan a QR code with your phone, sign in on Epic's own site and paste the one-time code
-  Epic shows on the page the QR opened. Your password only ever goes to Epic. (Typing the code works too.)
+- **Sign in without typing.** Scan a QR code with your phone: it opens Epic's own activation page
+  (epicgames.com/activate) with the code filled in. Sign in, confirm, and the handheld continues by itself. Your
+  password only ever goes to Epic. (Pasting a code on a page the handheld serves, or typing it, works too.)
 - **Browse & search the Epic Games Store** (Browse tab): this week's **free games** on top, then search, sort (Popular,
   Newest, price, A–Z), price (Free, On sale) and genre. **Controller support is on by default** (Epic's own
   *Controller Support* tag); switch to *All games* to see everything. Filters also apply to search.
@@ -46,6 +47,24 @@ Each Steam shortcut runs the game's `.exe` through Proton with these launch opti
 
 The wrapper asks Legendary for the game's Epic arguments and appends them to Steam's Proton command. Its log is
 `~/homebrew/data/Epic Library/logs/launch.log`.
+
+## Phone sign-in won't open?
+
+The first sign-in option (Epic's activation code) doesn't use the local page at all: the QR opens epicgames.com/activate,
+so any network works. The rest of this section is about the *Paste a code from my phone* option.
+
+The QR page is served by the handheld itself on port 47615 (up to 47619), so your phone has to be on the same Wi-Fi
+(not mobile data or a guest network, which keeps devices apart). Fedora-based systems such as Bazzite run a firewall;
+the plugin can't change it without root, but it reads the firewall's rules and puts the page on a port they already
+allow. If none is allowed, the sign-in screen says so and shows the one command that fixes it for every store
+plugin, to run once in Desktop Mode (Konsole):
+
+```
+sudo firewall-cmd --permanent --add-port=47615-47619/tcp && sudo firewall-cmd --reload
+```
+
+Your phone may label the page "Not secure". That's expected for a page on your own network (there are no
+certificates for local addresses); nothing on it goes through the internet, and it closes after you sign in.
 
 ## What gets installed where
 
