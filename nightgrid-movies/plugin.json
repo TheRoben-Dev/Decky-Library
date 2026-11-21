@@ -1,0 +1,17 @@
+{
+  "name": "Nightgrid Movies",
+  "author": "Roben",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": [
+      "theme",
+      "startup",
+      "boot",
+      "animation",
+      "nightgrid"
+    ],
+    "description": "Nightgrid-styled startup movies and suspend (sleep) animations for Game Mode, picked from Quick Access.",
+    "image": "https://opengraph.githubassets.com/1/SteamDeckHomebrew/PluginLoader"
+  }
+}

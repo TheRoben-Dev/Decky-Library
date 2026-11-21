@@ -1,5 +1,5 @@
 /* Nightgrid — pages.css  (bigpicture; achievements + volume also MainMenu/QuickAccess)
- * Downloads, search, media, achievements, on-screen keyboard, volume pop-in.
+ * Downloads, search, media, achievements, volume pop-in.
  * Unnamed variants (no CSS Loader stable name) are matched by hash substring and fail safe.
  */
 
@@ -91,45 +91,7 @@
   border-radius: var(--ng-radius);
 }
 
-/* ── On-screen keyboard (Default keyboard theme; Points Shop keyboard themes untouched) ── */
-.BasicUI .virtualkeyboard_Keyboard.DefaultTheme {
-  --background-color: var(--ng-bg-1);
-  --key-background-color: var(--ng-bg-2);
-  --key-spacebar-background-color: var(--ng-bg-2);
-  --key-meta-background-color: var(--ng-bg-0);
-  --key-tab-background-color: var(--ng-bg-0);
-  --key-caps-background-color: var(--ng-bg-0);
-  --key-shift-background-color: var(--ng-bg-0);
-  --key-enter-background-color: var(--ng-bg-0);
-  --key-backspace-background-color: var(--ng-bg-0);
-  --key-spacer-background-color: var(--ng-bg-0);
-  --key-deadkey-background-color: var(--ng-bg-0);
-  --key-focused-color: var(--ng-bg-0);
-  --key-focused-action-button-left-color: var(--ng-bg-0);
-  --key-focused-action-button-right-color: var(--ng-bg-0);
-  --key-enter-action-button-glyph-color: var(--ng-bg-0);
-  --key-extendedkey-focused-color: var(--ng-bg-0);
-  --key-extendedkey-hover-color: var(--ng-bg-0);
-  --key-emoji-focused-color: var(--ng-bg-0);
-  --key-extendedkey-background-color: var(--ng-data);
-  --key-toggleon-background-color: var(--ng-active);
-  --key-toggleoneshot-color: var(--ng-active);
-  --key-pointer-background-color: var(--ng-active);
-  --key-deadkeyactive-color: var(--ng-accent);
-  --key-emoji-category-highlight-background-color: var(--ng-line);
-  --key-emoji-focused-background-color: var(--ng-text-1);
-}
-.BasicUI .virtualkeyboard_Keyboard.DefaultTheme .virtualkeyboard_KeyboardKey {
-  border-radius: var(--ng-radius);
-  box-shadow: inset 0 0 0 1px var(--ng-line);
-}
-.BasicUI .virtualkeyboard_Keyboard.DefaultTheme .virtualkeyboard_KeyboardKey.virtualkeyboard_Touched {
-  background-color: var(--ng-active);
-}
-.BasicUI .virtualkeyboardcontainer_VirtualKeyboardTextBuffer {
-  background-color: var(--ng-bg-0);
-  box-shadow: inset 0 -1px 0 var(--ng-active);
-}
+/* On-screen keyboard: css/keyboard.css */
 
 /* ── Volume / brightness pop-in ─────────────────────────── */
 .BasicUI :is(.header_VolumePopin, .audio_VolumePopin) {

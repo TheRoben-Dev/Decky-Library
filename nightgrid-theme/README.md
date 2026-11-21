@@ -53,7 +53,8 @@ by victor-borges (CSS Loader → Store, then set **Handheld** to *ASUS ROG Ally*
 | STEAM menu, incl. the in-game version (game column, guides) | MainMenu | `css/mainmenu.css` |
 | Quick Access menu (and Decky's panel inside it) | QuickAccess | `css/qam.css` |
 | Friends list and chat windows | QuickAccess, bigpicture | `css/chat.css` |
-| Downloads, Search, Media, Achievements (page, game tab, in-game menu), on-screen keyboard, volume pop-in | bigpicture, MainMenu, QuickAccess | `css/pages.css` |
+| Downloads, Search, Media, Achievements (page, game tab, in-game menu), volume pop-in | bigpicture, MainMenu, QuickAccess | `css/pages.css` |
+| On-screen keyboard: terminal keypad on the grid, magenta top edge, square mono keys, darker modifiers, magenta outlined focus key with glow, cyan Enter, lit Caps/Shift, magenta press flash, `>` prompt text bar with a magenta block cursor | bigpicture | `css/keyboard.css` |
 | Notification toasts and the notification list | bigpicture, QuickAccess, toasts | `css/toasts.css` |
 | Steam Store and Steam Community pages opened in Game Mode | store | `css/store.css` |
 
@@ -69,6 +70,7 @@ shows over a running game), plus toasts and the keyboard.
   store gets the colors and shapes, and Steam's fonts.
 - **Colors a page sets inline** (sale pages, category art, branded events) are left alone on purpose.
 - **Points Shop keyboard themes** keep their own look; only Steam's default keyboard is restyled.
+- **Startup movies and sleep animations** in the same style come with the **Nightgrid Movies** Decky plugin (install it from Library Hub).
 
 Every control is square (`--ng-radius: 0`), including Steam's focus ring and the row/toggle highlights,
 so the focus box always lines up with the control.
