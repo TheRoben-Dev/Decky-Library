@@ -1,0 +1,16 @@
+{
+  "name": "Itch Library",
+  "author": "Roben",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": [
+      "itch.io",
+      "library",
+      "store",
+      "nightgrid"
+    ],
+    "description": "Your itch.io library in Game Mode: sign in from your phone, install native Linux or Windows (Proton) builds, play them from Steam with generated artwork, update and uninstall. Nothing runs in the background.",
+    "image": "https://opengraph.githubassets.com/1/TheRoben-Dev/Decky-Library"
+  }
+}
