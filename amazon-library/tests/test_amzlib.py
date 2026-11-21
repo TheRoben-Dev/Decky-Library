@@ -295,3 +295,34 @@ class Flow(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StoreDetails(unittest.TestCase):
+    OFFER = {"catalogId": "c1", "title": "Moon Run", "endTime": "2026-12-01T00:00:00Z", "deliveryMethod": "DIRECT_ENTITLEMENT",
+             "assets": [{"location2x": "https://img/a.jpg"}], "offerAssets": {"screenshots": [{"location": "https://img/s1.jpg"},
+             {"location": "http://insecure/s2.jpg"}]}, "self": {"eligibility": {"canClaim": True}},
+             "game": {"description": "Run<br>fast &amp; far", "developerName": "Dev", "genres": ["Action"], "gameModes": ["SINGLE_PLAYER"],
+                      "esrb": "TEEN", "background": {"defaultMedia": {"src2x": "https://img/bg.jpg"}}}}
+
+    def test_offer_details(self):
+        with mock.patch.object(api, "request", return_value={"data": {"primeOffers": [self.OFFER]}}):
+            o = api.prime_offers("t")[0]
+        self.assertEqual(o["description"], "Run\nfast & far")
+        self.assertEqual(o["screenshots"], ["https://img/s1.jpg"])
+        self.assertEqual(o["modes"], ["Single Player"])
+        self.assertEqual(o["rating"], "ESRB Teen")
+        self.assertEqual(o["background"], "https://img/bg.jpg")
+
+    def test_falls_back_to_basic_query(self):
+        calls = []
+
+        def req(url, body, **k):
+            calls.append(body)
+            if len(calls) == 1:
+                return {"errors": [{"message": "Cannot query field offerAssets"}]}
+            return {"data": {"primeOffers": [{**self.OFFER, "offerAssets": None}]}}
+        with mock.patch.object(api, "request", side_effect=req):
+            o = api.prime_offers("t")
+        self.assertEqual(len(calls), 2)
+        self.assertNotIn("offerAssets", calls[1])
+        self.assertEqual(o[0]["screenshots"], [])

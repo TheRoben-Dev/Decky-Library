@@ -9,18 +9,18 @@ import { useEffect, useState } from "react";
 import { loadLibrary, loadOffers } from "./actions";
 import { Offer } from "./backend";
 import { Qr } from "./signin";
-import { gamePath, state, useStore } from "./state";
+import { gamePath, offerPath, state, useStore } from "./state";
 import { toast } from "./steam";
 import { C } from "./ui";
 
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-function owned(o: Offer) {
+export function owned(o: Offer) {
   const t = norm(o.title);
   return state.games?.find((g) => norm(g.title) === t);
 }
 
-function ClaimModal({ o, url, closeModal }: { o: Offer; url: string; closeModal?: () => void }) {
+export function ClaimModal({ o, url, closeModal }: { o: Offer; url: string; closeModal?: () => void }) {
   const [busy, setBusy] = useState(false);
   const claimed = async () => {
     setBusy(true);
@@ -58,13 +58,12 @@ function ClaimModal({ o, url, closeModal }: { o: Offer; url: string; closeModal?
 
 function Tile({ o }: { o: Offer }) {
   const g = owned(o);
-  const open = () => {
-    if (g) Navigation.Navigate(gamePath(g.id));
-    else showModal(<ClaimModal o={o} url={state.claimsUrl} />);
-  };
+  const open = () => Navigation.Navigate(offerPath(o.id));
   return (
     <Focusable className="al-tile" focusClassName="al-focus" onActivate={open} onClick={open}
-      onOKActionDescription={g ? "Details" : "Claim"}>
+      onOKActionDescription="Details"
+      onSecondaryButton={g ? undefined : () => showModal(<ClaimModal o={o} url={state.claimsUrl} />)}
+      onSecondaryActionDescription={g ? undefined : "Claim"}>
       <div className="art" style={{ aspectRatio: "16 / 9" }}>
         {o.image ? <img src={o.image} loading="lazy" decoding="async" draggable={false} /> : <div className="none">{o.title}</div>}
         {g ? <div className="badge">IN LIBRARY</div> : o.claimed ? <div className="badge upd">CLAIMED</div> : null}

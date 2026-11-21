@@ -237,14 +237,61 @@ def _detail(e: dict) -> dict:
         "cover": str(det.get("backgroundUrl2") or pd.get("iconUrl") or ""),
         "background": str(det.get("backgroundUrl1") or det.get("backgroundUrl2") or ""),
         "logo": str(det.get("logoUrl") or ""),
-        "short": str(det.get("shortDescription") or "")[:600],
+        "short": str(det.get("shortDescription") or "")[:300],
         "developer": str(det.get("developer") or ""),
         "publisher": str(det.get("publisher") or ""),
         "genres": [str(g) for g in (det.get("genres") or [])][:4] if isinstance(det.get("genres"), list) else [],
         "released": str(det.get("releaseDate") or "")[:10],
         "screenshot": str(shots[0]) if shots else "",
         "added": str(e.get("grantTime") or e.get("createdDate") or ""),
+        # Store-page details (all from the same entitlement answer, no extra requests).
+        "description": _text(det.get("shortDescription"))[:4000],
+        "screenshots": _urls(shots),
+        "modes": _strs(det.get("gameModes")),
+        "rating": " · ".join(x for x in (_rating("ESRB", det.get("esrbRating") or det.get("esrbRatins")),
+                                         _rating("PEGI", det.get("pegiRating"))) if x),
+        "website": _site(det.get("websites")),
     }
+
+
+def _text(v) -> str:
+    """Plain text from a description that may carry HTML (<br>, <p>, entities)."""
+    import html as _html
+    import re as _re
+    t = str(v or "")
+    t = _re.sub(r"(?i)<br\s*/?>|</p>|</li>", "\n", t)
+    t = _re.sub(r"<[^>]+>", "", t)
+    t = _re.sub(r"\n{3,}", "\n\n", _html.unescape(t))
+    return t.strip()
+
+
+def _shots(oa) -> list:
+    if isinstance(oa, list):
+        oa = oa[0] if oa and isinstance(oa[0], dict) else {}
+    v = oa.get("screenshots") if isinstance(oa, dict) else None
+    return v if isinstance(v, list) else []
+
+
+def _urls(v, n: int = 12) -> list:
+    return [str(u) for u in (v if isinstance(v, list) else []) if isinstance(u, str) and https(u)][:n]
+
+
+def _strs(v, n: int = 6) -> list:
+    return [str(x).replace("_", " ").title() if str(x).isupper() else str(x) for x in (v if isinstance(v, list) else [])
+            if isinstance(x, (str, int))][:n]
+
+
+def _rating(org: str, v) -> str:
+    v = str(v or "").strip()
+    return f"{org} {v.replace('_', ' ').title() if v.isupper() else v}" if v and v.lower() not in ("none", "null", "rp") else ""
+
+
+def _site(w) -> str:
+    if isinstance(w, dict):
+        for k in ("official", "support"):
+            if isinstance(w.get(k), str) and https(w[k]):
+                return w[k]
+    return w if isinstance(w, str) and https(w) else ""
 
 
 def entitlements(token: str, serial: str) -> list:
@@ -301,16 +348,21 @@ def sdk_channel() -> dict:
 
 # ------------------------------------------------------------------ free games (Prime Gaming / Luna)
 
-OFFERS_QUERY = ('{"query":"query{primeOffers(dateOverride:null,group:null){catalogId,title,startTime,endTime,'
+OFFERS_BASIC = ('{"query":"query{primeOffers(dateOverride:null,group:null){catalogId,title,startTime,endTime,'
                 'deliveryMethod,productList{sku,vendor},content{publisher},assets{location2x},'
                 'self{eligibility{canClaim,isClaimed,isPrimeGaming,maxOrdersExceeded,inRestrictedMarketplace,'
                 'missingRequiredAccountLink}},game{id,description,developerName,publisher,genres}}}"}')
+OFFERS_QUERY = ('{"query":"query{primeOffers(dateOverride:null,group:null){catalogId,title,startTime,endTime,'
+                'deliveryMethod,productList{sku,vendor},content{publisher},assets{location2x},'
+                'offerAssets{screenshots{location}},'
+                'self{eligibility{canClaim,isClaimed,isPrimeGaming,maxOrdersExceeded,inRestrictedMarketplace,'
+                'missingRequiredAccountLink}},game{id,description,developerName,publisher,genres,gameModes,'
+                'releaseDate,esrb,pegi,website,logoImage{defaultMedia{src1x,src2x}},'
+                'background{defaultMedia{src1x,src2x}}}}}"}')
 
 
-def prime_offers(token: str) -> list:
-    """This month's free games with Prime. Only "direct entitlement" offers land in the Amazon
-    library; the rest are codes for other stores, shown as such."""
-    d = request(GRAPHQL, OFFERS_QUERY, headers={
+def _offers_request(token: str, query: str) -> list:
+    d = request(GRAPHQL, query, headers={
         "User-Agent": "GraphQL.Client/3.2.2.0", "client-id": "AmazonGamesApp", "prime-gaming-language": "en-US",
         "Content-Type": "application/json; charset=utf-8", "x-amz-access-token": token}, what="Prime Gaming")
     offers = ((d or {}).get("data") or {}).get("primeOffers") if isinstance(d, dict) else None
@@ -318,6 +370,19 @@ def prime_offers(token: str) -> list:
         errs = (d or {}).get("errors") if isinstance(d, dict) else None
         raise ApiError("Amazon's free games list isn't available right now" + (f" ({errs[0].get('message', '')[:120]})"
                        if isinstance(errs, list) and errs and isinstance(errs[0], dict) else ""))
+    return offers
+
+
+def prime_offers(token: str) -> list:
+    """This month's free games with Prime, with store-page details (description, screenshots,
+    modes, ratings). Only "direct entitlement" offers land in the Amazon library; the rest are
+    codes for other stores, shown as such. Falls back to the short query if Amazon rejects a field."""
+    try:
+        offers = _offers_request(token, OFFERS_QUERY)
+    except ApiError as e:
+        if e.status in (401, 403):
+            raise
+        offers = _offers_request(token, OFFERS_BASIC)
     out = []
     for o in offers:
         if not isinstance(o, dict):
@@ -329,13 +394,30 @@ def prime_offers(token: str) -> list:
             "id": str(o.get("catalogId") or ""), "title": str(o.get("title") or ""),
             "ends": str(o.get("endTime") or "")[:10], "direct": o.get("deliveryMethod") == "DIRECT_ENTITLEMENT",
             "image": str(img or ""), "publisher": str((o.get("content") or {}).get("publisher") or game.get("publisher") or ""),
-            "short": str(game.get("description") or "")[:600],
+            "short": _text(game.get("description"))[:300],
+            "description": _text(game.get("description"))[:4000],
+            "screenshots": _urls([x.get("location") for x in _shots(o.get("offerAssets")) if isinstance(x, dict)]),
+            "developer": str(game.get("developerName") or ""),
+            "genres": _strs(game.get("genres"), 4), "modes": _strs(game.get("gameModes")),
+            "released": str(game.get("releaseDate") or "")[:10],
+            "rating": " · ".join(x for x in (_rating("ESRB", game.get("esrb")), _rating("PEGI", game.get("pegi"))) if x),
+            "website": _site(game.get("website")),
+            "logo": _media(game.get("logoImage")), "background": _media(game.get("background")),
             "claimed": bool(elig.get("isClaimed")), "can_claim": bool(elig.get("canClaim")),
             "prime": bool(elig.get("isPrimeGaming")), "link_needed": bool(elig.get("missingRequiredAccountLink")),
         })
     out = [o for o in out if o["id"] and o["title"]]
     out.sort(key=lambda o: (not o["direct"], o["claimed"], o["title"].lower()))
     return out
+
+
+def _media(m) -> str:
+    d = (m or {}).get("defaultMedia") if isinstance(m, dict) else None
+    if isinstance(d, dict):
+        for k in ("src2x", "src1x"):
+            if isinstance(d.get(k), str) and https(d[k]):
+                return d[k]
+    return ""
 
 
 # ------------------------------------------------------------------ images

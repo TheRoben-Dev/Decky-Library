@@ -11,6 +11,9 @@ Unofficial: this handheld signs in as an Amazon Games device, the same way the W
   remove it any time under Amazon → Your account → Your devices.
 - **Full-screen library** (Open library in Quick Access): tabs for **Free games**, **All**, **Installed**,
   **Updates** and **Downloads**. L1/R1 switch tabs, A opens a game, X installs or plays it from the grid.
+- **Store-style game pages.** Opening a game (library or free game) shows Amazon's description, a screenshot strip
+  you can view full screen (L1/R1 to flip), developer, publisher, release date, genres, modes, age rating and a QR
+  to the official site. It all comes from data the plugin already loads, so a page costs no extra request.
 - **Installs through Proton.** Every Amazon game is a Windows game. Files come straight from Amazon's servers,
   four at a time, and each one is checked against Amazon's signed manifest before it's used.
 - **Steam shortcuts with artwork.** After an install the game is added to Steam (set to Proton) with capsule,

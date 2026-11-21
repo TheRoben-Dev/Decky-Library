@@ -10,6 +10,7 @@ import { addToSteam, cancelJob, refreshInstalled, removeGame, startInstall } fro
 import { Exe, Game, getExecutables, getGame, Installed, setExe } from "./backend";
 import { fmtBytes, jobFor, jobLine, state, useStore } from "./state";
 import { applyArt, openInSteam, shortcutExists, toast } from "./steam";
+import { About, Details, Gallery } from "./media";
 import { Bar, C, PAGE_CSS } from "./ui";
 
 function ExePicker({ rec }: { rec: Installed }) {
@@ -115,7 +116,7 @@ export function GamePage() {
   return (
     <div className="al-page">
       <style>{PAGE_CSS}</style>
-      {game?.background && <div className="al-hero" style={{ backgroundImage: `url("${game.background}")` }} />}
+      {(game?.background || game?.screenshots?.[0]) && <div className="al-hero" style={{ backgroundImage: `url("${game.background || game.screenshots![0]}")` }} />}
       <div className="al-inner">
         <div className="al-head">
           <span className="t">Amazon Library</span>
@@ -134,8 +135,10 @@ export function GamePage() {
               {game.logo ? <img src={game.logo} alt={game.title} style={{ maxWidth: 420, maxHeight: 120, objectFit: "contain", objectPosition: "left" }} />
                 : <h1>{game.title}</h1>}
               {meta && <div className="by">{meta}</div>}
-              {game.short && <div className="short">{game.short}</div>}
+              {game.short && !game.description && <div className="short">{game.short}</div>}
               <div className="al-panel">{actions}</div>
+              <Gallery shots={game.screenshots?.length ? game.screenshots : game.screenshot ? [game.screenshot] : []} />
+              <About text={game.description ?? ""} />
               {rec && !job && (
                 <div className="al-panel">
                   {!rec.present && <div style={{ color: C.warn, fontSize: 13 }}>The game's folder is missing (SD card out, or deleted). Reinstall or uninstall it.</div>}
@@ -159,6 +162,7 @@ export function GamePage() {
                   </Focusable>
                 </div>
               )}
+              <Details f={game} />
             </Focusable>
           </div>
         )}
