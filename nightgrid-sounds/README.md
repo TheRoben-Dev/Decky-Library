@@ -4,10 +4,12 @@ Original UI sound packs for Steam Game Mode, made for the Nightgrid theme. Every
 
 | Pack | Character |
 |---|---|
-| Nightgrid | Crisp terminal blips |
-| Grid Pulse | Soft detuned synth, low and warm |
-| Data Static | CRT clicks and lo-fi square tones |
-| Ice Glass | Pure sine chimes, quiet and clean |
+| Nightgrid | Glassy cyber-HUD chimes (FM bells) with a soft echo. Calm and clean. |
+| Phosphor Terminal | Retro green-screen terminal: mechanical key clacks, relay ticks, chirpy band-limited speaker beeps, CRT hum power-up on launch. |
+| Neon Pulse | Warm detuned synthwave plucks in A minor with a long echo. Musical. |
+| Ghost Signal | Lo-fi bit-crushed data bleeps and radio static, like a hacked feed. Subtle. |
+
+Each pack is its own sound design (not one melody re-voiced), and every sound is normalised so packs play at the same loudness, with small ticks quieter than notifications.
 
 - Covers focus moves, select, open/back, tabs, end of list, toggles, sliders and volume, notifications, game launch and the on-screen keyboard.
 - **Per sound**: keep any single sound from the pack, use Steam's, or turn it off (e.g. silence the focus tick).

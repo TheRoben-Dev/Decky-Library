@@ -17,7 +17,7 @@ import tempfile
 
 import decky
 
-PACKS = ("nightgrid", "pulse", "static", "glass")
+PACKS = ("nightgrid", "terminal", "neon", "signal")
 CATS = ("nav", "select", "open", "close", "tab", "edge", "toggleOn", "toggleOff",
         "sliderUp", "sliderDown", "notify", "launch", "type")
 MODES = ("pack", "steam", "off")

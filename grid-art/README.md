@@ -2,7 +2,7 @@
 
 Change a game's library artwork from [SteamGridDB](https://www.steamgriddb.com) without leaving Game Mode, in a full-screen Nightgrid-styled browser.
 
-- **Capsule, Wide, Hero and Logo** art for Steam games and non-Steam shortcuts, plus **Icons** for shortcuts.
+- **Capsule, Wide, Hero, Logo and Icon** (the small square game icon) for Steam games and non-Steam shortcuts.
 - Uses Steam's own custom artwork (`SteamClient.Apps.SetCustomArtworkForApp`), so Steam keeps the files in `userdata/<id>/config/grid` and the art stays even if the plugin is removed. **Reset to Steam's** puts the original back.
 - **From file** applies any PNG/JPEG on the device (Decky's file browser).
 - Filters: style per slot, animated (APNG) art, humor, flashing images, adult content (off by default).
