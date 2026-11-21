@@ -76,7 +76,7 @@ function SlotTab({ appid, gameId, slot, settings, onSettings, applied, setApplie
     if (busy !== null) return;
     setBusy(a.id);
     try {
-      if (slot.id === "icon") {
+      if (slot.id === "icon" && shortcut) {
         const r = await saveIcon(appid, a.url);
         if (!r.ok) throw new Error(r.error);
         setShortcutIcon(appid, r.path);
@@ -97,7 +97,7 @@ function SlotTab({ appid, gameId, slot, settings, onSettings, applied, setApplie
   const reset = async () => {
     setBusy("reset");
     try {
-      if (slot.id === "icon") setShortcutIcon(appid, "");
+      if (slot.id === "icon" && shortcut) setShortcutIcon(appid, "");
       else await clearArt(appid, slot.asset);
       setApplied(await markApplied(appid, slot.id, null));
       toast(`${slot.title} reset to Steam's`);
@@ -113,9 +113,9 @@ function SlotTab({ appid, gameId, slot, settings, onSettings, applied, setApplie
     try {
       const pick = await openFilePicker(0 /* FileSelectionType.FILE */, settings.home || "/home", true, true, undefined,
         ["png", "jpg", "jpeg"], false, false);
-      const r = await readLocal(appid, slot.id, pick.realpath ?? pick.path);
+      const r = await readLocal(appid, slot.id === "icon" && shortcut ? "icon" : "art", pick.realpath ?? pick.path);
       if (!r.ok) throw new Error(r.error);
-      if (slot.id === "icon") setShortcutIcon(appid, r.path!);
+      if (slot.id === "icon" && shortcut) setShortcutIcon(appid, r.path!);
       else await setArt(appid, r.data!, r.ext!, slot.asset);
       setApplied(await markApplied(appid, slot.id, null));
       toast(`${slot.title} set from file`);
@@ -157,7 +157,6 @@ function SlotTab({ appid, gameId, slot, settings, onSettings, applied, setApplie
           {busy === "reset" ? "Resetting…" : "Reset to Steam's"}
         </DialogButton>
       </Focusable>
-      {slot.id === "icon" && !shortcut && <div className="ga-msg">Steam only lets non-Steam shortcuts change their icon.</div>}
       {error && <div className="ga-msg err">{error}</div>}
       {data && data.items.length === 0 && !loading && !error &&
         <div className="ga-msg">Nothing on SteamGridDB for this with the current filters. Try Style: Any{canAnimate && settings.animated ? " or turn Animated off" : ""}.</div>}
@@ -222,7 +221,7 @@ export function ArtPage() {
   }, [appid]);
 
   const onSettings = (s: Settings) => { state.settings = s; setSettings(s); };
-  const slots = SLOTS.filter((s) => s.id !== "icon" || app?.shortcut);
+  const slots = SLOTS;
   const gameId = app?.shortcut ? sc.match?.id ?? 0 : 0;
 
   let body: ReactNode;

@@ -16,12 +16,12 @@ class Config(unittest.TestCase):
         self.assertEqual(main.clean({"pack": "nope", "volume": "x", "enabled": 1}), main.DEFAULTS)
 
     def test_clamps_and_filters(self):
-        c = main.clean({"pack": "pulse", "volume": 3, "enabled": False,
+        c = main.clean({"pack": "neon", "volume": 3, "enabled": False,
                         "cats": {"nav": "off", "select": "steam", "launch": "pack", "bogus": "off", "tab": "loud"}})
-        self.assertEqual(c, {"enabled": False, "pack": "pulse", "volume": 1.0, "cats": {"nav": "off", "select": "steam"}})
+        self.assertEqual(c, {"enabled": False, "pack": "neon", "volume": 1.0, "cats": {"nav": "off", "select": "steam"}})
 
     def test_roundtrip(self):
-        saved = main.save({"pack": "glass", "volume": 0.355})
+        saved = main.save({"pack": "terminal", "volume": 0.355})
         self.assertEqual(saved["volume"], 0.35)
         self.assertEqual(main.load(), saved)
 

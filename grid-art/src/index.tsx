@@ -130,7 +130,7 @@ function Content() {
       <Section id="about" title="About" summary="SteamGridDB artwork for Steam">
         <PanelSectionRow>
           <div style={note}>
-            Sets capsule, wide capsule, hero and logo art (plus icons for non-Steam shortcuts) through Steam's own custom
+            Sets capsule, wide capsule, hero, logo and the small game icon through Steam's own custom
             artwork feature, so it stays even without this plugin. Pick Change artwork… in a game's menu (between Manage and Properties), or open a game's page and come here.
             Reset in the browser puts Steam's art back. Nothing runs in the background.
           </div>

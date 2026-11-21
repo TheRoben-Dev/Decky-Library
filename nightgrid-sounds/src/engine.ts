@@ -12,7 +12,7 @@
  */
 import { beforePatch, findModuleChild } from "@decky/ui";
 import { prepare, storeSounds } from "./backend";
-import { Cat, CATS, PACKS, render, SILENT, wav, categoryOf } from "./sounds";
+import { Cat, CATS, DESIGN_VERSION, PACKS, render, SILENT, wav, categoryOf } from "./sounds";
 
 export type Mode = "pack" | "steam" | "off";
 export interface Config { enabled: boolean; pack: string; volume: number; cats: Partial<Record<Cat, Mode>> }
@@ -58,7 +58,7 @@ async function b64(blob: Blob): Promise<string> {
 async function build() {
   const my = ++gen;
   const pack = PACKS.find((p) => p.id === cfg.pack) ?? PACKS[0];
-  const key = `${pack.id}-${Math.round(cfg.volume * 100)}`;
+  const key = `${DESIGN_VERSION}-${pack.id}-${Math.round(cfg.volume * 100)}`;
   try {
     const prep = await prepare(key);
     if (!prep.ok) throw new Error(prep.error);

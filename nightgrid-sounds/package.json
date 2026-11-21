@@ -1,6 +1,6 @@
 {
   "name": "nightgrid-sounds",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Original Nightgrid UI sound packs for Steam Game Mode, synthesized in the plugin",
   "type": "module",
   "scripts": {

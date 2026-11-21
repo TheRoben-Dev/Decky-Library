@@ -80,6 +80,7 @@ export async function clearArt(appid: number, asset: number) {
   await SteamClient.Apps.ClearCustomArtworkForApp(appid, asset);
 }
 
+/** Non-Steam shortcuts keep their icon as a file path; Steam games take it as custom artwork (slot 4). */
 export function setShortcutIcon(appid: number, path: string) {
   SteamClient.Apps.SetShortcutIcon(appid, path);
 }
