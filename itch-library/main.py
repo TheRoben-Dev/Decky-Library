@@ -35,7 +35,8 @@ DESKTOP_KEY_FILES = ("itch-key.txt", "itch-api-key.txt")
 def _err(e: BaseException) -> dict:
     if not isinstance(e, (api.ApiError, install.InstallError)):
         decky.logger.error(f"unexpected error: {e!r}")
-    return {"ok": False, "error": str(e) or e.__class__.__name__, "status": getattr(e, "status", 0)}
+    return {"ok": False, "error": str(e) or e.__class__.__name__, "status": getattr(e, "status", 0),
+            "retry_after": getattr(e, "retry_after", 0)}
 
 
 def steam_root(home: str) -> str:
@@ -180,7 +181,7 @@ class Plugin:
             s["prefer"] = opts["prefer"]
         if isinstance(opts.get("tool"), str):
             s["tool"] = opts["tool"][:120]
-        for k in ("show_all", "keep_downloads"):
+        for k in ("show_all", "keep_downloads", "adult"):
             if k in opts:
                 s[k] = bool(opts[k])
         if isinstance(opts.get("root"), str):
@@ -305,9 +306,13 @@ class Plugin:
     async def browse(self, opts: dict):
         o = opts if isinstance(opts, dict) else {}
         try:
+            tags = o.get("tags") or []
+            more = {k: str(o.get(k) or "") for k in ("released", "duration", "multiplayer", "accessibility", "engine")}
+            more.update(tags=[str(t) for t in tags][:3] if isinstance(tags, list) else [],
+                        demo=bool(o.get("demo")), adult=bool(self.settings.data.get("adult")))
             res = await asyncio.to_thread(browse.browse, str(o.get("sort", "")), str(o.get("price", "")),
                                           str(o.get("genre", "")), str(o.get("controller", "gamepad")),
-                                          str(o.get("platform", "")), int(o.get("page", 1) or 1))
+                                          str(o.get("platform", "")), int(o.get("page", 1) or 1), **more)
             return {"ok": True, **res}
         except Exception as e:
             return _err(e)

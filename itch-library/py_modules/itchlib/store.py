@@ -42,6 +42,7 @@ SETTINGS = {
     "tool": "",                # Proton tool for Windows builds; "" = newest Proton Steam has
     "show_all": False,         # also list soundtracks, books, assets...
     "keep_downloads": False,   # keep the downloaded archive after installing
+    "adult": False,            # Browse: allow adult / NSFW tags (off unless the user turns it on)
 }
 
 
