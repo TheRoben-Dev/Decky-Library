@@ -42,17 +42,21 @@ Everything that stays on screen drifts slowly. The art is drawn live
 (`src/screensaver.tsx`).
 
 ## How it works
-Steam plays override videos from `~/.steam/root/config/uioverrides/movies`:
+Steam plays override videos from `~/.local/share/Steam/config/uioverrides/movies` (also reachable
+as `~/.steam/root/...`). Which file name it reads depends on the device, so the chosen video is
+written under every name, the same way Bazzite installs its own videos (`/usr/bin/steam-tweaks`):
 
-| File | Used for |
+| Files | Used for |
 |---|---|
-| `deck_startup.webm` | startup movie: select **deck_startup.webm** once in Settings → Customization → Startup Movie |
-| `steam_os_suspend.webm` | suspend animation from the menus |
-| `steam_os_suspend_from_throbber.webm` | suspend animation from in-game |
+| `steam_os_startup.webm`, `deck_startup.webm`, `bigpicture_startup.webm`, `oled_startup.webm` | startup movie |
+| `steam_os_suspend.webm`, `deck-suspend-animation.webm`, `oled-suspend-animation.webm` | suspend from the menus |
+| `steam_os_suspend_from_throbber.webm`, `deck-suspend-animation-from-throbber.webm`, `oled-suspend-animation-from-throbber.webm` | suspend from in-game |
 
-The plugin copies the chosen video there and remembers each file's SHA-256. A file it didn't
-write (Animation Changer, something added by hand) is never deleted. It's renamed to
+The plugin remembers each file's SHA-256. A file it didn't write (Bazzite's own videos,
+Animation Changer, something added by hand) is never deleted. It's renamed to
 `<name>.before-nightgrid` and put back when you pick "Steam default" or uninstall the plugin.
+Bazzite only copies its videos where a file is missing, so it doesn't undo the choice. If you
+picked a Points Shop startup movie in Settings → Customization, set that back to the default.
 Runs as the normal user (no root).
 
 ## Rendering the videos
