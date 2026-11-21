@@ -1,0 +1,16 @@
+{
+  "name": "Grid Art",
+  "author": "Roben",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": [
+      "artwork",
+      "steamgriddb",
+      "library",
+      "nightgrid"
+    ],
+    "description": "Change capsule, wide, hero, logo and shortcut icon art from SteamGridDB in a full-screen Nightgrid browser. Uses Steam's own custom artwork, nothing runs in the background.",
+    "image": "https://opengraph.githubassets.com/1/TheRoben-Dev/Decky-Library"
+  }
+}
