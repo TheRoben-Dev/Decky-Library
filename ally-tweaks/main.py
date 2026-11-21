@@ -1,6 +1,6 @@
 """Ally Tweaks - Decky backend.
 
-Runs as root (plugin flag "_root") to write the documented kernel sysfs files
+Runs as root (plugin.json flag "root") to write the documented kernel sysfs files
 (LED class, power_supply, asus-armoury), install the small restore unit, and
 reach Handheld Daemon's root-only socket on installs that still use HHD.
 
@@ -82,8 +82,9 @@ class Plugin:
 
     async def set_charge(self, limit: int, travel: bool):
         def run():
-            self.engine.conf["charge"].update({"limit": int(limit), "travel": bool(travel)})
-            self.engine.save()
+            with self.engine.lock:
+                self.engine.conf["charge"].update({"limit": int(limit), "travel": bool(travel)})
+                self.engine.save()
             return self.engine.apply_charge()
         try:
             return {"ok": True, "backend": await asyncio.to_thread(run)}

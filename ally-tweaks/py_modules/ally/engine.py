@@ -76,6 +76,7 @@ class Engine:
         self.led_contested = False
         self.sys_errors = {}
         self.last_hid = 0.0        # tweak key -> last apply error
+        self._epp_try = -1e9         # last EPP re-apply attempt (monotonic)
         self.screen = None          # debounced backlight fraction
         self._screen_seen = None
 
@@ -85,6 +86,8 @@ class Engine:
 
     def update(self, patch: dict):
         with self.lock:
+            if not isinstance(patch, dict):
+                raise ValueError("settings patch must be an object")
             self.conf = _merge(self.conf, patch)
             self.save()
         self.tick(force=True)
@@ -263,32 +266,39 @@ class Engine:
                 raise
 
     def _apply_system_key(self, key, on):
+        """Applies one tweak. A setter that reports False (file missing, write refused,
+        e.g. EPP while the performance governor is active) raises, so the UI shows the
+        failure under the toggle instead of a toggle that silently did nothing."""
+        def check(ok, what):
+            if ok is False:
+                raise RuntimeError(f"{what} couldn't be changed on this kernel/device (see Decky log)")
+
         if key == "touch":
             self._apply_touch()
         elif key == "epp":
             if on:
-                tweaks.set_epp(on)
+                check(tweaks.set_epp(on), "CPU energy preference")
             self.persist.update(EPP_IDX=tweaks.EPP_VALUES.index(on) if on else None)
         elif key == "wifiPowersaveOff":
             tweaks.set_wifi_powersave_off(on)
             self.persist.update(WIFI_PS_OFF=1 if on else None)
         elif key == "usbAutosuspendOff":
-            tweaks.set_usb_autosuspend_off(on)
+            check(tweaks.set_usb_autosuspend_off(on), "USB autosuspend")
             self.persist.update(USB_AS_OFF=1 if on else None)
         elif key == "cpuBoostOff":
-            tweaks.set_boost(not on)
+            check(tweaks.set_boost(not on), "CPU boost")
             self.persist.update(BOOST_OFF=1 if on else None)
         elif key == "smtOff":
-            tweaks.set_smt(not on)
+            check(tweaks.set_smt(not on), "SMT")
             self.persist.update(SMT_OFF=1 if on else None)
         elif key == "audioPowersaveOff":
-            tweaks.set_audio_ps(not on)
+            check(tweaks.set_audio_ps(not on), "Audio codec power saving")
             self.persist.update(AUDIO_PS_OFF=1 if on else None)
         elif key == "ampsAwake":
-            tweaks.set_amps_awake(on)
+            check(tweaks.set_amps_awake(on), "Speaker amplifier power")
             self.persist.update(AMPS_AWAKE=1 if on else None)
         elif key == "splitLockMitigation":
-            tweaks.set_splitlock(on)   # persisted by its sysctl.d drop-in
+            check(tweaks.set_splitlock(on), "Split-lock mitigation")   # persisted by its sysctl.d drop-in
 
     def _apply_touch(self):
         mode = self.conf["system"].get("touch", "on")
@@ -336,10 +346,13 @@ class Engine:
                     self._apply_touch()
                 if sysc.get("epp"):
                     st = tweaks.epp_status()
-                    if st and st["current"] != sysc["epp"]:
+                    # EPP can't be set while the "performance" governor/profile is active
+                    # (EBUSY); retry at most once a minute instead of failing every tick.
+                    if st and st["current"] != sysc["epp"] and time.monotonic() - self._epp_try > 60:
+                        self._epp_try = time.monotonic()
                         tweaks.set_epp(sysc["epp"])
             except Exception as e:
-                decky.logger.error(f"wifi enforce failed: {e}")
+                decky.logger.error(f"re-applying system tweaks failed: {e}")
             try:
                 snap = battery.snapshot()
                 self._travel(snap)
