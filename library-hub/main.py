@@ -50,13 +50,14 @@ def _deps(rid: str, have: dict):
 
 
 class Plugin:
-    async def status(self):
-        """Every item with installed/latest versions and dependencies. Never raises."""
+    async def status(self, force: bool = False):
+        """Every item with installed/latest versions and dependencies. Never raises.
+        force=True skips the short release cache (the "Check for updates" button)."""
         have = plugins.installed(_plugins_root())
         out = {"items": [], "error": None, "cssLoader": plugins.CSS_LOADER in have,
                "legacyUpdater": LEGACY_UPDATER in have}
         try:
-            cat = await asyncio.to_thread(releases.fetch_catalog)
+            cat = await asyncio.to_thread(releases.fetch_catalog, bool(force))
         except Exception as e:
             decky.logger.warning(f"release check failed: {e}")
             out["error"] = str(e)

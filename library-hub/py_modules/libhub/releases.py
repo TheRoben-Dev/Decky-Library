@@ -10,12 +10,17 @@ the SHA-256 in its `.sha256` asset, and GitHub's own asset digest when the API r
 """
 import hashlib
 import re
+import threading
+import time
+import urllib.error
 
 from . import net
 
 OWNER = "TheRoben-Dev"
 REPO = "Decky-Library"
-RELEASES_URL = f"https://api.github.com/repos/{OWNER}/{REPO}/releases?per_page=100"
+RELEASES_URL = f"https://api.github.com/repos/{OWNER}/{REPO}/releases?per_page=100&page={{page}}"
+MAX_PAGES = 5          # newest first; 500 releases is far more than the catalog needs
+CACHE_TTL = 120        # seconds; GitHub allows 60 unauthenticated API calls per hour
 DOWNLOAD_PREFIX = f"https://github.com/{OWNER}/{REPO}/releases/download/"
 
 THEME_ID = "nightgrid-theme"
@@ -29,6 +34,7 @@ KNOWN_NAMES = {
     "vex-performance": "Vex Performance",
     "proton-picker": "Proton Picker",
     "ally-tweaks": "Ally Tweaks",
+    "handheld-library": "Handheld Library",
 }
 MAX_ZIP = 30 * 1024 * 1024
 
@@ -91,8 +97,46 @@ def catalog(releases: list) -> dict:
     return best
 
 
-def fetch_catalog() -> dict:
-    return catalog(net.get_json(RELEASES_URL))
+_cache = {"at": 0.0, "cat": None}
+_cache_lock = threading.Lock()
+
+
+def _friendly(e: Exception) -> Exception:
+    if isinstance(e, urllib.error.HTTPError) and e.code in (403, 429):
+        reset = e.headers.get("X-RateLimit-Reset") if e.headers else None
+        when = ""
+        if reset and reset.isdigit():
+            when = f" Try again in about {max(1, round((int(reset) - time.time()) / 60))} min."
+        return RuntimeError("GitHub's hourly limit for update checks is used up." + when)
+    if isinstance(e, urllib.error.URLError):
+        return RuntimeError(f"Can't reach GitHub ({e.reason}). Check the Wi-Fi connection.")
+    return e
+
+
+def fetch_releases() -> list:
+    out = []
+    for page in range(1, MAX_PAGES + 1):
+        batch = net.get_json(RELEASES_URL.format(page=page))
+        if not isinstance(batch, list):
+            raise ValueError("unexpected reply from GitHub's releases API")
+        out += batch
+        if len(batch) < 100:
+            break
+    return out
+
+
+def fetch_catalog(force: bool = False) -> dict:
+    """Catalog of the newest release per id. Cached for CACHE_TTL seconds so opening Quick
+    Access repeatedly or installing several items doesn't burn GitHub's hourly API limit."""
+    with _cache_lock:
+        if not force and _cache["cat"] is not None and time.time() - _cache["at"] < CACHE_TTL:
+            return _cache["cat"]
+        try:
+            cat = catalog(fetch_releases())
+        except Exception as e:
+            raise _friendly(e) from e
+        _cache.update(at=time.time(), cat=cat)
+        return cat
 
 
 def asset_url(asset: dict, tag: str) -> str:

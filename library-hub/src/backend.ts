@@ -9,7 +9,7 @@ export interface Item {
 export interface Status { items: Item[]; error: string | null; cssLoader: boolean; legacyUpdater: boolean }
 interface Prepared { ok: boolean; error?: string; artifact?: string; hash?: string; name?: string; version?: string; installType?: number }
 
-export const getStatus = callable<[], Status>("status");
+export const getStatus = callable<[force?: boolean], Status>("status");
 const preparePlugin = callable<[id: string], Prepared>("prepare_plugin");
 const prepareStorePlugin = callable<[name: string], Prepared>("prepare_store_plugin");
 export const installTheme = callable<[], { ok: boolean; version?: string; error?: string }>("install_theme");

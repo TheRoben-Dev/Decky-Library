@@ -32,8 +32,9 @@ def installed_version(user_home: str):
     p = os.path.join(themes_dir(user_home), THEME_DIR, "theme.json")
     try:
         with open(p, "r", encoding="utf-8") as f:
-            return json.load(f).get("version")
-    except FileNotFoundError:
+            v = json.load(f).get("version")
+            return v if isinstance(v, str) else None
+    except (OSError, ValueError, AttributeError):
         return None
 
 

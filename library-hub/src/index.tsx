@@ -101,8 +101,10 @@ function Content() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ text: string; bad: boolean } | null>(null);
 
-  const refresh = async () => { try { setStatus(await getStatus()); } catch (e) { setMsg({ text: String(e), bad: true }); } };
-  const check = async () => { setBusy(true); setMsg(null); try { await refresh(); } finally { setBusy(false); } };
+  const refresh = async (force = false) => {
+    try { setStatus(await getStatus(force)); } catch (e) { setMsg({ text: String(e), bad: true }); }
+  };
+  const check = async (force = false) => { setBusy(true); setMsg(null); try { await refresh(force); } finally { setBusy(false); } };
 
   // Runs one action; Decky installs finish in the background, so look again a little later too.
   const act = async (fn: () => Promise<string | null>, done?: string) => {
@@ -112,8 +114,8 @@ function Content() {
       const err = await fn();
       setMsg(err ? { text: err, bad: true } : done ? { text: done, bad: false } : null);
       await refresh();
-      setTimeout(refresh, 4000);
-      setTimeout(refresh, 12000);
+      setTimeout(() => refresh(), 4000);
+      setTimeout(() => refresh(), 12000);
     } finally { setBusy(false); }
   };
 
@@ -174,7 +176,7 @@ function Content() {
         {others.map((it) => <ItemRows key={it.id} it={it} busy={busy} act={act} />)}
         {msg && <PanelSectionRow><div style={msg.bad ? warn : note}>{msg.text}</div></PanelSectionRow>}
         <PanelSectionRow>
-          <ButtonItem layout="below" disabled={busy} onClick={check}>{busy ? "Working…" : "Check for updates"}</ButtonItem>
+          <ButtonItem layout="below" disabled={busy} onClick={() => check(true)}>{busy ? "Working…" : "Check for updates"}</ButtonItem>
         </PanelSectionRow>
       </PanelSection>
       <PanelSection title="Recommended">
