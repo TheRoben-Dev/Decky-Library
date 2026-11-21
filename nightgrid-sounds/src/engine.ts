@@ -3,10 +3,15 @@
  *
  * Steam plays every Game Mode UI sound through GamepadUIAudio.m_AudioPlaybackManager.PlayAudioURL(url)
  * with URLs like "/sounds/deck_ui_navigation.wav". We patch that one method (before it runs) and
- * hand it a blob: URL of our rendered sound instead. No files are written, nothing is polled, and
- * unloading the plugin removes the patch, so Steam's own sounds come straight back.
+ * hand it the path of our rendered sound instead.
+ *
+ * Steam's player only plays files from its own UI folder (a blob: URL just comes out silent, which
+ * is what 0.1.0 did), so each pack+volume is rendered once, written by the backend to the plugin's
+ * data folder, and served through <steam>/steamui/sounds_nightgrid. Later starts find the files on
+ * disk and skip rendering. Nothing is polled; unloading removes the patch and Steam's sounds return.
  */
 import { beforePatch, findModuleChild } from "@decky/ui";
+import { prepare, storeSounds } from "./backend";
 import { Cat, CATS, PACKS, render, SILENT, wav, categoryOf } from "./sounds";
 
 export type Mode = "pack" | "steam" | "off";
@@ -16,6 +21,7 @@ export const DEFAULT_CONFIG: Config = { enabled: true, pack: "nightgrid", volume
 let cfg: Config = DEFAULT_CONFIG;
 let urls = new Map<Cat, string>();
 let silent: string | null = null;
+let lastError: string | null = null;
 let gen = 0;
 let patch: { unpatch(): void } | null = null;
 let hooked = false;
@@ -37,35 +43,52 @@ function resolve(url: string): string | null {
   if (!cat) return null;
   const mode = cfg.cats[cat] ?? "pack";
   if (mode === "steam") return null;
-  if (mode === "off") return silent;
+  if (mode === "off") return urls.size ? silent : null;
   return urls.get(cat) ?? null;   // not rendered yet -> Steam's own sound this once
 }
 
-/** Renders every category of the current pack at the current volume (a few ms each). */
+async function b64(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+/** Makes sure the current pack+volume exists as files Steam can load, then points the patch at them. */
 async function build() {
   const my = ++gen;
   const pack = PACKS.find((p) => p.id === cfg.pack) ?? PACKS[0];
-  const next = new Map<Cat, string>();
-  for (const { id } of CATS) {
-    try {
-      const data = await render(pack, id, cfg.volume);
-      if (my !== gen) { next.forEach(URL.revokeObjectURL); return; }   // settings changed meanwhile
-      next.set(id, URL.createObjectURL(wav(data)));
-    } catch (e) {
-      console.warn("[Nightgrid Sounds] render failed", id, e);
+  const key = `${pack.id}-${Math.round(cfg.volume * 100)}`;
+  try {
+    const prep = await prepare(key);
+    if (!prep.ok) throw new Error(prep.error);
+    if (!prep.have) {
+      const files: Record<string, string> = { silent: await b64(SILENT()) };
+      for (const { id } of CATS) files[id] = await b64(wav(await render(pack, id, cfg.volume)));
+      if (my !== gen) return;                       // settings changed meanwhile
+      const st = await storeSounds(key, files);
+      if (!st.ok) throw new Error(st.error);
     }
+    if (my !== gen) return;
+    const next = new Map<Cat, string>();
+    for (const { id } of CATS) next.set(id, `${prep.base}${key}/${id}.wav`);
+    urls = next;
+    silent = `${prep.base}${key}/silent.wav`;
+    lastError = null;
+  } catch (e: any) {
+    // Without files Steam can play, keep Steam's own sounds rather than silence.
+    urls = new Map(); silent = null;
+    lastError = String(e?.message ?? e);
+    console.warn("[Nightgrid Sounds] couldn't prepare sounds:", e);
   }
-  const old = urls;
-  urls = next;
-  // Steam may still be decoding an old URL for a moment; let it finish before revoking.
-  setTimeout(() => old.forEach(URL.revokeObjectURL), 5000);
 }
+
+export function engineError(): string | null { return lastError; }
 
 export function hookStatus(): boolean { return hooked; }
 
 export function start(config: Config) {
   cfg = config;
-  if (!silent) silent = URL.createObjectURL(SILENT());
   if (!patch) {
     const mgr = audioManager();
     const proto = mgr && Object.getPrototypeOf(mgr);
@@ -92,8 +115,7 @@ export function update(next: Config) {
 export function stop() {
   gen++;
   patch?.unpatch(); patch = null; hooked = false;
-  urls.forEach(URL.revokeObjectURL); urls = new Map();
-  if (silent) { URL.revokeObjectURL(silent); silent = null; }
+  urls = new Map(); silent = null;
 }
 
 let previewEl: HTMLAudioElement | null = null;

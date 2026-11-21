@@ -1,6 +1,6 @@
 # Nightgrid Sounds
 
-Original UI sound packs for Steam Game Mode, made for the Nightgrid theme. Every sound is **synthesized by the plugin** (Web Audio, rendered once into tiny WAVs in memory), so the plugin ships no audio files and writes nothing to disk except its settings.
+Original UI sound packs for Steam Game Mode, made for the Nightgrid theme. Every sound is **synthesized by the plugin** (Web Audio), so the plugin ships no audio files. A pack is rendered once per pack+volume into small WAVs (~200 KB total) under the plugin's data folder.
 
 | Pack | Character |
 |---|---|
@@ -14,7 +14,7 @@ Original UI sound packs for Steam Game Mode, made for the Nightgrid theme. Every
 - Volume slider and instant previews in Quick Access.
 
 ## How it works (and why it's light)
-Steam plays every Game Mode UI sound through one method, `GamepadUIAudio.m_AudioPlaybackManager.PlayAudioURL(url)`. The plugin patches that method and swaps the URL for its own rendered sound. No polling, no timers, no background process; the backend only stores `~/homebrew/settings/Nightgrid Sounds/settings.json`. The 13 sounds of a pack render in well under 0.2 s total, once at startup and again only when you change pack or volume. Turning it off or uninstalling restores Steam's sounds right away.
+Steam plays every Game Mode UI sound through one method, `GamepadUIAudio.m_AudioPlaybackManager.PlayAudioURL(url)`. The plugin patches that method and swaps the URL for its own rendered sound. Steam's player only plays files from its own UI folder, so the WAVs live in `~/homebrew/data/Nightgrid Sounds/sounds/` and are served through a symlink `steamui/sounds_nightgrid` (re-created on each start, since Steam updates can wipe `steamui`; removed on uninstall). No polling, no timers, no background process. A pack renders in well under 0.2 s, only the first time you pick that pack+volume. Turning it off or uninstalling restores Steam's sounds right away.
 
 If Audio Loader is installed too, set its pack to Default (both patch the same player); the panel warns about it.
 
