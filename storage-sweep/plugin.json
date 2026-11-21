@@ -1,0 +1,16 @@
+{
+  "name": "Storage Sweep",
+  "author": "Roben",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": [
+      "storage",
+      "cleaner",
+      "shader-cache",
+      "utility"
+    ],
+    "description": "Frees space: shader caches, workshop files and Proton prefixes left behind by uninstalled games, plus per-game shader cache resets. Scans only when you ask.",
+    "image": "https://opengraph.githubassets.com/1/TheRoben-Dev/Decky-Library"
+  }
+}
