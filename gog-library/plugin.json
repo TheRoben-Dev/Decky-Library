@@ -1,0 +1,16 @@
+{
+  "name": "GOG Library",
+  "author": "Roben",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": [
+      "gog",
+      "library",
+      "store",
+      "nightgrid"
+    ],
+    "description": "Your GOG games in Game Mode: sign in from your phone, browse the GOG store (controller-supported games first), install native Linux or Windows (Proton) versions, play them from Steam with their artwork, update and uninstall. Nothing runs in the background.",
+    "image": "https://opengraph.githubassets.com/1/TheRoben-Dev/Decky-Library"
+  }
+}
