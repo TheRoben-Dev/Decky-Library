@@ -115,7 +115,7 @@ export function LibraryPage() {
     body = (
       <div className="il-tabs">
         {error && <div className="il-msg err" style={{ paddingTop: 0 }}>{error}</div>}
-        <Tabs activeTab={tabs.some((t) => t.id === s.tab) ? s.tab : "all"} onShowTab={(t: string) => { s.tab = t; }} autoFocusContents tabs={tabs} />
+        <Tabs activeTab={tabs.some((t) => t.id === s.tab) ? s.tab : "all"} onShowTab={(t: string) => { if (state.tab !== t) { state.tab = t; changed(); } }} autoFocusContents tabs={tabs} />
       </div>
     );
   }
