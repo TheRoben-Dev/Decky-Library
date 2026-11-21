@@ -26,10 +26,26 @@ export async function loadSettings(): Promise<Settings> {
   return state.settings;
 }
 
+let saving: Promise<unknown> = Promise.resolve();
+
+/**
+ * Applies a settings change right away (so quick toggles build on each other instead of
+ * overwriting one another) and saves in order. The backend's normalized copy wins once saved.
+ */
 export async function updateSettings(patch: Partial<Settings>, resync = true): Promise<void> {
   const cur = await loadSettings();
-  state.settings = await setSettings({ ...cur, ...patch });
+  state.settings = { ...cur, ...patch };
   emit();
+  const want = state.settings;
+  saving = saving.then(async () => {
+    try {
+      const saved = await setSettings(want);
+      if (state.settings === want) { state.settings = saved; emit(); }
+    } catch (e) {
+      console.error("[Handheld Library] saving settings failed", e);
+    }
+  });
+  await saving;
   if (resync) await sync();
 }
 
@@ -64,7 +80,7 @@ async function doSync(): Promise<void> {
   }
   state.last = { ...r, at: Date.now() };
   if (r.ok && r.collectionId && r.collectionId !== s.collectionId) {
-    state.settings = await setSettings({ ...s, collectionId: r.collectionId });
+    await updateSettings({ collectionId: r.collectionId }, false);
   }
   emit();
 }

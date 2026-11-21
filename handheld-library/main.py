@@ -4,6 +4,7 @@ The frontend does all the Steam work (it reads the library and edits the collect
 Steam's own collectionStore). The backend only keeps settings and looks up ProtonDB tiers,
 which the frontend can't fetch itself (CORS). Runs as the normal user.
 """
+import asyncio
 import os
 import sys
 
@@ -31,13 +32,14 @@ class Plugin:
         return self._pins().status()
 
     async def pin_verify(self, code: str):
-        return self._pins().verify(code)
+        # PBKDF2 (200k rounds) off the event loop so Decky stays responsive.
+        return await asyncio.to_thread(self._pins().verify, code)
 
     async def pin_set(self, new: str, current: str = ""):
-        return self._pins().set(new, current)
+        return await asyncio.to_thread(self._pins().set, new, current)
 
     async def pin_clear(self, current: str):
-        return self._pins().clear(current)
+        return await asyncio.to_thread(self._pins().clear, current)
 
     def _pdb(self):
         if self._cache is None:

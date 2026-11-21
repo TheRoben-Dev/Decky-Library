@@ -286,8 +286,8 @@ function Content() {
   return (
     <>
       <FilterView />
-      <PinSection />
       <LibraryTabsSection />
+      <PinSection />
       <QamTabsSection />
     </>
   );

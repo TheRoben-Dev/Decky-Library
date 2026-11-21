@@ -98,6 +98,7 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
   return (
     <PinPad title="Hidden games are locked" hint="Enter your PIN" error={err} busy={busy}
       onSubmit={async (p) => {
+        setErr(undefined);   // so the same "Wrong PIN" twice still clears the pad
         setBusy(true);
         try {
           const r = await pinVerify(p);
@@ -120,23 +121,28 @@ function PinFlow({ mode, closeModal, onDone }: { mode: "set" | "change" | "remov
 
   const submit = async (p: string) => {
     setErr(undefined);
-    if (step === "current") {
-      setBusy(true);
-      const r = mode === "remove" ? await pinClear(p) : await pinVerify(p);
+    try {
+      if (step === "current") {
+        setBusy(true);
+        const r = mode === "remove" ? await pinClear(p) : await pinVerify(p);
+        setBusy(false);
+        if (!r.ok) { setErr(errorFor(r, "Wrong PIN.")); return; }
+        if (mode === "remove") { pinIsSet = false; lock(); finish("PIN removed. The Hidden games tab is unlocked."); return; }
+        setCurrent(p); setStep("new");
+      } else if (step === "new") {
+        setFirst(p); setStep("confirm");
+      } else {
+        if (p !== first) { setErr("PINs didn't match. Enter the new PIN again."); setStep("new"); return; }
+        setBusy(true);
+        const r = await pinSet(p, current);
+        setBusy(false);
+        if (!r.ok) { setErr(errorFor(r, "Couldn't save the PIN.")); setStep(mode === "set" ? "new" : "current"); return; }
+        pinIsSet = true; lock();
+        finish(mode === "set" ? "PIN set. The Hidden games tab is locked." : "PIN changed.");
+      }
+    } catch (e) {
       setBusy(false);
-      if (!r.ok) { setErr(errorFor(r, "Wrong PIN.")); return; }
-      if (mode === "remove") { pinIsSet = false; lock(); finish("PIN removed. The Hidden games tab is unlocked."); return; }
-      setCurrent(p); setStep("new");
-    } else if (step === "new") {
-      setFirst(p); setStep("confirm");
-    } else {
-      if (p !== first) { setErr("PINs didn't match. Enter the new PIN again."); setStep("new"); return; }
-      setBusy(true);
-      const r = await pinSet(p, current);
-      setBusy(false);
-      if (!r.ok) { setErr(errorFor(r, "Couldn't save the PIN.")); setStep(mode === "set" ? "new" : "current"); return; }
-      pinIsSet = true; lock();
-      finish(mode === "set" ? "PIN set. The Hidden games tab is locked." : "PIN changed.");
+      setErr(`Couldn't reach the plugin backend: ${e}`);
     }
   };
 

@@ -1,6 +1,6 @@
 {
   "name": "handheld-library",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Collection of games that work on SteamOS with controller support, plus a hidden-games panel",
   "type": "module",
   "scripts": {

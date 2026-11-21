@@ -59,7 +59,9 @@ function controllerLevel(ov: any): 0 | 1 | 2 {
 
 function isInstalled(ov: any): boolean {
   if (typeof ov.installed === "boolean") return ov.installed;
-  return !!ov.local_per_client_data?.installed || ov.size_on_disk !== undefined;
+  if (typeof ov.local_per_client_data?.installed === "boolean") return ov.local_per_client_data.installed;
+  // size_on_disk is present (as "0") for games that aren't installed too, so check the value.
+  return Number(ov.size_on_disk ?? ov.local_per_client_data?.size_on_disk ?? 0) > 0;
 }
 
 function toGame(ov: any): Game {

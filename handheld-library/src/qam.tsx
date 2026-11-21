@@ -134,6 +134,7 @@ export function uninstallQam() {
     pluginTabIds.forEach((id) => hook.removeById?.(id));
     pluginTabIds.clear();
     if (pluginTimer !== undefined) clearInterval(pluginTimer);
+    pluginTimer = undefined;
     if (hook.render === wrapper) hook.render = origRender;
     else broken = true;   // someone wrapped after us: become a pass-through
   } catch (e) {
