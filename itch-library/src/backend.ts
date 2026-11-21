@@ -90,3 +90,9 @@ export function within<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
     p.then((v) => { clearTimeout(t); ok(v); }, (e) => { clearTimeout(t); fail(e); });
   });
 }
+
+export interface StorePage {
+  description: ({ t: "h" | "p" | "li"; text: string } | { t: "img"; src: string })[];
+  screenshots: string[]; info: [string, string][]; rating: { value?: number; count?: number }; video: string; stale?: boolean;
+}
+export const getStorePage = callable<[gameId: number], ({ ok: true } & StorePage) | Fail>("store_page");
