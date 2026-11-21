@@ -9,7 +9,7 @@ Change a game's library artwork from [SteamGridDB](https://www.steamgriddb.com) 
 - Non-Steam shortcuts are matched on SteamGridDB by name, with a dropdown to pick the right match.
 
 ## Light on resources
-Nothing runs in the background: no polling, no Steam event hooks, no startup work beyond registering one route. The backend only talks to SteamGridDB when the browser is open, caches answers in memory for 10 minutes, and thumbnails are lazy-loaded straight from SteamGridDB's CDN.
+Nothing runs in the background: no polling, no Steam event hooks, no startup work beyond registering one route and one game-menu entry. The backend only talks to SteamGridDB when the browser is open, caches answers in memory for 10 minutes, and thumbnails are lazy-loaded straight from SteamGridDB's CDN.
 
 ## Setup
 1. Get a free API key: sign in at steamgriddb.com → Preferences → API.
@@ -19,7 +19,7 @@ Nothing runs in the background: no polling, no Steam event hooks, no startup wor
 The key is stored in `~/homebrew/settings/Grid Art/settings.json` (mode 600) and never sent to the UI.
 
 ## Use
-Open a game's page in the library (or pick a game in the panel), then Quick Access → Grid Art → **Change artwork**. L1/R1 switch between slots; A sets the focused picture.
+In the library, open a game's menu and pick **Change artwork…** (between Manage and Properties). Or open a game's page (or pick a game in the panel), then Quick Access → Grid Art → **Change artwork**. L1/R1 switch between slots; A sets the focused picture.
 
 ## Files
 | Path | What |
@@ -28,6 +28,7 @@ Open a game's page in the library (or pick a game in the panel), then Quick Acce
 | `py_modules/gridart/sgdb.py` | SteamGridDB client: query building, host allow-list, size cap, PNG/JPEG check |
 | `src/page.tsx` | Full-screen browser (`/grid-art/:appid`) |
 | `src/index.tsx` | Quick Access panel |
+| `src/menu.tsx` | "Change artwork…" entry in the library game menu |
 
 Runs as the normal user (no root). Tests: `python3 -m unittest discover -s tests`.
 
