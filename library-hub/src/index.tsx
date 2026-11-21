@@ -8,6 +8,9 @@ import {
   Dep, getStatus, installPlugin, installStorePlugin, installTheme, Item, reloadCssLoader, Status,
   uninstallPlugin, uninstallTheme, installPluginsBatch,
 } from "./backend";
+import { sectionFactory } from "./section";
+
+const Section = sectionFactory("library-hub");
 
 const note = { fontSize: "12px", lineHeight: "16px", opacity: 0.75, whiteSpace: "normal" as const };
 const warn = { ...note, color: "#FF9F1C", opacity: 1 };
@@ -144,42 +147,63 @@ function Content() {
   const s = status;
   const self = s?.items.find((i) => i.isSelf);
   const others = s?.items.filter((i) => !i.isSelf) ?? [];
+  const installed = others.filter((i) => i.installed);
+  const available = others.filter((i) => !i.installed);
+  const updates = s?.items.filter((i) => i.installed && i.updateAvailable) ?? [];
+
+  const headline = !s ? "Checking releases…"
+    : s.error ? null
+    : updates.length ? `${updates.length} update${updates.length > 1 ? "s" : ""} available`
+    : "Everything is up to date";
 
   return (
     <>
-      {s && !s.cssLoader && (
-        <PanelSection title="CSS Loader">
-          <PanelSectionRow>
-            <div style={warn}>CSS Loader isn't installed. The Nightgrid theme needs it.</div>
-          </PanelSectionRow>
-          <PanelSectionRow>
-            <ButtonItem layout="below" disabled={busy}
-              onClick={() => act(() => installStorePlugin(CSS_LOADER), "Confirm the CSS Loader install in Decky's prompt.")}>
-              Install CSS Loader
-            </ButtonItem>
-          </PanelSectionRow>
-        </PanelSection>
-      )}
-      <PanelSection title="Library">
-        {!s && <PanelSectionRow><div style={note}>Checking releases…</div></PanelSectionRow>}
+      {/* 1. Status: updates, and the one-tap actions */}
+      <PanelSection title="Updates">
+        {headline && <PanelSectionRow><div style={updates.length ? warn : note}>{headline}</div></PanelSectionRow>}
         {s?.error && <PanelSectionRow><div style={warn}>{s.error}</div></PanelSectionRow>}
-        {s && !s.error && others.length === 0 && (
-          <PanelSectionRow><div style={note}>No releases published yet.</div></PanelSectionRow>
-        )}
-        {(s?.items.filter((i) => i.installed && i.updateAvailable).length ?? 0) > 0 && (
+        {updates.length > 0 && (
           <PanelSectionRow>
-            <ButtonItem layout="below" disabled={busy} onClick={updateAll}>
-              Update all ({s!.items.filter((i) => i.installed && i.updateAvailable).length})
-            </ButtonItem>
+            <ButtonItem layout="below" disabled={busy} onClick={updateAll}>Update all ({updates.length})</ButtonItem>
           </PanelSectionRow>
         )}
-        {others.map((it) => <ItemRows key={it.id} it={it} busy={busy} act={act} />)}
         {msg && <PanelSectionRow><div style={msg.bad ? warn : note}>{msg.text}</div></PanelSectionRow>}
         <PanelSectionRow>
           <ButtonItem layout="below" disabled={busy} onClick={() => check(true)}>{busy ? "Working…" : "Check for updates"}</ButtonItem>
         </PanelSectionRow>
+        {s && !s.cssLoader && (
+          <>
+            <PanelSectionRow>
+              <div style={warn}>CSS Loader isn't installed. The Nightgrid theme needs it.</div>
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <ButtonItem layout="below" disabled={busy}
+                onClick={() => act(() => installStorePlugin(CSS_LOADER), "Confirm the CSS Loader install in Decky's prompt.")}>
+                Install CSS Loader
+              </ButtonItem>
+            </PanelSectionRow>
+          </>
+        )}
       </PanelSection>
-      <PanelSection title="Recommended">
+
+      {/* 2. What's installed (most-used: update / uninstall) */}
+      {installed.length > 0 && (
+        <PanelSection title={`Installed (${installed.length})`}>
+          {installed.map((it) => <ItemRows key={it.id} it={it} busy={busy} act={act} />)}
+        </PanelSection>
+      )}
+
+      {/* 3. Secondary */}
+      {s && !s.error && others.length === 0 && (
+        <PanelSection><PanelSectionRow><div style={note}>No releases published yet.</div></PanelSectionRow></PanelSection>
+      )}
+      {available.length > 0 && (
+        <Section id="available" title={`Not installed (${available.length})`}
+          summary={available.map((i) => i.name).join(", ")} defaultOpen={installed.length === 0}>
+          {available.map((it) => <ItemRows key={it.id} it={it} busy={busy} act={act} />)}
+        </Section>
+      )}
+      <Section id="recommended" title="Recommended" summary="Handheld Controller Glyphs (Ally button prompts)">
         <PanelSectionRow>
           <Field label="Handheld Controller Glyphs" description="Ally button prompts (CSS Loader theme by victor-borges)" bottomSeparator="none" />
         </PanelSectionRow>
@@ -189,8 +213,10 @@ function Content() {
             ASUS ROG Ally. It works alongside Nightgrid.
           </div>
         </PanelSectionRow>
-      </PanelSection>
-      <PanelSection title="Library Hub">
+      </Section>
+
+      {/* 5. About */}
+      <Section id="about" title="About Library Hub" summary={self?.installedVersion ? `Version ${self.installedVersion}${self.updateAvailable ? ` · ${self.latest} available` : ""}` : undefined}>
         {self && <ItemRows it={self} busy={busy} act={act} />}
         <PanelSectionRow>
           <div style={note}>
@@ -198,7 +224,7 @@ function Content() {
             published SHA-256. Plugins install through Decky's own installer; theme options are kept.
           </div>
         </PanelSectionRow>
-      </PanelSection>
+      </Section>
     </>
   );
 }

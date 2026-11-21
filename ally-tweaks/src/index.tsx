@@ -13,6 +13,9 @@ import { useEffect, useReducer, useState } from "react";
 import { FaGamepad } from "react-icons/fa";
 import * as be from "./backend";
 import { controller } from "./controller";
+import { sectionFactory } from "./section";
+
+const Section = sectionFactory("ally-tweaks");
 import { Light, LightMode, Reactive, Speed } from "./types";
 
 const note = { fontSize: "12px", lineHeight: "16px", opacity: 0.75, whiteSpace: "normal" as const };
@@ -239,7 +242,14 @@ function Lighting() {
   const gameLight = c.gameLight();
   const light = gameLight ?? s.base;
   const r = st.rgb;
+  const extrasSummary = [
+    s.reactive !== "none" ? `color follows ${s.reactive}` : null,
+    s.followScreen ? "follows screen" : null,
+    s.lowBattery ? `red pulse ≤${s.lowBatteryAt}%` : null,
+    s.offOnBattery ? "off on battery" : null,
+  ].filter(Boolean).join(" · ") || "None on";
   return (
+    <>
     <PanelSection title="Ring lighting">
       {st.rgbBackend === "none" && <Note warning>No ring LED control found: neither the kernel's joystick-ring LED nor Handheld Daemon is available on this system.</Note>}
       {st.rgbBackend === "sysfs" && st.leds.clamped && st.leds.hidFallback && (
@@ -277,51 +287,56 @@ function Lighting() {
           )}
           <Note>{gameLight ? "Editing this game's lighting." : "Editing the default lighting."}</Note>
           <LightEditor light={light} />
-          {!gameLight && (
-            <PanelSectionRow>
-              <DropdownItem label="Color follows"
-                rgOptions={REACTIVE.filter((r) => r.data !== "tdp" || st.rgbBackend === "hhd")}
-                selectedOption={s.reactive === "tdp" && st.rgbBackend !== "hhd" ? "none" : s.reactive}
-                description="Changes the hue of Solid/Pulse automatically. Needs the plugin running."
-                onChange={(o) => c.setRgb({ reactive: o.data })} />
-            </PanelSectionRow>
-          )}
-          <PanelSectionRow>
-            <ToggleField label="Follow screen brightness" checked={s.followScreen}
-              description={`Scales the rings with the screen's real backlight level in 1% steps, and turns them off when the screen turns off.${s.followScreen && st.screen != null ? ` Screen now: ${Math.round(st.screen * 100)}%.` : ""}`}
-              onChange={(v) => c.setRgb(v ? { followScreen: v, base: { ...s.base, brightness: 100 } } : { followScreen: v })} />
-          </PanelSectionRow>
-          <PanelSectionRow>
-            <ToggleField label="Pulse red on low battery" checked={s.lowBattery}
-              onChange={(v) => c.setRgb({ lowBattery: v })} />
-          </PanelSectionRow>
-          {s.lowBattery && (
-            <PanelSectionRow>
-              <SliderField label="Low battery at" value={s.lowBatteryAt} min={5} max={30} step={5} showValue
-                valueSuffix="%" onChange={(v) => c.setRgb({ lowBatteryAt: v })} />
-            </PanelSectionRow>
-          )}
-          <PanelSectionRow>
-            <ToggleField label="Lights off on battery" checked={s.offOnBattery}
-              description="Saves a little power when unplugged."
-              onChange={(v) => c.setRgb({ offOnBattery: v })} />
-          </PanelSectionRow>
-          {r?.hasBootFlags && (
-            <>
-              <PanelSectionRow>
-                <ToggleField label="Lights during boot" checked={r.rgbBoot}
-                  description="Asks the controller to keep the rings lit before HHD starts. A HHD option, briefly reconnects the controller."
-                  onChange={(v) => be.setRgbFlags(v, r.rgbCharging).then(() => c.refresh())} />
-              </PanelSectionRow>
-              <PanelSectionRow>
-                <ToggleField label="Lights while charging asleep" checked={r.rgbCharging}
-                  onChange={(v) => be.setRgbFlags(r.rgbBoot, v).then(() => c.refresh())} />
-              </PanelSectionRow>
-            </>
-          )}
         </>
       )}
     </PanelSection>
+    {s.managed && (
+      <Section id="lighting-extras" title="Lighting extras" summary={extrasSummary}>
+        {!gameLight && (
+          <PanelSectionRow>
+            <DropdownItem label="Color follows"
+              rgOptions={REACTIVE.filter((r) => r.data !== "tdp" || st.rgbBackend === "hhd")}
+              selectedOption={s.reactive === "tdp" && st.rgbBackend !== "hhd" ? "none" : s.reactive}
+              description="Changes the hue of Solid/Pulse automatically. Needs the plugin running."
+              onChange={(o) => c.setRgb({ reactive: o.data })} />
+          </PanelSectionRow>
+        )}
+        <PanelSectionRow>
+          <ToggleField label="Follow screen brightness" checked={s.followScreen}
+            description={`Scales the rings with the screen's real backlight level in 1% steps, and turns them off when the screen turns off.${s.followScreen && st.screen != null ? ` Screen now: ${Math.round(st.screen * 100)}%.` : ""}`}
+            onChange={(v) => c.setRgb(v ? { followScreen: v, base: { ...s.base, brightness: 100 } } : { followScreen: v })} />
+        </PanelSectionRow>
+        <PanelSectionRow>
+          <ToggleField label="Pulse red on low battery" checked={s.lowBattery}
+            onChange={(v) => c.setRgb({ lowBattery: v })} />
+        </PanelSectionRow>
+        {s.lowBattery && (
+          <PanelSectionRow>
+            <SliderField label="Low battery at" value={s.lowBatteryAt} min={5} max={30} step={5} showValue
+              valueSuffix="%" onChange={(v) => c.setRgb({ lowBatteryAt: v })} />
+          </PanelSectionRow>
+        )}
+        <PanelSectionRow>
+          <ToggleField label="Lights off on battery" checked={s.offOnBattery}
+            description="Saves a little power when unplugged."
+            onChange={(v) => c.setRgb({ offOnBattery: v })} />
+        </PanelSectionRow>
+        {r?.hasBootFlags && (
+          <>
+            <PanelSectionRow>
+              <ToggleField label="Lights during boot" checked={r.rgbBoot}
+                description="Asks the controller to keep the rings lit before HHD starts. A HHD option, briefly reconnects the controller."
+                onChange={(v) => be.setRgbFlags(v, r.rgbCharging).then(() => c.refresh())} />
+            </PanelSectionRow>
+            <PanelSectionRow>
+              <ToggleField label="Lights while charging asleep" checked={r.rgbCharging}
+                onChange={(v) => be.setRgbFlags(r.rgbBoot, v).then(() => c.refresh())} />
+            </PanelSectionRow>
+          </>
+        )}
+      </Section>
+    )}
+    </>
   );
 }
 
@@ -382,15 +397,15 @@ function Buttons() {
   if (!b?.supported) {
     if (!st.inputplumber) return null;
     return (
-      <PanelSection title="Back buttons (M1 / M2)">
+      <Section id="buttons" title="Back buttons (M1 / M2)" summary="Bind them per game in Steam's controller layout">
         <Note>InputPlumber presents M1/M2 as Xbox Elite back paddles, so Steam already lets you bind them per game: the game's controller layout in Steam, under the back paddles. Keys, macros and action-layer shifts all work there, with nothing extra running.</Note>
-      </PanelSection>
+      </Section>
     );
   }
   const game = c.appid ? st.settings.buttons.perGame[c.appid] : undefined;
   const opts = b.paddleOptions.map((o) => ({ data: o, label: PADDLES[o] ?? o }));
   return (
-    <PanelSection title="Back buttons (M1 / M2)">
+    <Section id="buttons" title="Back buttons (M1 / M2)" summary={game ? `Own layout for ${st.game?.name ?? "this game"}` : `All games: ${PADDLES[b.paddles ?? ""] ?? b.paddles ?? "default"}`}>
       <Note>Controller mode in HHD: {b.controllerMode === "uinput" ? "Xbox" : b.controllerMode}.{" "}
         {opts.length ? "" : "This mode has no back-button options; switch to Dualsense or Xbox in HHD."}</Note>
       {c.appid && opts.length > 0 && (
@@ -424,21 +439,34 @@ function Buttons() {
         </>
       )}
       <Note>With "Steam Input", M1/M2 show up as back paddles (L4/R4) in each game's Steam controller layout, where you can bind keys, macros or action-layer shifts per game.</Note>
-    </PanelSection>
+    </Section>
   );
 }
 
 function Panel() {
   const c = useController();
   const p = c.state!.panel;
-  if (p.panelOverdrive == null && p.bootSound == null) return null;
+  const st = c.state!;
+  const sys = st.settings.system;
+  const setSys = async (key: string, v: boolean | string) => {
+    c.setSystemLocal(key, v);
+    const r = await be.setSystem(key, v);
+    if (!r.ok) toaster.toast({ title: "Ally Tweaks", body: `Saved, but applying it failed${r.error ? `: ${r.error}` : ""}` });
+    c.refresh();
+  };
+  if (p.panelOverdrive == null && p.bootSound == null && !st.cpu.touch && st.cpu.audioPowerSave == null && !st.cpu.amps) return null;
+  const displaySummary = [
+    p.panelOverdrive != null ? `overdrive ${p.panelOverdrive ? "on" : "off"}` : null,
+    st.cpu.touch ? `touch ${sys.touch === "games" ? "off in games" : sys.touch ?? "on"}` : null,
+    sys.audioPowersaveOff || sys.ampsAwake ? "audio fixes on" : null,
+  ].filter(Boolean).join(" · ");
   const set = async (key: string, v: boolean) => {
     const r = await be.setPanel(key, v);
     if (!r.ok) toaster.toast({ title: "Ally Tweaks", body: `Couldn't change setting${r.error ? `: ${r.error}` : ""}` });
     c.refresh();
   };
   return (
-    <PanelSection title="Screen & system">
+    <Section id="display" title="Display & audio" summary={displaySummary}>
       {p.panelOverdrive != null && (
         <PanelSectionRow>
           <ToggleField label="Panel overdrive" checked={p.panelOverdrive}
@@ -453,7 +481,34 @@ function Panel() {
             onChange={(v) => set("bootSound", v)} />
         </PanelSectionRow>
       )}
-    </PanelSection>
+          {st.cpu.touch && (
+        <PanelSectionRow>
+          <DropdownItem label="Touchscreen"
+            rgOptions={[
+              { data: "on", label: "On" },
+              { data: "games", label: "Off while a game runs" },
+              { data: "off", label: "Off" },
+            ]}
+            selectedOption={sys.touch ?? "on"}
+            description="Stops accidental touches (e.g. palms on the screen edge). Turns back on instantly."
+            onChange={(o) => setSys("touch", o.data)} />
+        </PanelSectionRow>
+      )}
+      {st.cpu.audioPowerSave != null && (
+        <PanelSectionRow>
+          <ToggleField label="Audio codec power saving off" checked={sys.audioPowersaveOff}
+            description="Keeps the sound chip awake, so there's no pop or cut-off first syllable when sound starts after silence. Bazzite already keeps PipeWire outputs awake; this also covers the codec itself. About 0.1–0.3 W."
+            onChange={(v) => setSys("audioPowersaveOff", v)} />
+        </PanelSectionRow>
+      )}
+      {st.cpu.amps && (
+        <PanelSectionRow>
+          <ToggleField label="Keep speaker amps awake" checked={sys.ampsAwake}
+            description={`Workaround for one speaker going silent after a pause: stops the ${st.cpu.amps.count} ${st.cpu.amps.driver === "cs35l41-hda" ? "Cirrus CS35L41" : "TI TAS2781"} speaker amps from powering down between sounds, so there's nothing to fail on wake-up. Experimental (not a confirmed fix); best combined with "Audio codec power saving off". A little more idle power.`}
+            onChange={(v) => setSys("ampsAwake", v)} />
+        </PanelSectionRow>
+      )}
+    </Section>
   );
 }
 
@@ -467,11 +522,14 @@ function SystemTweaks() {
     if (!r.ok) toaster.toast({ title: "Ally Tweaks", body: `Saved, but applying it failed${r.error ? `: ${r.error}` : ""}` });
     c.refresh();
   };
+  const systemSummary = [
+    sys.wifiPowersaveOff ? "Wi-Fi PS off" : null,
+    sys.usbAutosuspendOff ? "USB autosuspend off" : null,
+    st.cpu.splitLockMitigation ? "split-lock on" : null,
+    st.cpu.pcie?.next ? "PCIe PM off" : null,
+  ].filter(Boolean).join(" · ") || "Bazzite defaults";
   return (
-    <PanelSection title="System tweaks">
-      {Object.entries(st.sysErrors ?? {}).map(([k, m]) => (
-        <Note key={k} warning>{k}: saved, but applying it failed ({m}). It's retried at boot and while the plugin runs; the log has details.</Note>
-      ))}
+    <Section id="system" title="Connectivity & system" summary={systemSummary}>
       {st.wifi.supported && (
         <PanelSectionRow>
           <ToggleField label="Wi-Fi power saving off" checked={sys.wifiPowersaveOff}
@@ -486,20 +544,6 @@ function SystemTweaks() {
             onChange={(v) => set("usbAutosuspendOff", v)} />
         </PanelSectionRow>
       )}
-      {st.cpu.audioPowerSave != null && (
-        <PanelSectionRow>
-          <ToggleField label="Audio codec power saving off" checked={sys.audioPowersaveOff}
-            description="Keeps the sound chip awake, so there's no pop or cut-off first syllable when sound starts after silence. Bazzite already keeps PipeWire outputs awake; this also covers the codec itself. About 0.1–0.3 W."
-            onChange={(v) => set("audioPowersaveOff", v)} />
-        </PanelSectionRow>
-      )}
-      {st.cpu.amps && (
-        <PanelSectionRow>
-          <ToggleField label="Keep speaker amps awake" checked={sys.ampsAwake}
-            description={`Workaround for one speaker going silent after a pause: stops the ${st.cpu.amps.count} ${st.cpu.amps.driver === "cs35l41-hda" ? "Cirrus CS35L41" : "TI TAS2781"} speaker amps from powering down between sounds, so there's nothing to fail on wake-up. Experimental (not a confirmed fix); best combined with "Audio codec power saving off". A little more idle power.`}
-            onChange={(v) => set("ampsAwake", v)} />
-        </PanelSectionRow>
-      )}
       {st.cpu.splitLockMitigation != null && (
         <PanelSectionRow>
           <ToggleField label="Split-lock mitigation" checked={!!st.cpu.splitLockMitigation}
@@ -507,21 +551,8 @@ function SystemTweaks() {
             onChange={(v) => set("splitLockMitigation", v)} />
         </PanelSectionRow>
       )}
-      {st.cpu.touch && (
-        <PanelSectionRow>
-          <DropdownItem label="Touchscreen"
-            rgOptions={[
-              { data: "on", label: "On" },
-              { data: "games", label: "Off while a game runs" },
-              { data: "off", label: "Off" },
-            ]}
-            selectedOption={sys.touch ?? "on"}
-            description="Stops accidental touches (e.g. palms on the screen edge). Turns back on instantly."
-            onChange={(o) => set("touch", o.data)} />
-        </PanelSectionRow>
-      )}
       {st.cpu.pcie.supported && <PcieToggle />}
-    </PanelSection>
+    </Section>
   );
 }
 
@@ -546,7 +577,7 @@ function CpuTweaks() {
     c.refresh();
   };
   return (
-    <PanelSection title="CPU">
+    <Section id="cpu" title="CPU" summary={[sys.cpuBoostOff ? "boost off" : "boost on", sys.smtOff ? "SMT off" : null, sys.epp ? `EPP ${EPP_LABELS[sys.epp] ?? sys.epp}` : null].filter(Boolean).join(" · ")}>
       {cpu.boost != null && (
         <PanelSectionRow>
           <ToggleField label="CPU boost" checked={!sys.cpuBoostOff}
@@ -571,7 +602,7 @@ function CpuTweaks() {
         </PanelSectionRow>
       )}
       <Note>All within ASUS stock limits. TDP and GPU clocks stay in Vex Performance.</Note>
-    </PanelSection>
+    </Section>
   );
 }
 
@@ -605,7 +636,7 @@ function GpuMemory() {
   const a = c.state!.apuMem;
   if (!a) return null;
   return (
-    <PanelSection title="GPU memory (VRAM)">
+    <Section id="vram" title="GPU memory (VRAM)" summary={APU_LABELS[a.current ?? 0] ?? `${(a.current ?? 0) + 1} GB`}>
       <PanelSectionRow>
         <DropdownItem label="Memory reserved for the GPU"
           rgOptions={a.choices.map((i) => ({ data: i, label: APU_LABELS[i] ?? `${i + 1} GB` }))}
@@ -617,15 +648,7 @@ function GpuMemory() {
             c.refresh();
           }} />
       </PanelSectionRow>
-    </PanelSection>
-  );
-}
-
-function BazziteDefaults() {
-  return (
-    <PanelSection title="Already set by Bazzite">
-      <Note>zram swap (zstd, half of RAM) with swappiness 180, low-latency Bluetooth for controllers, and PipeWire outputs that never sleep. Nothing to change here.</Note>
-    </PanelSection>
+    </Section>
   );
 }
 
@@ -640,6 +663,13 @@ function Content() {
           <Note warning>Made for the ROG Ally 2023 (RC71L). This looks like "{st.device.product || "unknown"}", so some options may not apply.</Note>
         </PanelSection>
       )}
+      {Object.keys(st.sysErrors ?? {}).length > 0 && (
+        <PanelSection>
+          {Object.entries(st.sysErrors ?? {}).map(([k, m]) => (
+            <Note key={k} warning>{k}: saved, but applying it failed ({m}). It's retried at boot and while the plugin runs; the log has details.</Note>
+          ))}
+        </PanelSection>
+      )}
       <Lighting />
       <Battery />
       <Buttons />
@@ -647,13 +677,13 @@ function Content() {
       <SystemTweaks />
       <CpuTweaks />
       <GpuMemory />
-      <BazziteDefaults />
-      <PanelSection title="About">
+      <Section id="about" title="About" summary={st.device.isAlly2023 ? `ROG Ally ${st.device.chip} · BIOS ${st.device.bios}` : st.device.product}>
         <Note>
           {st.device.isAlly2023 ? `ROG Ally ${st.device.chip} · BIOS ${st.device.bios}. ` : ""}
           Stays inside ASUS stock limits: no TDP, clock, fan or firmware changes. Power and TDP live in Vex Performance.
         </Note>
-      </PanelSection>
+        <Note>Already set by Bazzite, nothing to change: zram swap (zstd, half of RAM) with swappiness 180, low-latency Bluetooth for controllers, and PipeWire outputs that never sleep.</Note>
+      </Section>
     </>
   );
 }

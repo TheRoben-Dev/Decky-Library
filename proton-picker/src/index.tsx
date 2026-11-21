@@ -15,6 +15,9 @@ import { controller, FAMILY_LABEL } from "./controller";
 import { effectiveTier, TIER_COLOR } from "./recommend";
 import * as steam from "./steam";
 import { Family } from "./types";
+import { sectionFactory } from "./section";
+
+const Section = sectionFactory("proton-picker");
 
 const note = { fontSize: "12px", lineHeight: "16px", opacity: 0.75, whiteSpace: "normal" as const };
 const warn = { ...note, color: "#ffb84d", opacity: 1 };
@@ -85,10 +88,10 @@ function GameSection() {
   const prev = rec?.history.length ? rec.history[rec.history.length - 1] : null;
 
   return (
-    <PanelSection title="Game">
+    <PanelSection title={running === appid && appid ? "Running game" : "Game"}>
       <PanelSectionRow>
         <DropdownItem
-          label={running === appid ? "Running now" : "Game"}
+          label="Game"
           rgOptions={recent.map((g) => ({ data: g.appid, label: g.name }))}
           selectedOption={appid}
           onChange={(o) => c.selectGame(String(o.data))}
@@ -98,21 +101,9 @@ function GameSection() {
       {info && (
         <>
           <PanelSectionRow>
-            <Field label="ProtonDB" bottomSeparator="none">
-              <TierBadge tier={tier} />
-              {pdb && pdb !== "error" && pdb.total ? <span style={{ ...note, marginLeft: 6 }}>{pdb.total} reports</span> : null}
-            </Field>
-          </PanelSectionRow>
-          {pdb === "error" && <Note warning>Couldn't reach ProtonDB. Using Steam Deck rating only.</Note>}
-          <PanelSectionRow>
-            <Field label="Steam Deck" bottomSeparator="none">{info.native ? "Native Linux" : DECK[info.deckCategory] ?? "Unknown"}</Field>
-          </PanelSectionRow>
-          <PanelSectionRow>
-            <Field label="Uses now" bottomSeparator="none">{c.displayName(info.currentTool)}</Field>
-          </PanelSectionRow>
-          <PanelSectionRow>
             <DropdownItem
               label="Proton version"
+              description={`Uses now: ${c.displayName(info.currentTool)}`}
               rgOptions={options}
               selectedOption={selectedOpt}
               onChange={async (o) => {
@@ -126,9 +117,8 @@ function GameSection() {
             <Note warning>Set in Steam's own Properties, so Auto leaves it alone. Pick Auto again here to hand it over.</Note>
           )}
           {r?.wantsFamily && !c.hasAny(r.wantsFamily) && (
-            <Note warning>{FAMILY_LABEL[r.wantsFamily]} isn't installed yet. {c.settings.autoInstall ? "It will install automatically." : "Install it below."}</Note>
+            <Note warning>{FAMILY_LABEL[r.wantsFamily]} isn't installed yet. {c.settings.autoInstall ? "It will install automatically." : "Install it under Proton builds."}</Note>
           )}
-          {rec?.note && <Note>Last change: {rec.note}{rec.verified ? "" : " (not played long enough yet to confirm it works)"}.</Note>}
           {prev !== null && (
             <PanelSectionRow>
               <ButtonItem layout="below" onClick={() => c.rollback(info.appid, "rolled back by you")}>
@@ -136,41 +126,31 @@ function GameSection() {
               </ButtonItem>
             </PanelSectionRow>
           )}
+          {rec?.note && <Note>Last change: {rec.note}{rec.verified ? "" : " (not played long enough yet to confirm it works)"}.</Note>}
+          <PanelSectionRow>
+            <Field label="Ratings" bottomSeparator="none">
+              <TierBadge tier={tier} />
+              {pdb && pdb !== "error" && pdb.total ? <span style={{ ...note, marginLeft: 6 }}>{pdb.total} reports</span> : null}
+              <span style={{ ...note, marginLeft: 8 }}>Deck: {info.native ? "Native Linux" : DECK[info.deckCategory] ?? "Unknown"}</span>
+            </Field>
+          </PanelSectionRow>
+          {pdb === "error" && <Note warning>Couldn't reach ProtonDB. Using Steam Deck rating only.</Note>}
         </>
       )}
     </PanelSection>
   );
 }
 
-function BuildsSection() {
+/** Install progress and "restart Steam" prompt: shown at the top while they matter. */
+function BuildStatus() {
   const c = useController();
   const ins = c.install;
   const busy = ["starting", "downloading", "verifying", "extracting"].includes(ins.phase);
   const pending = c.pendingRestart();
   const gb = (b?: number) => ((b ?? 0) / 1e9).toFixed(2);
-
+  if (!busy && ins.phase !== "error" && !pending.length) return null;
   return (
-    <PanelSection title="Proton builds">
-      {(["ge", "cachyos"] as Family[]).map((f) => {
-        const rel = c.releases[f];
-        const newest = c.newestInstalled(f);
-        const latest = c.hasLatest(f);
-        return (
-          <PanelSectionRow key={f}>
-            <Field label={FAMILY_LABEL[f]} description={
-              <span style={note}>
-                Installed: {newest?.display ?? "none"}
-                {rel?.ok && rel.tag ? <><br />Latest: {rel.tag}</> : rel && !rel.ok ? <><br />Couldn't check GitHub</> : null}
-              </span>
-            } bottomSeparator="none" />
-            {rel?.ok && rel.asset && !latest && (
-              <ButtonItem layout="below" disabled={busy} onClick={() => c.installFamily(f)}>
-                Install {rel.tag}
-              </ButtonItem>
-            )}
-          </PanelSectionRow>
-        );
-      })}
+    <PanelSection>
       {busy && (
         <PanelSectionRow>
           <ProgressBarWithInfo
@@ -195,6 +175,40 @@ function BuildsSection() {
           </PanelSectionRow>
         </>
       )}
+    </PanelSection>
+  );
+}
+
+function BuildsSection() {
+  const c = useController();
+  const busy = ["starting", "downloading", "verifying", "extracting"].includes(c.install.phase);
+  const families = ["ge", "cachyos"] as Family[];
+  const updates = families.filter((f) => c.releases[f]?.ok && c.releases[f]?.asset && !c.hasLatest(f));
+  const summary = families.map((f) => `${FAMILY_LABEL[f]}: ${c.newestInstalled(f)?.display ?? "none"}`).join(" · ")
+    + (updates.length ? ` · ${updates.length} new` : "");
+
+  return (
+    <Section id="builds" title="Proton builds" summary={summary}>
+      {families.map((f) => {
+        const rel = c.releases[f];
+        const newest = c.newestInstalled(f);
+        const latest = c.hasLatest(f);
+        return (
+          <PanelSectionRow key={f}>
+            <Field label={FAMILY_LABEL[f]} description={
+              <span style={note}>
+                Installed: {newest?.display ?? "none"}
+                {rel?.ok && rel.tag ? <><br />Latest: {rel.tag}</> : rel && !rel.ok ? <><br />Couldn't check GitHub</> : null}
+              </span>
+            } bottomSeparator="none" />
+            {rel?.ok && rel.asset && !latest && (
+              <ButtonItem layout="below" disabled={busy} onClick={() => c.installFamily(f)}>
+                Install {rel.tag}
+              </ButtonItem>
+            )}
+          </PanelSectionRow>
+        );
+      })}
       <PanelSectionRow>
         <ButtonItem layout="below" onClick={async () => {
           await c.refreshTools();
@@ -211,7 +225,7 @@ function BuildsSection() {
           Remove unused old builds
         </ButtonItem>
       </PanelSectionRow>
-    </PanelSection>
+    </Section>
   );
 }
 
@@ -219,7 +233,7 @@ function AutomationSection() {
   const c = useController();
   const s = c.settings;
   return (
-    <PanelSection title="Automation">
+    <Section id="settings" title="Settings" summary={`Auto-pick ${s.autoManage ? "on" : "off"} · prefers ${FAMILY_LABEL[s.preferredFamily]}${c.sweepNote ? ` · ${c.sweepNote}` : ""}`}>
       <PanelSectionRow>
         <ToggleField label="Auto-pick for my library" checked={s.autoManage}
           description="Games rated below Platinum and not Deck Verified get the newest custom Proton. Never overrides a version you set in Steam."
@@ -251,7 +265,7 @@ function AutomationSection() {
         </ButtonItem>
       </PanelSectionRow>
       {c.sweepNote && <Note>{c.sweepNote}</Note>}
-    </PanelSection>
+    </Section>
   );
 }
 
@@ -259,6 +273,7 @@ function Content() {
   useEffect(() => { controller.refreshTools(); }, []);
   return (
     <>
+      <BuildStatus />
       <GameSection />
       <BuildsSection />
       <AutomationSection />

@@ -10,6 +10,9 @@ import { knownPinSet, openPinFlow, refreshPinSet, startSleepWatch, stopSleepWatc
 import { installLibrary, LIBRARY_TABS, libraryActive, seenLibraryTabs, setLibraryConfig, tabMasterInstalled, uninstallLibrary } from "./library";
 import { deckyPlugins, installQam, onSeenTabs, qamActive, seenTabs, setHiddenTabs, setPluginTabs, uninstallQam } from "./qam";
 import { GameRow, note, warn } from "./ui";
+import { sectionFactory } from "./section";
+
+const Section = sectionFactory("handheld-library");
 import { deleteCollection, Game, isHidden, launch } from "./steam";
 import { loadSettings, snapshot, start, stop, subscribe, sync, updateSettings } from "./engine";
 
@@ -44,13 +47,16 @@ function FilterView() {
   const st = useEngine();
   const s = st.settings;
   const [shown, setShown] = useState(PAGE);
-  const [name, setName] = useState(s?.collectionName ?? "");
-  useEffect(() => { if (s) setName(s.collectionName); }, [s?.collectionName]);
-
   const list = useMemo(() => st.matches.filter((m) =>
     !isHidden(m.g.appid) && (!s?.installedOnly || m.g.installed)), [st.matches, s?.installedOnly]);
   if (!s) return <PanelSection><PanelSectionRow><div style={note}>Loading…</div></PanelSectionRow></PanelSection>;
 
+  const rulesSummary = [
+    s.deckMin === "off" ? null : s.deckMin === "verified" ? "Deck Verified" : "Deck Verified/Playable",
+    s.steamOS ? "SteamOS Compatible" : null,
+    s.protonDB !== "off" ? `ProtonDB ${s.protonDB === "gold" ? "Gold+" : "Platinum"}` : null,
+    s.native ? "native" : null,
+  ].filter(Boolean).join(" or ") + ` · ${s.controller === "full" ? "full" : "full or partial"} controller`;
   const nothingAccepted = s.deckMin === "off" && !s.steamOS && !s.native && s.protonDB === "off";
   const status = !s.enabled ? "Collection sync is off."
     : st.syncing ? "Syncing…"
@@ -59,7 +65,7 @@ function FilterView() {
 
   return (
     <>
-      <PanelSection title="Library collection">
+      <PanelSection title={s.collectionName}>
         <PanelSectionRow>
           <div style={st.last && !st.last.ok ? warn : note}>{status}</div>
         </PanelSectionRow>
@@ -69,15 +75,31 @@ function FilterView() {
             onChange={(v) => updateSettings({ enabled: v })} />
         </PanelSectionRow>
         <PanelSectionRow>
-          <TextField label="Collection name" value={name} onChange={(e) => setName(e.target.value)}
-            onBlur={() => name.trim() && name.trim() !== s.collectionName && updateSettings({ collectionName: name.trim() })} />
-        </PanelSectionRow>
-        <PanelSectionRow>
           <ButtonItem layout="below" disabled={st.syncing} onClick={() => sync()}>Sync now</ButtonItem>
         </PanelSectionRow>
       </PanelSection>
 
-      <PanelSection title="Rules">
+      <Section id="matches" title={`Matches (${list.length})`} summary="Play or open any matching game" defaultOpen>
+        <PanelSectionRow>
+          <ToggleField label="Installed only" checked={s.installedOnly}
+            onChange={(v) => { setShown(PAGE); updateSettings({ installedOnly: v }, false); }} />
+        </PanelSectionRow>
+        {list.length === 0 && <PanelSectionRow><div style={note}>No games match yet.</div></PanelSectionRow>}
+        {list.slice(0, shown).map(({ g, why }) => (
+          <GameRow key={g.appid} g={g} desc={`${why} · ${ctrlLabel(g)}${g.installed ? "" : " · not installed"}`}
+            actions={[
+              { label: g.installed ? "Play" : "Install", onClick: () => { Navigation.CloseSideMenus(); launch(g); } },
+              { label: "Page", onClick: () => openPage(g.appid) },
+            ]} />
+        ))}
+        {list.length > shown && (
+          <PanelSectionRow>
+            <ButtonItem layout="below" onClick={() => setShown(shown + PAGE)}>Show more ({list.length - shown} left)</ButtonItem>
+          </PanelSectionRow>
+        )}
+      </Section>
+
+      <Section id="rules" title="Rules" summary={rulesSummary}>
         <PanelSectionRow>
           <DropdownItem label="Steam Deck rating" selectedOption={s.deckMin}
             rgOptions={[
@@ -119,41 +141,36 @@ function FilterView() {
             onChange={(v) => updateSettings({ excludeUnsupported: v })} />
         </PanelSectionRow>
         {nothingAccepted && <PanelSectionRow><div style={warn}>No rating is accepted, so nothing matches.</div></PanelSectionRow>}
-      </PanelSection>
+      </Section>
 
-      <PanelSection title={`Matches (${list.length})`}>
-        <PanelSectionRow>
-          <ToggleField label="Installed only" checked={s.installedOnly}
-            onChange={(v) => { setShown(PAGE); updateSettings({ installedOnly: v }, false); }} />
-        </PanelSectionRow>
-        {list.length === 0 && <PanelSectionRow><div style={note}>No games match yet.</div></PanelSectionRow>}
-        {list.slice(0, shown).map(({ g, why }) => (
-          <GameRow key={g.appid} g={g} desc={`${why} · ${ctrlLabel(g)}${g.installed ? "" : " · not installed"}`}
-            actions={[
-              { label: g.installed ? "Play" : "Install", onClick: () => { Navigation.CloseSideMenus(); launch(g); } },
-              { label: "Page", onClick: () => openPage(g.appid) },
-            ]} />
-        ))}
-        {list.length > shown && (
-          <PanelSectionRow>
-            <ButtonItem layout="below" onClick={() => setShown(shown + PAGE)}>Show more ({list.length - shown} left)</ButtonItem>
-          </PanelSectionRow>
-        )}
-      </PanelSection>
 
-      {s.collectionId && (
-        <PanelSection title="Clean up">
-          <PanelSectionRow>
-            <ButtonItem layout="below" onClick={async () => {
-              if (!(await confirm("Delete the collection?", `Removes "${s.collectionName}" from your library (the games stay). Sync is turned off.`, "Delete"))) return;
-              const ok = await deleteCollection(s.collectionId);
-              await updateSettings({ enabled: false, collectionId: "" }, false);
-              toaster.toast({ title: "Handheld Library", body: ok ? "Collection deleted." : "Collection was already gone." });
-            }}>Delete collection</ButtonItem>
-          </PanelSectionRow>
-        </PanelSection>
-      )}
     </>
+  );
+}
+
+function CollectionSettings() {
+  const st = useEngine();
+  const s = st.settings;
+  const [name, setName] = useState(s?.collectionName ?? "");
+  useEffect(() => { if (s) setName(s.collectionName); }, [s?.collectionName]);
+  if (!s) return null;
+  return (
+    <Section id="settings" title="Collection settings" summary={`Name: ${s.collectionName}`}>
+      <PanelSectionRow>
+        <TextField label="Collection name" value={name} onChange={(e) => setName(e.target.value)}
+          onBlur={() => name.trim() && name.trim() !== s.collectionName && updateSettings({ collectionName: name.trim() })} />
+      </PanelSectionRow>
+      {s.collectionId && (
+        <PanelSectionRow>
+          <ButtonItem layout="below" onClick={async () => {
+            if (!(await confirm("Delete the collection?", `Removes "${s.collectionName}" from your library (the games stay). Sync is turned off.`, "Delete"))) return;
+            const ok = await deleteCollection(s.collectionId);
+            await updateSettings({ enabled: false, collectionId: "" }, false);
+            toaster.toast({ title: "Handheld Library", body: ok ? "Collection deleted." : "Collection was already gone." });
+          }}>Delete collection</ButtonItem>
+        </PanelSectionRow>
+      )}
+    </Section>
   );
 }
 
@@ -168,7 +185,7 @@ function QamTabsSection() {
   const plugins = [...new Set([...deckyPlugins().map((p) => p.name as string), ...s.pluginTabs])]
     .filter((n) => n !== "Handheld Library").sort((a, b) => a.localeCompare(b));
   return (
-    <PanelSection title="Quick Access tabs">
+    <Section id="qamtabs" title="Quick Access tabs" summary={`${s.hiddenQamTabs.length} hidden · ${s.pluginTabs.length} plugin tab${s.pluginTabs.length === 1 ? "" : "s"}`}>
       {!qamActive() && (
         <PanelSectionRow><div style={warn}>Decky's Quick Access hook wasn't found, so the Hidden games tab and tab hiding are off. Quick Access is unchanged.</div></PanelSectionRow>
       )}
@@ -205,7 +222,7 @@ function QamTabsSection() {
             }} />
         </PanelSectionRow>
       ))}
-    </PanelSection>
+    </Section>
   );
 }
 
@@ -218,9 +235,9 @@ function LibraryTabsSection() {
   if (!s) return null;
   if (tabMasterInstalled()) {
     return (
-      <PanelSection title="Library tabs">
+      <Section id="libtabs" title="Library tabs" summary="Managed by TabMaster">
         <PanelSectionRow><div style={note}>TabMaster is installed and already controls the Library tabs, so this section is off. Hide tabs in TabMaster instead.</div></PanelSectionRow>
-      </PanelSection>
+      </Section>
     );
   }
   const hiddenSet = new Set(s.hiddenLibraryTabs);
@@ -235,7 +252,7 @@ function LibraryTabsSection() {
     updateSettings({ hiddenLibraryTabs: [...next] }, false);
   };
   return (
-    <PanelSection title="Library tabs">
+    <Section id="libtabs" title="Library tabs" summary={`${s.hiddenLibraryTabs.length} hidden${s.readyLibraryTab ? ` · "${s.collectionName}" tab on` : ""}`}>
       {!libraryActive() && (
         <PanelSectionRow><div style={warn}>The Library patch isn't active, so Steam shows its normal tabs.</div></PanelSectionRow>
       )}
@@ -253,7 +270,7 @@ function LibraryTabsSection() {
           <ToggleField label={LIBRARY_TABS[id] ?? id} checked={!hiddenSet.has(id)} onChange={(on) => toggle(id, on)} />
         </PanelSectionRow>
       ))}
-    </PanelSection>
+    </Section>
   );
 }
 
@@ -262,7 +279,7 @@ function PinSection() {
   useEffect(() => { refreshPinSet().then(setSet); }, []);
   const done = (msg: string) => { refreshPinSet().then(setSet); toaster.toast({ title: "Hidden games lock", body: msg }); };
   return (
-    <PanelSection title="Hidden games lock">
+    <Section id="lock" title="Hidden games lock" summary={set ? "PIN set" : "No PIN"}>
       <PanelSectionRow>
         <div style={note}>
           {set ? "The Hidden games tab asks for your PIN. Once unlocked it stays open for 15 minutes, or until the device sleeps."
@@ -278,7 +295,7 @@ function PinSection() {
           <PanelSectionRow><div style={note}>Forgot it? In Desktop Mode delete ~/homebrew/settings/Handheld Library/pin.json. The lock is gone right away.</div></PanelSectionRow>
         </>
       )}
-    </PanelSection>
+    </Section>
   );
 }
 
@@ -287,8 +304,9 @@ function Content() {
     <>
       <FilterView />
       <LibraryTabsSection />
-      <PinSection />
       <QamTabsSection />
+      <PinSection />
+      <CollectionSettings />
     </>
   );
 }

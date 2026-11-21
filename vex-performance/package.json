@@ -1,6 +1,6 @@
 {
   "name": "vex-performance",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "All-in-one per-game performance profiles for Decky Loader",
   "type": "module",
   "scripts": {
