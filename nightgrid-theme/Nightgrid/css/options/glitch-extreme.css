@@ -1,0 +1,5 @@
+/* Nightgrid — Glitch: Extreme (heavy static, long) */
+html:root .BasicUI {
+  --ng-gi: 1.6;
+  --ng-gdur: 800ms;
+}

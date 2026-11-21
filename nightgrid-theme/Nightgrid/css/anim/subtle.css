@@ -1,0 +1,179 @@
+/* Nightgrid — anim/subtle.css  (Animations: "Subtle" and "Full"; bigpicture, MainMenu, QuickAccess, toasts)
+ * Motion tokens are Nightgrid's own (ui/src/styles/tokens.css: 120/160/200 ms, ease 0.2,0.8,0.2,1).
+ * Rules:
+ *  - only opacity and transform are animated (compositor-only); the header reveal uses clip-path
+ *    on a few short text elements, once;
+ *  - one-shot animations start when the selector starts matching (focus moves, a menu mounts),
+ *    so nothing runs while the UI is idle except the small blinking cursor;
+ *  - everything is inside `prefers-reduced-motion: no-preference`, and Steam's own LowPerfMode
+ *    turns it off;
+ *  - looping animations stop while a game is running (see the end of the file). Steam's windows
+ *    don't paint at all while they're hidden behind a game, so the remaining cost is only while
+ *    a menu is actually open.
+ */
+@media (prefers-reduced-motion: no-preference) {
+
+  @keyframes ng-in-fade   { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ng-in-up     { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes ng-in-left   { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+  @keyframes ng-in-right  { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+  @keyframes ng-in-scale  { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+  @keyframes ng-focus-pop { from { transform: scale(.97); } to { transform: none; } }
+  @keyframes ng-ring-in   { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: none; } }
+  @keyframes ng-blink     { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+  /* ── Focus ────────────────────────────────────────────── */
+  /* The global focus ring fades/settles in whenever it appears. */
+  .focusring_FocusRing {
+    animation: ng-ring-in var(--ng-dur) var(--ng-ease);
+  }
+  /* Nightgrid-styled controls give a tiny "lock-on" as focus lands on them. Steam's own animated
+   * items (game covers, STEAM-menu rows) are left alone so their transforms aren't fought. */
+  .BasicUI :is(.gamepadtabbedpage_Tab, .quickaccessmenu_Tab, .header_HeaderItem,
+               .gamepadpagedsettings_PagedSettingsDialog_PageListItem, button.DialogButton).gpfocus,
+  .BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_Focused {
+    animation: ng-focus-pop var(--ng-dur-fast) var(--ng-ease);
+  }
+
+  /* ── Selected tab: the label and its magenta bar fade up on the newly selected tab ──
+   * (animates the tab's own opacity; no pseudo-element or position change on Steam's tab) */
+  @keyframes ng-tab-select { from { opacity: .55; } to { opacity: 1; } }
+  .BasicUI .gamepadtabbedpage_Tab.gamepadtabbedpage_Selected {
+    animation: ng-tab-select var(--ng-dur-slow) var(--ng-ease);
+  }
+
+  /* ── Panels opening ───────────────────────────────────── */
+  .BasicUI .gamepaddialog_ModalPosition > .gamepaddialog_GamepadDialogContent {
+    animation: ng-in-up var(--ng-dur-slow) var(--ng-ease);
+  }
+  .BasicUI .gamepadcontextmenu_contextMenuContents {
+    animation: ng-in-scale var(--ng-dur) var(--ng-ease);
+    transform-origin: 50% 0;
+  }
+  .BasicUI .gamepadpagedsettings_PagedSettingsDialog .gamepadpagedsettings_PagedSettingDialog_ContentColumn {
+    animation: ng-in-fade var(--ng-dur) var(--ng-ease);
+  }
+  .BasicUI .quickaccessmenu_Title {
+    animation: ng-in-left var(--ng-dur-slow) var(--ng-ease);
+  }
+  .BasicUI :is(.gamepadsearch_GamepadSearch, .downloads_DownloadsPage) {
+    animation: ng-in-fade var(--ng-dur-slow) var(--ng-ease);
+  }
+  .BasicUI .virtualkeyboard_Keyboard {
+    animation: ng-in-up var(--ng-dur) var(--ng-ease);
+  }
+  :root :is(.standardtemplates_StandardTemplate, .notificationcontent_StandardTemplate,
+            .standardtemplates_PinnedTemplate, .notificationcontent_PinnedTemplate, .shorttemplates_ShortTemplate) {
+    animation: ng-in-right var(--ng-dur-slow) var(--ng-ease);
+  }
+
+  /* ── Home spotlight: signal-static cut between games ──
+   * The frame never moves: no slide, skew or scale. The incoming hero art (Steam marks it
+   * MoveLeft/MoveRight and stacks it on top) starts as blown-out TV snow scattered over the
+   * old art, then breaks through in growing static and rolling signal bars with colour-channel
+   * corruption, until the static is gone and only the new game is left. Strength comes from the
+   * Glitch option (--ng-gi scales contrast, channel split and colour corruption; --ng-gdur is the
+   * length; defaults = Strong). Replaces Steam's own slide-in (same selectors). Runs once per move.
+   * Mask layers: static noise + rolling bars, unioned. */
+  @keyframes ng-static-art {
+    0%   { -webkit-mask-image: var(--ng-static-1), linear-gradient(transparent, transparent);
+           -webkit-mask-size: 480px 240px, 100% 100%; -webkit-mask-position: 0 0, 0 0;
+           filter: grayscale(1) contrast(calc(1 + 4 * var(--ng-gi))) brightness(1.9); }
+    7%   { -webkit-mask-image: var(--ng-static-2), linear-gradient(transparent, transparent);
+           -webkit-mask-position: 170px 90px, 0 0;
+           filter: grayscale(1) contrast(calc(1 + 5 * var(--ng-gi))) brightness(2.1); }
+    14%  { -webkit-mask-image: var(--ng-static-1), repeating-linear-gradient(to bottom, transparent 0 41px, #000 41px 47px, transparent 47px 96px, #000 96px 98px), linear-gradient(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.08));
+           -webkit-mask-size: 480px 240px, 100% 137px; -webkit-mask-position: -90px 30px, 0 12px;
+           filter: var(--ng-hero-filter) saturate(calc(1 + 2.5 * var(--ng-gi))) hue-rotate(calc(var(--ng-gi) * 140deg))
+                   drop-shadow(calc(var(--ng-gi) * -16px) 0 rgba(0, 229, 255, .95)) drop-shadow(calc(var(--ng-gi) * 16px) 0 rgba(255, 42, 109, .95)); }
+    21%  { -webkit-mask-image: var(--ng-static-2), linear-gradient(transparent, transparent), linear-gradient(rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.14));
+           -webkit-mask-size: 480px 240px, 100% 100%; -webkit-mask-position: 60px -110px, 0 0;
+           filter: grayscale(1) contrast(calc(1 + 5 * var(--ng-gi))) brightness(2); }
+    28%  { -webkit-mask-image: var(--ng-static-3), repeating-linear-gradient(to bottom, transparent 0 23px, #000 23px 35px, transparent 35px 71px, #000 71px 74px), linear-gradient(rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.22));
+           -webkit-mask-size: 480px 240px, 100% 113px; -webkit-mask-position: 220px 40px, 0 58px;
+           filter: var(--ng-hero-filter) saturate(calc(1 + 2 * var(--ng-gi))) hue-rotate(calc(var(--ng-gi) * -100deg)) contrast(calc(1 + .8 * var(--ng-gi)))
+                   drop-shadow(calc(var(--ng-gi) * 12px) 0 rgba(0, 229, 255, .9)) drop-shadow(calc(var(--ng-gi) * -12px) 0 rgba(255, 42, 109, .9)); }
+    35%  { -webkit-mask-image: var(--ng-static-2), repeating-linear-gradient(to bottom, transparent 0 41px, #000 41px 47px, transparent 47px 96px, #000 96px 98px), linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3));
+           -webkit-mask-size: 480px 240px, 100% 137px; -webkit-mask-position: -150px 160px, 0 81px;
+           filter: grayscale(.6) contrast(calc(1 + 3 * var(--ng-gi))) brightness(1.6)
+                   drop-shadow(calc(var(--ng-gi) * -10px) 0 rgba(0, 229, 255, .8)) drop-shadow(calc(var(--ng-gi) * 10px) 0 rgba(255, 42, 109, .8)); }
+    43%  { -webkit-mask-image: var(--ng-static-3), repeating-linear-gradient(to bottom, transparent 0 23px, #000 23px 35px, transparent 35px 71px, #000 71px 74px), linear-gradient(rgba(0, 0, 0, 0.38), rgba(0, 0, 0, 0.38));
+           -webkit-mask-size: 480px 240px, 100% 113px; -webkit-mask-position: 30px -60px, 0 7px;
+           filter: var(--ng-hero-filter) saturate(calc(1 + 1.5 * var(--ng-gi))) hue-rotate(calc(var(--ng-gi) * 60deg))
+                   drop-shadow(calc(var(--ng-gi) * -9px) 0 rgba(0, 229, 255, .85)) drop-shadow(calc(var(--ng-gi) * 9px) 0 rgba(255, 42, 109, .85)); }
+    51%  { -webkit-mask-image: var(--ng-static-4), repeating-linear-gradient(to bottom, transparent 0 41px, #000 41px 47px, transparent 47px 96px, #000 96px 98px), linear-gradient(rgba(0, 0, 0, 0.46), rgba(0, 0, 0, 0.46));
+           -webkit-mask-size: 480px 240px, 100% 137px; -webkit-mask-position: 190px 120px, 0 103px;
+           filter: grayscale(.4) contrast(calc(1 + 2 * var(--ng-gi))) brightness(1.4)
+                   drop-shadow(calc(var(--ng-gi) * 7px) 0 rgba(0, 229, 255, .8)) drop-shadow(calc(var(--ng-gi) * -7px) 0 rgba(255, 42, 109, .8)); }
+    59%  { -webkit-mask-image: var(--ng-static-3), linear-gradient(transparent, transparent), linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55));
+           -webkit-mask-size: 480px 240px, 100% 100%; -webkit-mask-position: -40px 200px, 0 0;
+           filter: var(--ng-hero-filter) saturate(calc(1 + var(--ng-gi))) hue-rotate(calc(var(--ng-gi) * -40deg))
+                   drop-shadow(calc(var(--ng-gi) * -6px) 0 rgba(0, 229, 255, .75)) drop-shadow(calc(var(--ng-gi) * 6px) 0 rgba(255, 42, 109, .75)); }
+    67%  { -webkit-mask-image: var(--ng-static-4), repeating-linear-gradient(to bottom, transparent 0 23px, #000 23px 35px, transparent 35px 71px, #000 71px 74px), linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65));
+           -webkit-mask-size: 480px 240px, 100% 113px; -webkit-mask-position: 120px 20px, 0 40px;
+           filter: var(--ng-hero-filter) contrast(calc(1 + .5 * var(--ng-gi)))
+                   drop-shadow(calc(var(--ng-gi) * 4px) 0 rgba(0, 229, 255, .7)) drop-shadow(calc(var(--ng-gi) * -4px) 0 rgba(255, 42, 109, .7)); }
+    75%  { -webkit-mask-image: var(--ng-static-4), linear-gradient(#000, #000);
+           -webkit-mask-size: 480px 240px, 100% 100%; -webkit-mask-position: -200px -80px, 0 0;
+           filter: var(--ng-hero-filter) drop-shadow(calc(var(--ng-gi) * -3px) 0 rgba(0, 229, 255, .6)) drop-shadow(calc(var(--ng-gi) * 3px) 0 rgba(255, 42, 109, .6)); }
+    84%  { -webkit-mask-image: none;
+           filter: var(--ng-hero-filter) grayscale(.3) contrast(1.3) drop-shadow(-2px 0 rgba(0, 229, 255, .5)) drop-shadow(2px 0 rgba(255, 42, 109, .5)); }
+    92%, 100% { -webkit-mask-image: none; filter: var(--ng-hero-filter); }
+  }
+  .gamepadhomerecentgames_RecentGamesBackgroundImage.gamepadhomerecentgames_MoveRight:not(.gamepadhomerecentgames_OffScreen),
+  .gamepadhomerecentgames_RecentGamesBackgroundImage.gamepadhomerecentgames_MoveLeft:not(.gamepadhomerecentgames_OffScreen) {
+    animation: ng-static-art var(--ng-gdur) steps(1, end);
+  }
+  /* The newly focused cover gets a short burst of the same static; its lift/scale stays put. */
+  @keyframes ng-static-card {
+    0%   { -webkit-mask-image: var(--ng-static-3); -webkit-mask-size: 240px 120px; -webkit-mask-position: 0 0;
+           filter: grayscale(1) contrast(calc(1 + 4 * var(--ng-gi))) brightness(1.9); }
+    20%  { -webkit-mask-image: var(--ng-static-2); -webkit-mask-position: 90px 40px;
+           filter: saturate(calc(1 + 2 * var(--ng-gi))) hue-rotate(calc(var(--ng-gi) * 120deg))
+                   drop-shadow(calc(var(--ng-gi) * -6px) 0 rgba(0, 229, 255, .95)) drop-shadow(calc(var(--ng-gi) * 6px) 0 rgba(255, 42, 109, .95)); }
+    40%  { -webkit-mask-image: var(--ng-static-4); -webkit-mask-position: -60px 70px;
+           filter: grayscale(.5) contrast(calc(1 + 2 * var(--ng-gi))) brightness(1.4)
+                   drop-shadow(calc(var(--ng-gi) * 4px) 0 rgba(0, 229, 255, .85)) drop-shadow(calc(var(--ng-gi) * -4px) 0 rgba(255, 42, 109, .85)); }
+    60%  { -webkit-mask-image: none;
+           filter: drop-shadow(calc(var(--ng-gi) * -2px) 0 rgba(0, 229, 255, .7)) drop-shadow(calc(var(--ng-gi) * 2px) 0 rgba(255, 42, 109, .7)); }
+    80%, 100% { -webkit-mask-image: none; filter: none; }
+  }
+  .BasicUI .appportrait_InRecentGames.Focusable:focus {
+    animation: ng-static-card calc(var(--ng-gdur) * .6) steps(1, end);
+  }
+
+  /* ── Terminal cursor after the big "// TITLE" headers ── */
+  /* Only on the two headers Nightgrid fully owns; Steam's DialogHeader keeps its own ::after. */
+  .BasicUI :is(.quickaccessmenu_Title, .downloads_Title)::after {
+    content: "_";
+    position: static;
+    display: inline-block;
+    width: auto;
+    height: auto;
+    background: none;
+    margin-left: .2em;
+    color: var(--ng-active);
+    animation: ng-blink 1.1s steps(1, end) infinite;
+  }
+
+  /* ── Section headers: quick left-to-right reveal when they appear ── */
+  @keyframes ng-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  .BasicUI :is(.DialogControlsSectionHeader, .homestorecarousel_Header, .downloads_Title) {
+    animation: ng-reveal var(--ng-dur-slow) var(--ng-ease);
+  }
+
+  /* ── While a game is running: no loops ───────────────── */
+  /* bigpicture: the in-game overlay uses Steam's transparent page background.
+   * MainMenu: the running-game column (no stable name; hash substring, fails safe). */
+  :root:has(.gamepadui_BasicHome.gamepadui_TransparentBackground) :is(.quickaccessmenu_Title, .downloads_Title)::after,
+  :root:has([class*="RAI0lLN8sCtqCMI36rLiB"]) .quickaccessmenu_Title::after {
+    animation: none;
+  }
+}
+
+/* Steam's own low-performance mode wins over everything here */
+.LowPerfMode *,
+.LowPerfMode *::before,
+.LowPerfMode *::after {
+  animation: none !important;
+}

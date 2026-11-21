@@ -1,0 +1,5 @@
+/* Grid: "Off" — flat canvas */
+html:root {
+  --ng-grid-image: none;
+  --ng-grid-size: auto;
+}

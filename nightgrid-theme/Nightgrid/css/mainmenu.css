@@ -1,0 +1,42 @@
+/* Nightgrid — mainmenu.css  (MainMenu: the STEAM-button side menu)
+ * Styled like Nightgrid's "// MODULES" rail: dark panel, hairline edge, uppercase rows,
+ * active row outlined in magenta.
+ * Steam's sheets load after CSS Loader's on this page → `.BasicUI` prefix everywhere.
+ * `mainmenu_Item` / `mainmenu_ActiveDot` have two hashes in CSS Loader's translation table and
+ * it injects the newer one, which some Steam builds don't use yet, so the older hash is matched
+ * by substring too (same workaround as Slate; drop it once Steam moves on).
+ */
+.BasicUI .mainmenu_Menu {
+  background-color: var(--ng-bg-1);
+  background-image: var(--ng-grid-image);
+  background-size: var(--ng-grid-size);
+  border-right: 1px solid var(--ng-line);
+  border-radius: var(--ng-radius);
+  box-shadow: 8px 0 32px rgba(0, 0, 0, .55);
+}
+.BasicUI :is(.mainmenu_Item, [class*="2w9TpQwxU7vcwaAbf3KGv"]) {
+  text-transform: uppercase;
+  letter-spacing: var(--ng-tracking);
+  color: var(--ng-text-1);
+  border-radius: var(--ng-radius);
+}
+.BasicUI .mainmenu_Menu :is(.mainmenu_Item, [class*="2w9TpQwxU7vcwaAbf3KGv"]):is(.gpfocus, :hover) {
+  color: var(--ng-text-0) !important;
+  background: color-mix(in srgb, var(--ng-active) 16%, var(--ng-bg-1)) !important;
+  box-shadow: inset 0 0 0 1px var(--ng-active), var(--ng-glow-active);
+}
+.BasicUI :is(.mainmenu_Item, [class*="2w9TpQwxU7vcwaAbf3KGv"]) :is(.mainmenu_ActiveDot, [class*="1uLVHdiiCg78BRnhqLxUID"]) {
+  background: var(--ng-active);
+  border-radius: var(--ng-radius);
+}
+.BasicUI .mainmenu_RunnningAppSeparator {
+  background: linear-gradient(90deg, transparent 2%, var(--ng-line) 50%, transparent 98%);
+}
+/* In-game: game submenu column + overlay guides */
+.BasicUI [class*="RAI0lLN8sCtqCMI36rLiB"] { background-color: color-mix(in srgb, var(--ng-bg-0) 92%, transparent); }
+.BasicUI .overlayguides_OverlayGuidesHome .overlayguides_GuideList { background-color: var(--ng-bg-0); }
+.BasicUI .overlayguides_OverlayGuidesHome .overlayguides_GuideListItemBase {
+  background-color: var(--ng-bg-1);
+  border: var(--ng-hairline);
+  border-radius: var(--ng-radius);
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Proton Picker",
+  "author": "Roben",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": ["proton", "compatibility", "protondb", "ge-proton", "cachyos"],
+    "description": "Picks a Proton build per game from ProtonDB and Steam Deck ratings, installs GE-Proton / Proton-CachyOS, applies it automatically and rolls back if a game breaks.",
+    "image": "https://opengraph.githubassets.com/1/SteamDeckHomebrew/PluginLoader"
+  }
+}

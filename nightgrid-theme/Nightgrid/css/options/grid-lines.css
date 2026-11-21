@@ -1,0 +1,7 @@
+/* Grid: "Lines" — 32px line grid only, no dots */
+html:root {
+  --ng-grid-image:
+    linear-gradient(color-mix(in srgb, var(--ng-line) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--ng-line) 45%, transparent) 1px, transparent 1px);
+  --ng-grid-size: 32px 32px, 32px 32px;
+}

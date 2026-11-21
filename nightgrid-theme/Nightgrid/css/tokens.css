@@ -1,0 +1,56 @@
+/* Nightgrid — tokens.css
+ * Design tokens, taken 1:1 from the Nightgrid app (ui/src/styles/tokens.css, NIGHTGRID palette).
+ * Every other file uses only these variables. Palettes (options/palette-*.css) override them
+ * with `html:root` (0,1,1); custom colors (options/custom-colors.css) with `html:root:root` (0,2,1),
+ * so the order CSS Loader injects in never matters.
+ * Selectors everywhere use CSS Loader's stable class names (module_Class), which it rewrites
+ * to Steam's current hashed classes when it injects.
+ */
+:root {
+  /* Surfaces */
+  --ng-bg-0: #07080B;      /* canvas */
+  --ng-bg-1: #0D0F14;      /* panels, menus */
+  --ng-bg-2: #141821;      /* raised controls, focused rows */
+  --ng-line: #1F2633;      /* hairlines, borders, grid */
+
+  /* Text */
+  --ng-text-0: #E6EDF3;    /* primary */
+  --ng-text-1: #8B98A9;    /* muted labels */
+
+  /* Accents (Nightgrid naming in brackets) */
+  --ng-active: #FF2A6D;    /* selection / focus [magenta] */
+  --ng-data: #00E5FF;      /* data, bars, toggles, progress [cyan] */
+  --ng-accent: #F3E600;    /* highlights, warnings-as-accent [accent] */
+  --ng-ok: #2BFF88;        /* ready / online / Play [ok] */
+  --ng-warn: #FF9F1C;      /* WARN [warn] */
+  --ng-danger: #FF003C;    /* destructive [danger] */
+  --ng-mint: #BDF5EC;
+
+  --ng-on-fill: #07080B;   /* text on bright accent fills */
+
+  /* Effects (glow off → options/glow-off.css sets these to none) */
+  --ng-glow-active: 0 0 14px color-mix(in srgb, var(--ng-active) 45%, transparent);
+  --ng-glow-data: 0 0 12px color-mix(in srgb, var(--ng-data) 35%, transparent);
+
+  /* Grid backdrop (Nightgrid backdrop.css: 16px dots + 128px lines). Grid options swap these. */
+  --ng-grid-image:
+    radial-gradient(color-mix(in srgb, var(--ng-line) 80%, transparent) 1px, transparent 1px),
+    linear-gradient(color-mix(in srgb, var(--ng-line) 35%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--ng-line) 35%, transparent) 1px, transparent 1px);
+  --ng-grid-size: 16px 16px, 128px 128px, 128px 128px;
+
+  /* Type */
+  --ng-font-mono: "Nightgrid Mono", "JetBrains Mono", ui-monospace, "Cascadia Mono", monospace;
+  --ng-tracking: 0.14em;
+  --ng-tracking-tight: 0.05em;  /* long labels in narrow columns */
+
+  /* Motion (Nightgrid: --dur-fast / --dur / --dur-slow / --ease) */
+  --ng-dur-fast: 120ms;
+  --ng-dur: 160ms;
+  --ng-dur-slow: 200ms;
+  --ng-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Shape */
+  --ng-radius: 0px;        /* Nightgrid is square: every control, highlight and focus ring uses this */
+  --ng-hairline: 1px solid var(--ng-line);
+}

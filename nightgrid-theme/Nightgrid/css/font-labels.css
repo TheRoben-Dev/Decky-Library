@@ -1,0 +1,20 @@
+/* Nightgrid — font-labels.css  (Font: "Mono labels", also part of "Mono everywhere")
+ * JetBrains Mono on labels, tabs, menus and numbers. */
+.BasicUI .gamepadtabbedpage_Tab,
+.BasicUI .gamepadtabbedpage_TabCount,
+.BasicUI .footer_BasicFooter,
+.BasicUI .footer_QuickAccessFooter,
+.BasicUI .header_Clock,
+.BasicUI .quickaccessmenu_Title,
+.BasicUI .mainmenu_Menu,
+.BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem,
+.BasicUI .gamepaddialog_GamepadDialogContent .DialogHeader,
+.BasicUI .DialogControlsSectionHeader,
+.BasicUI .gamepadcontextmenu_contextMenuItem,
+.BasicUI .homestorecarousel_Header,
+.BasicUI .gamepadslider_DescriptionValue,
+.BasicUI .gamepadslider_EditableValue,
+.BasicUI .progressbar_ProgressBar,
+.BasicUI button.DialogButton {
+  font-family: var(--ng-font-mono) !important;
+}

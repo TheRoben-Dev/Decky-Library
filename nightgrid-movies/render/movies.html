@@ -1,0 +1,359 @@
+<!doctype html>
+<!-- Nightgrid Movies — source for the bundled startup / suspend videos.
+     render.cjs opens this page, calls draw(id, t) frame by frame and pipes the frames to ffmpeg.
+     Everything is drawn from code (no external art), seeded so every render is identical. -->
+<html><head><meta charset="utf-8">
+<style>
+@font-face { font-family: "NG"; src: url("JetBrainsMono-latin.woff2") format("woff2"); font-weight: 100 800; }
+html, body { margin: 0; background: #000; }
+canvas { display: block; }
+</style></head>
+<body><canvas id="c" width="1920" height="1080"></canvas>
+<script>
+const W = 1920, H = 1080;
+const C = { bg0: "#07080B", bg1: "#0D0F14", bg2: "#141821", line: "#1F2633", text0: "#E6EDF3", text1: "#8B98A9",
+            active: "#FF2A6D", data: "#00E5FF", accent: "#F3E600", ok: "#2BFF88" };
+const cv = document.getElementById("c"), g = cv.getContext("2d");
+const FONT = (px, w = 700) => `${w} ${px}px NG, monospace`;
+
+// deterministic PRNG
+function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const ease = (x) => 1 - Math.pow(1 - x, 3);
+
+// ── shared layers ──────────────────────────────────────────────
+function bg(alpha = 1) { g.globalAlpha = alpha; g.fillStyle = C.bg0; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
+
+function grid(alpha = 1, revealY = H) {
+  g.save(); g.beginPath(); g.rect(0, 0, W, revealY); g.clip();
+  g.globalAlpha = alpha * .35; g.strokeStyle = C.line; g.lineWidth = 1.5;
+  for (let x = 0; x <= W; x += 192) { g.beginPath(); g.moveTo(x + .5, 0); g.lineTo(x + .5, H); g.stroke(); }
+  for (let y = 0; y <= H; y += 192) { g.beginPath(); g.moveTo(0, y + .5); g.lineTo(W, y + .5); g.stroke(); }
+  g.globalAlpha = alpha * .8; g.fillStyle = C.line;
+  for (let y = 12; y < H; y += 24) for (let x = 12; x < W; x += 24) g.fillRect(x - 1, y - 1, 2.5, 2.5);
+  g.restore();
+}
+
+function scanlines(a = .22) { g.fillStyle = `rgba(0,0,0,${a})`; for (let y = 0; y < H; y += 4) g.fillRect(0, y, W, 2); }
+
+function vignette(a = .55) {
+  const r = g.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, H * .95);
+  r.addColorStop(0, "rgba(0,0,0,0)"); r.addColorStop(1, `rgba(0,0,0,${a})`); g.fillStyle = r; g.fillRect(0, 0, W, H);
+}
+
+// TV static: streaky noise at 1/3 resolution, scaled up without smoothing.
+const NW = 480, NH = 270, nc = document.createElement("canvas"); nc.width = NW; nc.height = NH;
+const ng = nc.getContext("2d"), nimg = ng.createImageData(NW, NH);
+function noise(frame, density = 1, alpha = 1, tint = null) {
+  const r = rng((frame % 8) * 7919 + 13), d = nimg.data;   // 8 noise frames on a loop: keeps the files small
+  for (let y = 0; y < NH; y++) {
+    const rowGain = .55 + r() * .9, roll = (y + frame * 11) % 90 < 6 ? 1.6 : 1;   // rolling bright bar
+    let run = 0, v = 0;
+    for (let x = 0; x < NW; x++) {
+      if (run-- <= 0) { v = r(); run = (r() * 5) | 0; }          // short horizontal runs = streaks
+      const on = v < density;
+      const lum = on ? Math.min(255, (40 + v / Math.max(density, .01) * 215) * rowGain * roll) : 0;
+      const i = (y * NW + x) * 4;
+      d[i] = lum; d[i + 1] = lum; d[i + 2] = lum; d[i + 3] = on ? 255 : 0;
+    }
+  }
+  ng.putImageData(nimg, 0, 0);
+  g.save(); g.imageSmoothingEnabled = false; g.globalAlpha = alpha; g.drawImage(nc, 0, 0, W, H);
+  if (tint) { g.globalCompositeOperation = "multiply"; g.fillStyle = tint; g.fillRect(0, 0, W, H); }
+  g.restore();
+}
+
+// Wordmark: "NIGHTGRID" + "// GAME MODE", with optional RGB split, slice tears and glow.
+function wordmark({ alpha = 1, split = 0, tear = 0, frame = 0, y = H / 2, bar = 1, sub = 1, scale = 1 } = {}) {
+  const r = rng(frame * 31 + 5);
+  const draw = (color, dx) => {
+    g.font = FONT(150 * scale, 800); g.textAlign = "center"; g.textBaseline = "alphabetic";
+    g.fillStyle = color; g.letterSpacing = `${.14 * 150 * scale}px`;
+    g.fillText("NIGHTGRID", W / 2 + dx + .07 * 150 * scale, y);
+  };
+  g.save(); g.globalAlpha = alpha;
+  if (split > 0) {
+    g.globalCompositeOperation = "lighter";
+    draw("rgba(0,229,255,.9)", -split); draw("rgba(255,42,109,.9)", split);
+    g.globalCompositeOperation = "source-over";
+  }
+  g.shadowColor = "rgba(255,42,109,.35)"; g.shadowBlur = 30 * alpha;
+  draw(C.text0, 0); g.shadowBlur = 0;
+  // underline bar + subtitle
+  const bw = 1180 * scale * ease(clamp(bar));
+  g.fillStyle = C.active; g.shadowColor = C.active; g.shadowBlur = 24; g.fillRect(W / 2 - bw / 2, y + 34 * scale, bw, 6 * scale); g.shadowBlur = 0;
+  if (sub > 0) {
+    g.globalAlpha = alpha * sub; g.font = FONT(34 * scale, 500); g.letterSpacing = `${.3 * 34 * scale}px`;
+    g.fillStyle = C.data; g.fillText("//", W / 2 - 190 * scale, y + 104 * scale);
+    g.fillStyle = C.text1; g.fillText("GAME MODE", W / 2 + 50 * scale, y + 104 * scale);
+  }
+  g.restore();
+  // slice tears: copy horizontal bands of what's drawn and shift them
+  if (tear > 0) {
+    const n = 2 + ((r() * 5) | 0);
+    for (let i = 0; i < n; i++) {
+      const by = y - 150 * scale + r() * 300 * scale, bh = 6 + r() * 40;
+      const dx = (r() - .5) * 2 * tear;
+      g.drawImage(cv, 0, by, W, bh, dx, by, W, bh);
+    }
+  }
+}
+
+function terminal(lines, t, x = 120, y = 150) {
+  g.font = FONT(34, 500); g.textAlign = "left"; g.textBaseline = "alphabetic"; g.letterSpacing = "0px";
+  const cw = g.measureText("M").width;
+  lines.forEach((ln, i) => {
+    const start = ln.at; if (t < start) return;
+    const chars = Math.floor((t - start) * 60); const ly = y + i * 56;
+    let cx = x;
+    for (const [txt, col] of ln.parts) {
+      const s = txt.slice(0, Math.max(0, chars - (cx - x) / cw)); if (!s) break;
+      g.fillStyle = col; g.fillText(s, cx, ly); cx += g.measureText(txt).width;
+    }
+    const full = ln.parts.map(p => p[0]).join("").length;
+    const last = i === lines.length - 1 || t < lines[i + 1].at;
+    if (last && (Math.floor(t * 3) % 2 === 0 || chars < full)) {
+      const typed = Math.min(chars, full); g.fillStyle = C.active;
+      g.fillRect(x + typed * cw + 4, ly - 28, cw * .85, 34);
+    }
+  });
+}
+
+function fadeOut(t, a, b) { const k = seg(t, a, b); if (k > 0) { g.globalAlpha = k; g.fillStyle = C.bg0; g.fillRect(0, 0, W, H); g.globalAlpha = 1; } }
+function fadeBlack(t, a, b) { const k = seg(t, a, b); if (k > 0) { g.globalAlpha = k; g.fillStyle = "#000"; g.fillRect(0, 0, W, H); g.globalAlpha = 1; } }
+
+// ── movies ─────────────────────────────────────────────────────
+const MOVIES = {
+  // Startup: grid draws in, a boot log types out, a static burst, then the wordmark locks in.
+  "boot-sequence": { dur: 6.0, draw(t, f) {
+    g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+    const reveal = ease(seg(t, .3, 1.3)) * H;
+    bg(seg(t, .2, .6)); grid(seg(t, .3, 1.3), reveal);
+    if (t > .3 && t < 1.35) { g.fillStyle = C.data; g.shadowColor = C.data; g.shadowBlur = 20; g.fillRect(0, reveal - 2, W, 3); g.shadowBlur = 0; }
+    const logA = 1 - seg(t, 3.25, 3.45);
+    if (logA > 0) {
+      g.globalAlpha = logA;
+      const OK = ["[ OK ] ", C.ok];
+      terminal([
+        { at: 1.1, parts: [["> ", C.data], ["nightgrid boot --mode=game", C.text0]] },
+        { at: 1.6, parts: [OK, ["display   1920x1080 @ 120Hz", C.text1]] },
+        { at: 1.9, parts: [OK, ["input     controller online", C.text1]] },
+        { at: 2.2, parts: [OK, ["gpu       ready", C.text1]] },
+        { at: 2.5, parts: [OK, ["library   synced", C.text1]] },
+        { at: 2.8, parts: [["> ", C.data], ["launching steam", C.text0]] },
+      ], t);
+      g.globalAlpha = 1;
+    }
+    if (t >= 3.2 && t < 3.75) noise(f, .55 - seg(t, 3.2, 3.75) * .3, .9, null);
+    if (t >= 3.45) {
+      const k = seg(t, 3.45, 4.4);
+      wordmark({ alpha: Math.min(1, k * 3), split: 26 * (1 - ease(k)), tear: t < 4.0 ? 60 * (1 - k) : 0, frame: f,
+                 bar: seg(t, 3.7, 4.5), sub: seg(t, 4.2, 4.7) });
+      if (t > 4.95 && t < 5.05) wordmark({ split: 10, tear: 30, frame: f, bar: 1, sub: 1 });
+    }
+    scanlines(.18); vignette(); fadeOut(t, 5.3, 6.0);
+  } },
+
+  // Startup: a fast kernel-style log scrolls past, clears, then the wordmark types in.
+  "kernel-log": { dur: 6.0, draw(t, f) {
+    bg(); grid(.5);
+    const r = rng(42), msgs = ["usb 1-3: new full-speed device", "amdgpu: VRAM 4096M", "input: Ally controller", "nvme0n1: p1 p2 p3",
+      "wlan0: link up", "audio: hda codec ready", "battery: BAT0 present", "acpi: PPTT table ok", "zram0: 8 GiB", "drm: 1920x1080 @ 120 Hz",
+      "steam: big picture", "inputplumber: ready", "gamescope: compositor up", "fs: btrfs mounted", "net: dns ok", "thermal: zone0 ok"];
+    const lines = []; let ts = 0;
+    for (let i = 0; i < 90; i++) { ts += .003 + r() * .04; lines.push([ts, msgs[(r() * msgs.length) | 0], r() < .12]); }
+    const shown = Math.floor(seg(t, .2, 3.0) * lines.length);
+    if (t < 3.25) {
+      g.font = FONT(26, 500); g.textAlign = "left"; g.letterSpacing = "0px";
+      const rows = 30, start = Math.max(0, shown - rows);
+      for (let i = start; i < shown; i++) {
+        const [tsv, m, hi] = lines[i], yy = 70 + (i - start) * 32;
+        g.fillStyle = C.text1; g.fillText(`[${tsv.toFixed(6).padStart(12, " ")}]`, 80, yy);
+        g.fillStyle = hi ? C.data : C.text0; g.globalAlpha = hi ? 1 : .8; g.fillText(m, 330, yy); g.globalAlpha = 1;
+      }
+    }
+    if (t >= 3.2 && t < 3.4) noise(f, .35, .7);
+    if (t >= 3.4) {
+      const k = seg(t, 3.4, 4.3), n = Math.floor(k * 9);
+      g.font = FONT(150, 800); g.textAlign = "center"; g.letterSpacing = `${.14 * 150}px`;
+      const word = "NIGHTGRID".slice(0, n);
+      if (k < 1) {
+        g.fillStyle = C.text0; g.shadowColor = "rgba(255,42,109,.35)"; g.shadowBlur = 30;
+        const full = g.measureText("NIGHTGRID").width, x0 = W / 2 - full / 2 + .07 * 150;
+        g.textAlign = "left"; g.fillText(word, x0, H / 2); g.shadowBlur = 0;
+        const cw = full / 9; g.fillStyle = C.active; g.fillRect(x0 + n * cw + 6, H / 2 - 112, cw * .6, 124);
+      } else wordmark({ frame: f, bar: seg(t, 4.3, 4.9), sub: seg(t, 4.7, 5.1), split: t < 4.45 ? 12 : 0 });
+    }
+    scanlines(.18); vignette(); fadeOut(t, 5.3, 6.0);
+  } },
+
+  // Startup: a terminal login, password dots, ACCESS GRANTED, wordmark.
+  "login": { dur: 6.0, draw(t, f) {
+    bg(); grid(seg(t, 0, .6));
+    const OKc = C.ok, cx = W / 2 - 420, cy = H / 2 - 120;
+    const panelA = 1 - seg(t, 3.6, 3.9);
+    if (panelA > 0) {
+      g.globalAlpha = panelA;
+      g.fillStyle = C.bg1; g.fillRect(cx - 40, cy - 90, 920, 380);
+      g.strokeStyle = C.line; g.lineWidth = 2; g.strokeRect(cx - 40, cy - 90, 920, 380);
+      g.fillStyle = C.active; g.fillRect(cx - 40, cy - 90, 920, 4);
+      g.font = FONT(24, 600); g.textAlign = "left"; g.letterSpacing = `${.14 * 24}px`;
+      g.fillStyle = C.data; g.fillText("//", cx, cy - 40); g.fillStyle = C.text1; g.fillText("SECURE SHELL · GAME MODE", cx + 50, cy - 40);
+      terminal([
+        { at: .5, parts: [["nightgrid login: ", C.text1], ["player", C.text0]] },
+        { at: 1.3, parts: [["password: ", C.text1], ["••••••••••", C.active]] },
+        { at: 2.2, parts: [["> ", C.data], ["verifying", C.text0], [" ...", C.text1]] },
+      ], t, cx, cy + 30);
+      if (t > 2.9) {
+        const blink = t < 3.5 && Math.floor(t * 8) % 2 === 0;
+        g.font = FONT(56, 800); g.letterSpacing = `${.14 * 56}px`; g.fillStyle = blink ? C.bg1 : OKc;
+        g.shadowColor = OKc; g.shadowBlur = 25; g.fillText("ACCESS GRANTED", cx, cy + 240); g.shadowBlur = 0;
+      }
+      g.globalAlpha = 1;
+    }
+    if (t >= 3.6 && t < 3.8) noise(f, .3, .6);
+    if (t >= 3.8) { const k = seg(t, 3.8, 4.5);
+      wordmark({ alpha: Math.min(1, k * 3), split: 20 * (1 - k), tear: t < 4.1 ? 40 * (1 - k) : 0, frame: f, bar: seg(t, 4.0, 4.7), sub: seg(t, 4.4, 4.9) }); }
+    scanlines(.18); vignette(); fadeOut(t, 5.3, 6.0);
+  } },
+
+  // Startup: a system check with filling bars, ALL SYSTEMS NOMINAL, wordmark.
+  "diagnostics": { dur: 6.0, draw(t, f) {
+    bg(); grid(seg(t, 0, .6));
+    const rows = [["CPU", "8C/16T", .2], ["GPU", "RDNA3 · 12CU", .55], ["MEMORY", "16 GB", .9], ["STORAGE", "NVMe OK", 1.25], ["INPUT", "ONLINE", 1.6], ["DISPLAY", "120 Hz", 1.95]];
+    const x = 260, y0 = 260, bw = 900;
+    const a = 1 - seg(t, 3.7, 4.0);
+    if (a > 0) {
+      g.globalAlpha = a; g.textAlign = "left";
+      g.font = FONT(28, 600); g.letterSpacing = `${.14 * 28}px`;
+      g.fillStyle = C.data; g.fillText("//", x, y0 - 70); g.fillStyle = C.text0; g.fillText("SYSTEM CHECK", x + 56, y0 - 70);
+      rows.forEach(([name, val, at], i) => {
+        const yy = y0 + i * 80, k = ease(seg(t, at, at + .6));
+        if (t < at) return;
+        g.font = FONT(26, 600); g.letterSpacing = `${.14 * 26}px`; g.fillStyle = C.text1; g.fillText(name, x, yy);
+        g.strokeStyle = C.line; g.lineWidth = 2; g.strokeRect(x + 220, yy - 24, bw, 28);
+        const segs = 40, on = Math.floor(segs * k);
+        for (let s = 0; s < on; s++) { g.fillStyle = s === on - 1 && k < 1 ? C.active : C.data; g.fillRect(x + 224 + s * (bw / segs), yy - 20, bw / segs - 4, 20); }
+        g.font = FONT(24, 500); g.letterSpacing = "0px";
+        g.fillStyle = k < 1 ? C.text1 : C.ok; g.fillText(k < 1 ? `${Math.floor(k * 100)}%` : "[ OK ]", x + bw + 250, yy);
+        if (k >= 1) { g.fillStyle = C.text1; g.fillText(val, x + bw + 380, yy); }
+      });
+      if (t > 2.8) { g.font = FONT(34, 800); g.letterSpacing = `${.14 * 34}px`; g.fillStyle = C.ok; g.shadowColor = C.ok; g.shadowBlur = 20;
+        g.fillText("ALL SYSTEMS NOMINAL", x, y0 + 6 * 80 + 30); g.shadowBlur = 0; }
+      g.globalAlpha = 1;
+    }
+    if (t >= 3.7 && t < 3.9) noise(f, .3, .6);
+    if (t >= 3.9) { const k = seg(t, 3.9, 4.6);
+      wordmark({ alpha: Math.min(1, k * 3), split: 18 * (1 - k), frame: f, bar: seg(t, 4.1, 4.8), sub: seg(t, 4.5, 5.0) }); }
+    scanlines(.18); vignette(); fadeOut(t, 5.3, 6.0);
+  } },
+
+  // Startup: screens of hex scramble that lock, letter by letter, into the wordmark.
+  "decrypt": { dur: 5.5, draw(t, f) {
+    bg(); grid(.45);
+    const r = rng(f * 13 + 1), HEX = "0123456789ABCDEF#$%&@*<>/\\";
+    g.font = FONT(22, 500); g.textAlign = "left"; g.letterSpacing = "0px";
+    const colsA = 1 - seg(t, 2.6, 3.4);
+    if (colsA > 0) {
+      for (let row = 0; row < 32; row++) {
+        let line = ""; for (let c = 0; c < 120; c++) line += HEX[(r() * HEX.length) | 0];
+        g.globalAlpha = colsA * (.15 + .35 * r()); g.fillStyle = row % 7 === (f >> 1) % 7 ? C.data : C.text1; g.fillText(line, 40, 40 + row * 33);
+      }
+      g.globalAlpha = 1;
+    }
+    // central decrypt line
+    const word = "NIGHTGRID", locked = Math.floor(seg(t, .8, 3.2) * 9.99);
+    g.font = FONT(150, 800); g.textAlign = "center"; g.letterSpacing = `${.14 * 150}px`;
+    if (t < 3.3) {
+      let s = ""; for (let i = 0; i < 9; i++) s += i < locked ? word[i] : HEX[(r() * 16) | 0];
+      g.fillStyle = C.bg0; g.fillRect(0, H / 2 - 140, W, 190);
+      g.fillStyle = C.text0; g.shadowColor = "rgba(0,229,255,.4)"; g.shadowBlur = 24; g.fillText(s, W / 2 + .07 * 150, H / 2); g.shadowBlur = 0;
+      g.font = FONT(26, 500); g.letterSpacing = `${.3 * 26}px`; g.fillStyle = C.data;
+      g.fillText(`DECRYPTING ${String(Math.floor(seg(t, .8, 3.2) * 100)).padStart(3, " ")}%`, W / 2, H / 2 + 100);
+    } else {
+      wordmark({ frame: f, bar: seg(t, 3.3, 4.0), sub: seg(t, 3.8, 4.3), split: t < 3.45 ? 14 : 0, tear: t < 3.45 ? 30 : 0 });
+    }
+    scanlines(.18); vignette(); fadeOut(t, 4.8, 5.5);
+  } },
+
+  // Startup: pure signal static that thins out and leaves the wordmark behind.
+  "signal": { dur: 5.0, draw(t, f) {
+    bg(); grid(seg(t, 1.4, 2.4));
+    const dens = t < 1.4 ? .62 : .62 * (1 - ease(seg(t, 1.4, 2.6)));
+    const tints = ["#ffffff", "#9ff6ff", "#ffb3c9", "#ffffff"];
+    if (t >= 1.2) {
+      const k = seg(t, 1.2, 2.6);
+      wordmark({ alpha: k, split: 34 * (1 - k) + (t > 3.2 && t < 3.32 ? 18 : 0), tear: (t < 2.6 ? 90 * (1 - k) : (t > 3.2 && t < 3.32 ? 50 : 0)),
+                 frame: f, bar: seg(t, 2.2, 3.0), sub: seg(t, 2.8, 3.3) });
+    }
+    if (dens > .01) noise(f, dens, t < 1.4 ? 1 : .85, tints[f % 4]);
+    scanlines(.22); vignette(.6); fadeOut(t, 4.3, 5.0);
+  } },
+
+  // Startup: a perspective grid runs toward you, the wordmark rises over the horizon.
+  "grid-run": { dur: 5.0, draw(t, f) {
+    bg(); const hz = H * .58;
+    // sky: dot grid fading toward the horizon
+    g.save(); g.beginPath(); g.rect(0, 0, W, hz); g.clip(); grid(.6 * seg(t, 0, .8)); g.restore();
+    const sky = g.createLinearGradient(0, hz - 260, 0, hz); sky.addColorStop(0, "rgba(255,42,109,0)"); sky.addColorStop(1, "rgba(255,42,109,.18)");
+    g.fillStyle = sky; g.fillRect(0, hz - 260, W, 260);
+    // floor
+    const fa = seg(t, .1, 1.0);
+    g.save(); g.beginPath(); g.rect(0, hz, W, H - hz); g.clip();
+    g.fillStyle = C.bg1; g.fillRect(0, hz, W, H - hz);
+    g.strokeStyle = C.active; g.lineWidth = 2; g.globalAlpha = fa;
+    for (let i = -24; i <= 24; i++) { g.beginPath(); g.moveTo(W / 2 + i * 40, hz); g.lineTo(W / 2 + i * 420, H); g.stroke(); }
+    const speed = 1.6, ph = (t * speed) % 1;
+    for (let k = 0; k < 14; k++) {
+      const z = (k + 1 - ph); const yy = hz + (H - hz) * (1 / z) * .9; if (yy > H || yy < hz) continue;
+      g.globalAlpha = fa * clamp((yy - hz) / 120); g.beginPath(); g.moveTo(0, yy); g.lineTo(W, yy); g.stroke();
+    }
+    g.restore(); g.globalAlpha = 1;
+    // horizon line
+    g.fillStyle = C.data; g.shadowColor = C.data; g.shadowBlur = 30; g.fillRect(0, hz - 1, W * ease(seg(t, 0, .9)), 3); g.shadowBlur = 0;
+    // wordmark rising
+    if (t > 1.3) {
+      const k = ease(seg(t, 1.3, 2.4)); const flick = t < 2.4 && (f % 3 === 0) ? .45 : 1;
+      g.save(); g.beginPath(); g.rect(0, 0, W, hz - 4); g.clip();
+      wordmark({ alpha: k * flick, y: hz - 150 + (1 - k) * 220, split: 18 * (1 - k), frame: f, bar: seg(t, 2.1, 2.9), sub: seg(t, 2.6, 3.1), scale: .9 });
+      g.restore();
+    }
+    if (t > 3.5 && t < 3.6) noise(f, .25, .6);
+    scanlines(.16); vignette(.6); fadeOut(t, 4.3, 5.0);
+  } },
+
+  // Suspend: old-CRT power-off. The picture collapses to a bright line, then a dot, then black.
+  "power-down": { dur: 2.4, draw(t, f) {
+    g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+    const sy = t < .5 ? 1 : Math.max(.004, 1 - ease(seg(t, .5, 1.15)));
+    const sx = t < 1.15 ? 1 : Math.max(.002, 1 - ease(seg(t, 1.15, 1.6)));
+    if (t < 1.9) {
+      g.save(); g.translate(W / 2, H / 2); g.scale(sx, sy); g.translate(-W / 2, -H / 2);
+      bg(); grid(); wordmark({ frame: f, split: t > .3 ? 8 : 0 });
+      const glow = seg(t, .5, 1.1); g.globalCompositeOperation = "lighter"; g.globalAlpha = glow * .75; g.fillStyle = "#bff7ff"; g.fillRect(0, 0, W, H);
+      g.globalAlpha = 1; g.globalCompositeOperation = "source-over";
+      g.restore();
+      if (t > 1.0) { g.fillStyle = C.data; g.shadowColor = C.data; g.shadowBlur = 40; g.globalAlpha = 1 - seg(t, 1.6, 1.9);
+        g.fillRect(W / 2 - W * sx / 2, H / 2 - 2, W * sx, 4); g.shadowBlur = 0; g.globalAlpha = 1; }
+    }
+    if (t > 1.5 && t < 2.2) { const a = 1 - seg(t, 1.6, 2.2); g.fillStyle = `rgba(223,252,255,${a})`; g.shadowColor = C.data; g.shadowBlur = 50;
+      g.beginPath(); g.arc(W / 2, H / 2, 6 + 10 * a, 0, Math.PI * 2); g.fill(); g.shadowBlur = 0; }
+    scanlines(.2);
+  } },
+
+  // Suspend: the wordmark breaks into static, the static rolls away into black.
+  "static-out": { dur: 2.4, draw(t, f) {
+    g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+    const k = seg(t, .25, 1.2);
+    if (t < 1.4) { bg(1 - seg(t, 1.0, 1.4)); grid(1 - k); wordmark({ alpha: 1 - seg(t, .8, 1.3), split: 30 * k, tear: 80 * k, frame: f }); }
+    const dens = t < 1.2 ? .65 * ease(k) : .65 * (1 - seg(t, 1.2, 2.1));
+    if (dens > .01) noise(f, dens, 1 - seg(t, 1.5, 2.2), f % 2 ? "#ffd0de" : "#c8fbff");
+    scanlines(.22); fadeBlack(t, 2.0, 2.3);
+  } },
+};
+
+window.ready = document.fonts.load(FONT(150, 800)).then(() => document.fonts.load(FONT(34, 500)));
+window.movies = Object.fromEntries(Object.entries(MOVIES).map(([k, v]) => [k, v.dur]));
+window.draw = (id, t, f) => MOVIES[id].draw(t, f);
+</script></body></html>

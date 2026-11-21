@@ -1,0 +1,109 @@
+import asyncio
+import os
+import sys
+import tempfile
+import time
+import unittest
+from unittest import mock
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "py_modules"))
+
+from hhlib import protondb, settings  # noqa: E402
+
+
+class SettingsTest(unittest.TestCase):
+    def test_defaults_and_coercion(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "s", "settings.json")
+            self.assertEqual(settings.load(p), settings.DEFAULTS)
+            s = settings.save(p, {"deckMin": "bogus", "protonDB": "gold", "steamOS": "yes",
+                                  "collectionName": "  ", "unknown": 1})
+            self.assertEqual(s["deckMin"], "playable")
+            self.assertEqual(s["protonDB"], "gold")
+            self.assertIs(s["steamOS"], True)          # wrong type ignored
+            self.assertEqual(s["collectionName"], "Handheld Ready")
+            self.assertNotIn("unknown", s)
+            s = settings.save(p, {"hiddenQamTabs": [3, "999", "48151", 3, {"x": 1}]})
+            self.assertEqual(s["hiddenQamTabs"], ["3", "48151"])
+            s = settings.save(p, {"hiddenLibraryTabs": ["Soundtracks", 5, "", "Soundtracks"], "readyLibraryTab": True})
+            self.assertEqual(s["hiddenLibraryTabs"], ["Soundtracks"])
+            self.assertIs(s["readyLibraryTab"], True)
+            s = settings.save(p, {"pluginTabs": ["Vex Performance", 3, " ", "Ally Tweaks"]})
+            self.assertEqual(s["pluginTabs"], ["Ally Tweaks", "Vex Performance"])
+            self.assertEqual(settings.load(p), s)
+
+
+class ProtonDBTest(unittest.TestCase):
+    def test_rank(self):
+        self.assertGreater(protondb.tier_rank("Platinum"), protondb.tier_rank("gold"))
+        self.assertEqual(protondb.tier_rank("pending"), -1)
+        self.assertEqual(protondb.tier_rank("none"), -1)
+
+    def test_lookup_uses_cache_and_survives_errors(self):
+        with tempfile.TemporaryDirectory() as d:
+            cache = protondb.Cache(os.path.join(d, "c.json"))
+            cache.put(10, "gold", time.time())
+            calls = []
+
+            def fake(appid):
+                calls.append(appid)
+                if appid == 30:
+                    raise OSError("offline")
+                return "platinum"
+
+            with mock.patch.object(protondb, "_fetch_one", fake):
+                out = asyncio.run(protondb.lookup(cache, [10, 20, 30, 20]))
+            self.assertEqual(out, {10: "gold", 20: "platinum"})
+            self.assertEqual(sorted(calls), [20, 30])
+            again = protondb.Cache(os.path.join(d, "c.json"))
+            self.assertEqual(again.get(20, time.time()), "platinum")
+            self.assertIsNone(again.get(20, time.time() + 8 * 86400))   # expired
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+
+class PinTest(unittest.TestCase):
+    def test_set_verify_change_clear_no_lockout(self):
+        from hhlib import pin
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "pin.json")
+            st = pin.PinStore(path)
+            self.assertEqual(st.status(), {"set": False, "retryIn": 0, "length": 0})
+            self.assertTrue(st.verify("x")["ok"])                 # no PIN → open
+            self.assertFalse(st.set("12a4")["ok"])
+            self.assertTrue(st.set("1234")["ok"])
+            raw = open(path).read()
+            self.assertNotIn("1234", raw)                        # only salt + hash on disk
+            self.assertTrue(st.verify("1234")["ok"])
+            self.assertFalse(st.set("5678", "0000")["ok"])        # change needs current
+            self.assertTrue(st.set("5678", "1234")["ok"])
+            for _ in range(10):
+                self.assertEqual(st.verify("0000"), {"ok": False, "retryIn": 0})
+            self.assertTrue(st.verify("5678")["ok"])              # no lockout after wrong tries
+            self.assertFalse(st.clear("1111")["ok"])
+            self.assertTrue(st.clear("5678")["ok"])
+            self.assertFalse(os.path.exists(path))
+
+
+class PinLengthTest(unittest.TestCase):
+    def test_length_reported_and_backfilled(self):
+        import json as _json
+        from hhlib import pin
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "pin.json")
+            st = pin.PinStore(path)
+            self.assertEqual(st.status()["length"], 0)
+            st.set("123456")
+            self.assertEqual(st.status()["length"], 6)
+            with open(path) as f:
+                raw = _json.load(f)
+            raw.pop("length")
+            with open(path, "w") as f:
+                _json.dump(raw, f)
+            self.assertEqual(st.status()["length"], 0)       # older file
+            self.assertFalse(st.verify("1234")["ok"])
+            self.assertEqual(st.status()["length"], 0)       # wrong PIN doesn't backfill
+            self.assertTrue(st.verify("123456")["ok"])
+            self.assertEqual(st.status()["length"], 6)

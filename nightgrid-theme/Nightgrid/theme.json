@@ -1,0 +1,242 @@
+{
+  "name": "Nightgrid",
+  "author": "TheRoben-Dev",
+  "version": "v0.6.4",
+  "description": "Retro-terminal Game Mode theme based on the Nightgrid homelab app: near-black canvas with a faint grid, cyan data accents, magenta outlined selection, uppercase letter-spaced labels and JetBrains Mono. Covers Home, Library, game pages, Settings, menus, Quick Access, Friends & Chat, Store, Downloads, Search, Media, Achievements, keyboard and notifications. Options: animations (off / subtle / full), palette (Nightgrid / Ice / Bloodline), custom colors, grid, font, glow, scanlines.",
+  "target": "System-Wide",
+  "manifest_version": 9,
+  "tabs": {
+    "sp": [
+      "bigpicture"
+    ],
+    "menu": [
+      "MainMenu"
+    ],
+    "qam": [
+      "QuickAccess"
+    ],
+    "toasts": [
+      "notificationtoasts_.*"
+    ],
+    "web": [
+      "store"
+    ],
+    "all": [
+      "bigpicture",
+      "MainMenu",
+      "QuickAccess",
+      "notificationtoasts_.*"
+    ],
+    "default": [
+      "all",
+      "web"
+    ]
+  },
+  "inject": {
+    "css/tokens.css": [],
+    "css/fonts.css": [],
+    "css/accents.css": [
+      "sp",
+      "menu",
+      "qam"
+    ],
+    "css/controls.css": [
+      "sp",
+      "menu",
+      "qam"
+    ],
+    "css/labels.css": [
+      "sp",
+      "menu",
+      "qam"
+    ],
+    "css/canvas.css": [
+      "sp"
+    ],
+    "css/shell.css": [
+      "sp"
+    ],
+    "css/home.css": [
+      "sp"
+    ],
+    "css/mainmenu.css": [
+      "menu"
+    ],
+    "css/qam.css": [
+      "qam"
+    ],
+    "css/toasts.css": [
+      "sp",
+      "qam",
+      "toasts"
+    ],
+    "css/chat.css": [
+      "sp",
+      "qam"
+    ],
+    "css/pages.css": [
+      "sp",
+      "menu",
+      "qam"
+    ],
+    "css/keyboard.css": [
+      "sp"
+    ],
+    "css/store.css": [
+      "web"
+    ]
+  },
+  "patches": {
+    "Animations": {
+      "type": "dropdown",
+      "default": "Subtle",
+      "values": {
+        "Off": {},
+        "Subtle": {
+          "css/anim/subtle.css": [
+            "sp",
+            "menu",
+            "qam",
+            "toasts"
+          ]
+        },
+        "Full": {
+          "css/anim/subtle.css": [
+            "sp",
+            "menu",
+            "qam",
+            "toasts"
+          ],
+          "css/anim/full.css": [
+            "sp",
+            "menu",
+            "qam"
+          ]
+        }
+      }
+    },
+    "Glitch": {
+      "type": "dropdown",
+      "default": "Strong",
+      "values": {
+        "Subtle": {
+          "css/options/glitch-subtle.css": [
+            "sp"
+          ]
+        },
+        "Strong": {},
+        "Extreme": {
+          "css/options/glitch-extreme.css": [
+            "sp"
+          ]
+        }
+      }
+    },
+    "Palette": {
+      "type": "dropdown",
+      "default": "Nightgrid",
+      "values": {
+        "Nightgrid": {},
+        "Ice": {
+          "css/options/palette-ice.css": []
+        },
+        "Bloodline": {
+          "css/options/palette-bloodline.css": []
+        }
+      }
+    },
+    "Colors": {
+      "type": "dropdown",
+      "default": "From palette",
+      "values": {
+        "From palette": {},
+        "Custom": {
+          "css/options/custom-colors.css": []
+        }
+      },
+      "components": [
+        {
+          "name": "Selection (magenta)",
+          "type": "color-picker",
+          "on": "Custom",
+          "default": "#FF2A6D",
+          "css_variable": "ng-c-active",
+          "tabs": []
+        },
+        {
+          "name": "Data (cyan)",
+          "type": "color-picker",
+          "on": "Custom",
+          "default": "#00E5FF",
+          "css_variable": "ng-c-data",
+          "tabs": []
+        },
+        {
+          "name": "Accent (yellow)",
+          "type": "color-picker",
+          "on": "Custom",
+          "default": "#F3E600",
+          "css_variable": "ng-c-accent",
+          "tabs": []
+        }
+      ]
+    },
+    "Grid": {
+      "type": "dropdown",
+      "default": "Dots + grid",
+      "values": {
+        "Dots + grid": {},
+        "Lines": {
+          "css/options/grid-lines.css": []
+        },
+        "Off": {
+          "css/options/grid-off.css": []
+        }
+      }
+    },
+    "Font": {
+      "type": "dropdown",
+      "default": "Mono labels",
+      "values": {
+        "Mono labels": {
+          "css/font-labels.css": [
+            "sp",
+            "menu",
+            "qam"
+          ]
+        },
+        "Mono everywhere": {
+          "css/font-labels.css": [
+            "sp",
+            "menu",
+            "qam"
+          ],
+          "css/options/font-all.css": []
+        },
+        "Steam default": {}
+      }
+    },
+    "Glow": {
+      "type": "checkbox",
+      "default": "Yes",
+      "values": {
+        "No": {
+          "css/options/glow-off.css": []
+        },
+        "Yes": {}
+      }
+    },
+    "Scanlines": {
+      "type": "checkbox",
+      "default": "No",
+      "values": {
+        "No": {},
+        "Yes": {
+          "css/options/scanlines.css": [
+            "sp"
+          ]
+        }
+      }
+    }
+  }
+}

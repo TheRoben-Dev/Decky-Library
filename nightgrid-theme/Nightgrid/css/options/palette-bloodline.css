@@ -1,0 +1,8 @@
+/* Palette: BLOODLINE (from Nightgrid's theme list) */
+html:root {
+  --ng-bg-0: #0B0606; --ng-bg-1: #140B0B; --ng-bg-2: #1E1111; --ng-line: #33201F;
+  --ng-text-0: #F3E9E6; --ng-text-1: #A99390;
+  --ng-accent: #FFB000; --ng-data: #FF6B3D; --ng-active: #FF2A55;
+  --ng-danger: #FF1E3C; --ng-ok: #9BE564; --ng-warn: #FF9F1C; --ng-mint: #F3D9C9;
+  --ng-on-fill: #0B0606;
+}

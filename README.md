@@ -1,1 +1,28 @@
 # Decky-Library
+
+Decky Loader plugins and CSS Loader themes for Bazzite / SteamOS handhelds. Each one lives in its own folder.
+
+## Themes (CSS Loader)
+| Theme | What it does |
+|---|---|
+| [nightgrid-theme](nightgrid-theme/) | Retro-terminal Game Mode theme based on the Nightgrid app: near-black grid canvas, cyan data accents, magenta outlined selection, uppercase mono labels. Covers Game Mode, Quick Access, friends & chat, the Store and toasts. Palette, custom colors, grid, font, glow and scanline options. |
+
+Install a theme by extracting its zip into `~/homebrew/themes/`, then refresh CSS Loader and enable it.
+
+## Plugins
+| Plugin | What it does |
+|---|---|
+| [library-hub](library-hub/) | Installs, updates and removes every plugin in this repo and the Nightgrid theme from Quick Access (SHA-256 checked, via Decky's own installer), offers CSS Loader if it's missing, and updates itself. |
+| [handheld-library](handheld-library/) | Keeps a "Handheld Ready" Library collection of games rated Deck Verified/Playable (optionally SteamOS Compatible, ProtonDB Gold+ or native) that have full or partial controller support, and lists your hidden games in Quick Access with Play and Unhide. |
+| [vex-performance](vex-performance/) | Per-game smart profiles: gamescope FSR, frame cap + matched refresh, TDP/GPU (Steam slider / PowerStation) and lsfg-vk frame gen, applied automatically on game launch. |
+| [proton-picker](proton-picker/) | Per-game Proton picker: ProtonDB/Deck-rating driven auto choice, installs GE-Proton / Proton-CachyOS, applies it with no launch options and rolls back if a game breaks. |
+| [ally-tweaks](ally-tweaks/) | ROG Ally 2023 tweaks: ring RGB (kernel LED on Bazzite 44+/InputPlumber, HHD where present) that survives reboots, per-game/reactive/follow-screen lighting, left/right ring colors, charge limiter with one-tap full charge, panel overdrive. No TDP/fan/firmware changes. |
+
+## Building a plugin
+```
+cd <plugin-folder>
+pnpm install
+pnpm build
+./package.sh   # installable zip in out/
+```
+Install the zip from Decky → Developer → Install Plugin from Zip.

@@ -1,0 +1,38 @@
+/* Nightgrid — anim/full.css  (Animations: "Full", on top of subtle.css)
+ * Adds the looping effects: focus glow pulse and moving stripes on progress bars, plus a
+ * typewriter header reveal. Loops stop while a game is running.
+ */
+@media (prefers-reduced-motion: no-preference) {
+
+  /* ── Focus glow pulse (opacity of the ring only) ─────── */
+  @keyframes ng-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .62; } }
+  .focusring_FocusRing {
+    animation: ng-ring-in var(--ng-dur) var(--ng-ease), ng-pulse 2.4s ease-in-out var(--ng-dur) infinite;
+  }
+
+  /* ── Moving stripes on running download bars ───────────
+   * A stripe layer on the fill's own background, scrolled with background-position. Nothing
+   * about the bar's box (position, overflow, size) is touched. The top-bar mini progress is
+   * left alone: it's 2–3 px tall and stripes there only read as flicker. */
+  @keyframes ng-stripes { from { background-position: 0 0; } to { background-position: 24px 0; } }
+  .BasicUI .downloads_ProgressBar.downloads_ProgressBar:not([class*="_2XedpgsgZ3gMAUuPRtnfld"]):not([class*="HifZB5TP6WNuubp1dzyxS"]) > div {
+    background-image: repeating-linear-gradient(-45deg, rgba(7, 8, 11, .28) 0 6px, transparent 6px 12px);
+    background-size: 24px 100%;
+    animation: ng-stripes .9s linear infinite;
+  }
+
+  /* ── Typewriter reveal for section headers (steps instead of a smooth wipe) ── */
+  @keyframes ng-type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  .BasicUI :is(.DialogControlsSectionHeader, .homestorecarousel_Header, .downloads_Title) {
+    animation: ng-type .42s steps(14, end);
+  }
+
+  /* ── While a game is running: no loops ──────────────── */
+  :root:has(.gamepadui_BasicHome.gamepadui_TransparentBackground) .focusring_FocusRing,
+  :root:has([class*="RAI0lLN8sCtqCMI36rLiB"]) .focusring_FocusRing {
+    animation: ng-ring-in var(--ng-dur) var(--ng-ease);
+  }
+  :root:has(.gamepadui_BasicHome.gamepadui_TransparentBackground) .downloads_ProgressBar > div {
+    animation: none;
+  }
+}

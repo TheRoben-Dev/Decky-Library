@@ -1,0 +1,67 @@
+/* Nightgrid — qam.css  (QuickAccess: the … menu, Decky's panel lives here too)
+ * Steam's sheets load after CSS Loader's on this page → `.BasicUI` prefix everywhere.
+ */
+.BasicUI .quickaccessmenu_QuickAccessMenu,
+.BasicUI .quickaccessmenu_Title {
+  background: var(--ng-bg-1);
+}
+.BasicUI .quickaccessmenu_Title {
+  box-shadow: 0 0 7px 12px var(--ng-bg-1);   /* Steam draws a navy glow here */
+  color: var(--ng-text-0);
+}
+.BasicUI .quickaccessmenu_QuickAccessMenu .quickaccessmenu_Menu::before,
+.BasicUI .quickaccessmenu_QuickAccessMenu .quickaccessmenu_Menu::after {
+  background: var(--ng-line);
+}
+
+/* Tab rail (left icons) */
+.BasicUI .quickaccessmenu_Tab {
+  border-radius: var(--ng-radius);
+}
+@keyframes ng-qa-tab-select {
+  0%   { background: color-mix(in srgb, var(--ng-active) 25%, var(--ng-bg-1)); }
+  100% { background: color-mix(in srgb, var(--ng-active) 12%, var(--ng-bg-1)); }
+}
+.BasicUI .quickaccessmenu_Tab.quickaccessmenu_Tab.quickaccessmenu_Selected {
+  background-color: color-mix(in srgb, var(--ng-active) 12%, var(--ng-bg-1));
+  box-shadow: inset 2px 0 0 var(--ng-active);
+  animation-name: ng-qa-tab-select;
+}
+.BasicUI .quickaccessmenu_Tab.gpfocus {
+  background: color-mix(in srgb, var(--ng-active) 18%, var(--ng-bg-1)) !important;
+  color: var(--ng-text-0) !important;
+  box-shadow: inset 0 0 0 1px var(--ng-active), var(--ng-glow-active) !important;
+}
+.BasicUI .quickaccessmenu_Tab.gpfocus svg {
+  color: var(--ng-text-0) !important;
+}
+
+/* Friends list */
+.BasicUI .GamepadMode.friendlist,
+.BasicUI .GamepadMode .multiChatDialog {
+  background: var(--ng-bg-1);
+}
+.BasicUI .GamepadMode .insetshadow_FriendListInsetShadowTop {
+  background: linear-gradient(to bottom, var(--ng-bg-1) 0%, transparent 100%);
+}
+.BasicUI .friendGroup.friendGroup:is(.taggedGroup, .gameGroup),
+.BasicUI .FriendsListContent .friendlistListContainer .friendGroup.friendGroup.offlineFriends {
+  border-top-color: var(--ng-line);
+}
+
+/* Decky plugin pages: Decky renders the plugin's title inside Steam's Quick Access title, and
+ * plugins (incl. Decky itself) give their own title element the same class
+ * (`staticClasses.Title` = quickaccessmenu_Title). Without this the nested copy got its own
+ * background, glow band, "// " prefix, cursor and slide-in, so the title bar showed twice side by
+ * side. Only the outer title keeps the Nightgrid decoration. */
+.BasicUI .quickaccessmenu_Title .quickaccessmenu_Title {
+  background: none !important;
+  box-shadow: none !important;
+  animation: none !important;
+  padding-left: 0;
+}
+.BasicUI .quickaccessmenu_Title .quickaccessmenu_Title::before,
+.BasicUI .quickaccessmenu_Title .quickaccessmenu_Title::after {
+  content: none !important;
+  animation: none !important;
+}

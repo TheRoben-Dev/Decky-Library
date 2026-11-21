@@ -1,0 +1,101 @@
+/* Nightgrid — pages.css  (bigpicture; achievements + volume also MainMenu/QuickAccess)
+ * Downloads, search, media, achievements, volume pop-in.
+ * Unnamed variants (no CSS Loader stable name) are matched by hash substring and fail safe.
+ */
+
+/* ── Downloads ───────────────────────────────────────────── */
+.BasicUI .downloads_DownloadsPage.downloads_DownloadsPage {
+  background-color: var(--ng-bg-0);
+  background-image: var(--ng-grid-image);
+  background-size: var(--ng-grid-size);
+}
+.BasicUI .downloads_Section.downloads_Section.downloads_Section {
+  background-color: color-mix(in srgb, var(--ng-bg-1) 92%, transparent);
+}
+.BasicUI .downloads_Rule.downloads_Rule { background-color: var(--ng-line); }
+.BasicUI .downloads_Title {
+  text-transform: uppercase;
+  letter-spacing: var(--ng-tracking);
+}
+.BasicUI .downloads_Title::before { content: "// "; color: var(--ng-data); letter-spacing: 0; }
+.BasicUI .downloads_Count { color: var(--ng-data); }
+.BasicUI .downloads_PatchNotes { color: var(--ng-data); }
+/* Graph: network = cyan, disk = ok green (Steam: blue / green) */
+.BasicUI .downloadgraph_DownloadGraph .downloadgraph_GraphBarDownload { color: color-mix(in srgb, var(--ng-data) 70%, transparent); }
+.BasicUI .downloadgraph_DownloadGraph .downloadgraph_GraphLine { stroke: var(--ng-ok); }
+.BasicUI .downloadgraph_Network.downloadgraph_Network svg { color: var(--ng-data); }
+.BasicUI .downloadgraph_Disk.downloadgraph_Disk { background-color: var(--ng-ok); }
+.BasicUI .downloadgraph_HeroAndLogo .downloadgraph_HeroContainer .downloadgraph_HeroGradient {
+  background: linear-gradient(90deg, transparent 40%, var(--ng-bg-0) 100%);   /* Steam: blue multiply tint on the art */
+}
+/* Progress bars: grey paused/queued variant (_2Xedpg…) keeps Steam's grey */
+.BasicUI .downloads_ProgressBar.downloads_ProgressBar { border-radius: var(--ng-radius); }
+.BasicUI .downloads_ProgressBar.downloads_ProgressBar:not([class*="_2XedpgsgZ3gMAUuPRtnfld"]) div { background-color: var(--ng-data); }
+.BasicUI .downloads_ProgressBar.downloads_ProgressBar[class*="HifZB5TP6WNuubp1dzyxS"] div { background-color: var(--ng-ok); }
+.BasicUI .downloads_SectionItemStatus .downloads_ProgressBar.downloads_ProgressBar { background-color: var(--ng-bg-2); }
+.BasicUI .downloads_SectionItem { border-radius: var(--ng-radius); }
+.BasicUI .downloads_SectionItem.downloads_Active {
+  background-color: var(--ng-bg-1);
+  box-shadow: inset 0 0 0 1px var(--ng-line), inset 0 2px 0 var(--ng-data);
+}
+.BasicUI .downloads_SectionItemWrapper.downloads_SectionItemWrapper.gpfocus .downloads_SectionItem {
+  background-color: color-mix(in srgb, var(--ng-active) 12%, var(--ng-bg-1));
+}
+.BasicUI .downloads_SectionItem .downloads_Button.DialogButton:enabled {
+  background: var(--ng-bg-2);
+}
+.BasicUI .downloads_SectionList.downloads_DropOption.downloads_DragOver {
+  background: color-mix(in srgb, var(--ng-data) 18%, var(--ng-bg-0));
+}
+
+/* ── Search overlay ──────────────────────────────────────── */
+.BasicUI .gamepadsearch_GamepadSearch {
+  background-color: var(--ng-bg-0);
+  background-image: var(--ng-grid-image);
+  background-size: var(--ng-grid-size);
+}
+.BasicUI .gamepadsearch_ResultTemplateImage { border-radius: var(--ng-radius); }
+
+/* ── Media (screenshots / recordings grid) ──────────────── */
+.BasicUI .mediapage_MediaPage { background-color: var(--ng-bg-0); }
+.BasicUI [class*="_2-7fqz03LhYHKEBI-HwIPq"],
+.BasicUI [class*="_2-7fqz03LhYHKEBI-HwIPq"] [class*="_2hcrnBEslc1Awh2IFpGA7W"] {
+  border-radius: var(--ng-radius);
+}
+
+/* ── Achievements (game page tab, in-game STEAM menu, full page) ── */
+.BasicUI :is(.achievementspage_AchievementList, .achievementslist_AchievementList) {
+  background-color: color-mix(in srgb, var(--ng-bg-0) 85%, transparent);
+}
+.BasicUI :is(.achievementspage_AchievementListItemBase, .achievementspage_GlobalAchievementListItem,
+             .achievementspage_SortableUserAchievementInner,
+             .achievementslist_AchievementListItemBase, .achievementslist_GlobalAchievementListItem) {
+  background-color: var(--ng-bg-1);
+  border: 1px solid var(--ng-line);
+  border-radius: var(--ng-radius);
+}
+.BasicUI :is(.achievementspage_AchievementListItemBase, .achievementslist_AchievementListItemBase).gpfocus {
+  background-color: color-mix(in srgb, var(--ng-active) 14%, var(--ng-bg-1));
+  border-color: var(--ng-active);
+}
+.BasicUI :is(.achievementspage_AchievementTitle, .achievementslist_AchievementTitle) { color: var(--ng-text-0); }
+.BasicUI :is(.achievementspage_AchievementDescription, .achievementslist_AchievementDescription) { color: var(--ng-text-1); }
+.BasicUI :is(.achievementspage_AchievementGlobalPercentage, .achievementslist_AchievementGlobalPercentage,
+             .achievementspage_UnlockDate, .achievementslist_UnlockDate) {
+  color: var(--ng-data);
+  font-variant-numeric: tabular-nums;
+}
+.BasicUI .achievementsheader_StatsBlock {
+  background: var(--ng-bg-1);
+  border: var(--ng-hairline);
+  border-radius: var(--ng-radius);
+}
+
+/* On-screen keyboard: css/keyboard.css */
+
+/* ── Volume / brightness pop-in ─────────────────────────── */
+.BasicUI :is(.header_VolumePopin, .audio_VolumePopin) {
+  background: var(--ng-bg-1);
+  border: 1px solid var(--ng-line);
+  border-radius: var(--ng-radius);
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Handheld Library",
+  "author": "Roben",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": ["library", "collection", "steam-deck", "controller", "hidden"],
+    "description": "Keeps a Library collection of games that are Deck Verified/Playable (or SteamOS Compatible / ProtonDB Gold+) and have full or partial controller support, and lists hidden games in Quick Access with Play and Unhide.",
+    "image": "https://opengraph.githubassets.com/1/TheRoben-Dev/Decky-Library"
+  }
+}

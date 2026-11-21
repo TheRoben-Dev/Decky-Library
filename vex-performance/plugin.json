@@ -1,0 +1,11 @@
+{
+  "name": "Vex Performance",
+  "author": "Roben",
+  "flags": ["root"],
+  "api_version": 1,
+  "publish": {
+    "tags": ["performance", "tdp", "fsr", "lsfg-vk", "root"],
+    "description": "Per-game smart profiles: gamescope FSR, frame cap + matched refresh, TDP/GPU (HHD-aware) and lsfg-vk frame gen, applied automatically on launch.",
+    "image": "https://opengraph.githubassets.com/1/SteamDeckHomebrew/PluginLoader"
+  }
+}

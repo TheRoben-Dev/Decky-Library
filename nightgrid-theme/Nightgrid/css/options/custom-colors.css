@@ -1,0 +1,7 @@
+/* Colors: "Custom" — use the three color pickers (CSS Loader injects them as --ng-c-*).
+ * 0,2,1 so it beats both tokens.css and the palettes, whatever the inject order. */
+html:root:root {
+  --ng-active: var(--ng-c-active);
+  --ng-data: var(--ng-c-data);
+  --ng-accent: var(--ng-c-accent);
+}
