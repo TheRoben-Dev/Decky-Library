@@ -35,7 +35,10 @@ MAX_JSON = 32_000_000
 MAX_IMAGE = 10 * 1024 * 1024
 REFRESH_MARGIN = 300            # refresh the access token this many seconds before it expires
 
-_CA_FILES = ("/etc/pki/tls/certs/ca-bundle.crt", "/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/cert.pem")
+# Decky's bundled Python has no CA store of its own, so certificates are checked against the
+# system's bundle (Bazzite/Fedora first). Verification is never turned off.
+_CA_FILES = ("/etc/pki/tls/certs/ca-bundle.crt", "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
+             "/etc/ssl/certs/ca-certificates.crt", "/etc/ssl/certs/ca-bundle.crt", "/etc/ssl/cert.pem")
 _ctx = None
 
 
@@ -49,9 +52,16 @@ def context() -> ssl.SSLContext:
     global _ctx
     if _ctx:
         return _ctx
-    for f in _CA_FILES:
-        if os.path.exists(f):
-            _ctx = ssl.create_default_context(cafile=f)
+    env = os.environ.get("SSL_CERT_FILE", "")
+    for f in ((env,) if env else ()) + _CA_FILES:
+        if not os.path.isfile(f):
+            continue
+        try:
+            c = ssl.create_default_context(cafile=f)
+        except (OSError, ssl.SSLError):
+            continue
+        if c.cert_store_stats().get("x509_ca", 0) > 0:
+            _ctx = c
             return _ctx
     _ctx = ssl.create_default_context()
     return _ctx

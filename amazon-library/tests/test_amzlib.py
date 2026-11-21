@@ -326,3 +326,21 @@ class StoreDetails(unittest.TestCase):
         self.assertEqual(len(calls), 2)
         self.assertNotIn("offerAssets", calls[1])
         self.assertEqual(o[0]["screenshots"], [])
+
+
+class Certs(unittest.TestCase):
+    def test_uses_a_real_ca_bundle(self):
+        api._ctx = None
+        ctx = api.context()
+        self.assertEqual(ctx.verify_mode, __import__("ssl").CERT_REQUIRED)
+        self.assertGreater(ctx.cert_store_stats()["x509_ca"], 0)
+
+    def test_skips_broken_bundle(self):
+        bad = os.path.join(tempfile.mkdtemp(), "bad.pem")
+        with open(bad, "w") as f:
+            f.write("not a cert")
+        api._ctx = None
+        with mock.patch.object(api, "_CA_FILES", (bad,) + api._CA_FILES):
+            ctx = api.context()
+        self.assertGreater(ctx.cert_store_stats()["x509_ca"], 0)
+        api._ctx = None
