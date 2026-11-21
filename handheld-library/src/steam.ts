@@ -35,8 +35,17 @@ function cs(): any {
   return w.collectionStore;
 }
 
+/**
+ * collectionStore.GetCollection throws (reads a field of an undefined map) while Steam is still
+ * loading collections at Game Mode boot. Never let that escape: treat it as "not there yet".
+ */
+export function getCollection(id: string): any {
+  if (!id) return null;
+  try { return cs()?.GetCollection?.(id) ?? null; } catch { return null; }
+}
+
 export function storesReady(): boolean {
-  const c = cs()?.GetCollection?.("type-games");
+  const c = getCollection("type-games");
   return !!(c && c.allApps && c.allApps.length > 0);
 }
 
@@ -87,8 +96,10 @@ function isShortcutOrMod(ov: any): boolean {
 /** Every owned Steam game (not software, tools or non-Steam shortcuts), hidden ones included. */
 export function allGames(): Game[] {
   const store = cs();
-  let list: any[] = store?.GetCollection?.("type-games")?.allApps ?? [];
-  if (!list.length) list = (store?.allAppsCollection?.allApps ?? []).filter((o: any) => o?.app_type === 1);
+  let list: any[] = getCollection("type-games")?.allApps ?? [];
+  if (!list.length) {
+    try { list = (store?.allAppsCollection?.allApps ?? []).filter((o: any) => o?.app_type === 1); } catch { list = []; }
+  }
   return list.filter((o) => o && !isShortcutOrMod(o)).map(toGame);
 }
 
@@ -132,7 +143,7 @@ export function isHidden(appid: number): boolean {
 }
 
 export function hiddenGames(): Game[] {
-  const list: any[] = cs()?.GetCollection?.("hidden")?.allApps ?? [];
+  const list: any[] = getCollection("hidden")?.allApps ?? [];
   return list.filter(Boolean).map(toGame).sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -164,7 +175,7 @@ export async function syncCollection(s: Settings, matches: Game[]): Promise<Sync
   const store = cs();
   if (!store?.NewUnsavedCollection) return { ok: false, count: 0, added: 0, removed: 0, error: "Steam's collection store isn't available." };
   const name = s.collectionName.trim();
-  let col = s.collectionId ? store.GetCollection(s.collectionId) : null;
+  let col = s.collectionId ? getCollection(s.collectionId) : null;
   if (col && (!col.bIsEditable || col.bIsDynamic)) col = null;
 
   if (!col) {
@@ -196,7 +207,7 @@ export async function syncCollection(s: Settings, matches: Game[]): Promise<Sync
 }
 
 export async function deleteCollection(id: string): Promise<boolean> {
-  const col = id ? cs()?.GetCollection?.(id) : null;
+  const col = getCollection(id);
   if (!col?.bIsDeletable) return false;
   await col.Delete();
   return true;

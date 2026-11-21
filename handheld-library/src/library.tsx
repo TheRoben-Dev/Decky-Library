@@ -12,6 +12,7 @@
 import { routerHook } from "@decky/api";
 import { afterPatch, replacePatch, wrapReactType } from "@decky/ui";
 import { cloneElement, isValidElement, ReactElement } from "react";
+import { getCollection } from "./steam";
 
 export const LIBRARY_TABS: Record<string, string> = {
   GreatOnDeck: "Great on Deck",
@@ -63,7 +64,7 @@ function dispatcher(): any {
 function readyTab(tpl: any): any | null {
   const rt = config.readyTab;
   if (!rt) return null;
-  const col = (window as any).collectionStore?.GetCollection?.(rt.collectionId);
+  const col = getCollection(rt.collectionId);
   const inner = tpl?.content?.props?.children;
   if (!col || !isValidElement(tpl?.content) || !isValidElement(inner) || !(inner.props as any)?.collection) return null;
   const addon = typeof tpl.renderTabAddon === "function" ? tpl.renderTabAddon() : null;

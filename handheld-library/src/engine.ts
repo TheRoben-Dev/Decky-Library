@@ -101,11 +101,14 @@ export function start(): void {
   let tries = 0;
   const boot = () => {
     if (stopped) return;
-    if (!storesReady() && tries++ < 60) { timer = window.setTimeout(boot, 2000); return; }
+    let ready = false;
+    try { ready = storesReady(); } catch { ready = false; }
+    if (!ready && tries++ < 60) { timer = window.setTimeout(boot, 2000); return; }
     sync();
     timer = window.setInterval(() => sync(), SYNC_EVERY_MS) as unknown as number;
   };
-  boot();
+  // First check on the next tick, so nothing Steam does during plugin import can break loading.
+  timer = window.setTimeout(boot, 0);
 }
 
 export function stop(): void {
