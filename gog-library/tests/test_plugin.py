@@ -146,6 +146,21 @@ class Flow(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(up["installed"]["42"]["update_name"], "2.1")
         await p.uninstall(42, True)
 
+    async def test_details_cached(self):
+        d = {"id": 77, "description": ["Hi"], "screenshots": [], "videos": [], "genres": [], "themes": [], "modes": [],
+             "developers": [], "publishers": [], "released": "", "rating": None, "languages": 0}
+        with mock.patch.object(api, "details", return_value=dict(d)) as m:
+            r1 = await self.p.details(77)
+            r2 = await self.p.details(77)
+        self.assertTrue(r1["ok"] and r2["ok"])
+        self.assertEqual(r2["description"], ["Hi"])
+        self.assertEqual(m.call_count, 1)
+        with mock.patch.object(api, "details", side_effect=api.ApiError("down")), mock.patch.object(main, "DETAILS_TTL", -1):
+            r3 = await self.p.details(77)   # stale cache still beats an error
+        self.assertTrue(r3["ok"])
+        with mock.patch.object(api, "details", side_effect=api.ApiError("down")):
+            self.assertFalse((await self.p.details(78))["ok"])
+
     async def test_sign_in(self):
         p = self.p
         p.settings.data["auth"] = {}

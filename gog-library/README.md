@@ -11,6 +11,9 @@ Your GOG games and the GOG store in Steam Game Mode, Nightgrid-styled and fully 
   game's store page in Steam's browser, or **Buy on phone** shows a QR code; after buying, *I bought it* moves it to
   your library. Free games work the same way (*Get it on GOG*, then *I added it*), because GOG only lets an account
   download games that are in its library.
+- **Store pages for every game**: opening a game (from Browse or your library) shows its screenshots (D-pad through
+  them, A for full screen), trailers, rating and review count, release date, genres, developer, publisher, game modes,
+  features and the full description. Details come from GOG's store and games database and are cached for 3 days.
 - **Your library**: every game you own in a full-screen grid: Library, Installed, Updates, Downloads.
   L1/R1 switch tabs, A opens a game, X installs or plays it right from the grid.
 - **Native Linux first, Windows through Proton.** When a game has both you choose which wins (Settings), or pick on the

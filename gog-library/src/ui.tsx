@@ -90,6 +90,17 @@ export const PAGE_CSS = `
 .gl-panel .v { font-size: 13px; word-break: break-all; }
 .gl-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .gl-kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; align-items: baseline; }
+.gl-kv .v { word-break: normal; overflow-wrap: anywhere; }
+.gl-gallery .main { aspect-ratio: 16 / 9; background: ${C.bg0}; border: 1px solid ${C.line}; overflow: hidden; }
+.gl-gallery .main img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.gl-gallery .thumbs { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 6px; scrollbar-width: none; }
+.gl-gallery .thumb { flex: 0 0 150px; aspect-ratio: 16 / 9; border: 2px solid ${C.line}; opacity: .7; transition: opacity .12s, border-color .12s; }
+.gl-gallery .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gl-gallery .thumb.on { opacity: 1; border-color: ${C.data}; }
+.gl-gallery .thumb.gl-focus { opacity: 1; border-color: ${C.active}; box-shadow: 0 0 10px color-mix(in srgb, ${C.active} 45%, transparent); }
+.gl-about .para { font-size: 14px; line-height: 1.55; color: ${C.text0}; padding: 2px 8px; border-left: 2px solid transparent; }
+.gl-about .para.li { padding-left: 18px; }
+.gl-about .para.on { border-left-color: ${C.data}; background: color-mix(in srgb, ${C.data} 6%, transparent); }
 .gl-signin { display: flex; gap: 32px; padding: 16px 24px; align-items: flex-start; flex-wrap: wrap; overflow-y: auto; }
 .gl-qr { background: #fff; padding: 14px; border: 2px solid ${C.data}; box-shadow: 0 0 22px color-mix(in srgb, ${C.data} 40%, transparent); line-height: 0; }
 .gl-qr svg { width: 240px; height: 240px; display: block; }
