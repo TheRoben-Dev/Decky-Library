@@ -50,7 +50,7 @@ async function load(page: number): Promise<Loaded> {
   const key = keyOf();
   const r = st.query ? await be.search(st.query, page) : await be.browse({ ...st.opts, page });
   if (keyOf() !== key) return null;   // filters changed meanwhile
-  if (!r.ok) return { error: r.error, retry: r.status === 429 ? r.retry_after || 60 : 0, notice: "", detail: (r as any).detail ?? "", web: "" };
+  if (!r.ok) return { error: r.error, retry: r.status === 429 ? r.retry_after || 60 : 0, notice: "", detail: (r as any).detail ?? "", web: (r as any).web ?? "" };
   st.items = page > 1 ? [...(st.items ?? []), ...r.items.filter((i) => !(st.items ?? []).some((x) => x.url === i.url))] : r.items;
   st.opts.page = page;
   st.more = r.more;
@@ -108,6 +108,7 @@ export function BrowseTab() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [detail, setDetail] = useState("");
+  const [errWeb, setErrWeb] = useState("");
   const [wait, setWait] = useState(0);          // seconds until itch.io accepts requests again
   const [loading, setLoading] = useState(false);
   const [draft, setDraft] = useState(st.query);
@@ -120,6 +121,7 @@ export function BrowseTab() {
       if (r?.error) setError(r.error);
       if (r?.notice) setNotice(r.notice);
       setDetail(r?.detail ?? "");
+      setErrWeb(r?.error ? r.web : "");
       setWait(r?.retry ?? 0);
     } catch (e) { setError(String(e)); } finally { setLoading(false); }
   };
@@ -223,10 +225,11 @@ export function BrowseTab() {
       {detail && <div className="il-msg" style={{ paddingTop: 0, fontSize: 11, opacity: 0.7, wordBreak: "break-word" }}>itch.io said: {detail}</div>}
       {error && (
         <Focusable className="il-msg err" style={{ paddingTop: 0, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          <span>{wait > 0 ? error.replace(/Try again in .*$/, `Try again in ${wait} s.`) : error}</span>
+          <span>{wait > 0 ? error.replace(/Try again in [^.]*\./, `Try again in ${wait} s.`) : error}</span>
           <DialogButton className="il-btn" disabled={wait > 0 || loading} onClick={() => run(st.items?.length ? st.opts.page + 1 : 1)}>
             {wait > 0 ? `Retry in ${wait}` : "Retry"}
           </DialogButton>
+          {errWeb && <DialogButton className="il-btn" onClick={() => Navigation.NavigateToExternalWeb(errWeb)}>Open on itch.io</DialogButton>}
         </Focusable>
       )}
       {st.items && st.items.length === 0 && !loading && !error && <div className="il-msg">Nothing matches. Try fewer filters.</div>}
