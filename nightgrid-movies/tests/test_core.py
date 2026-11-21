@@ -35,10 +35,42 @@ class Core(unittest.TestCase):
         self.assertEqual(self.read("deck_startup.webm"), b"BBB")
         self.assertFalse(os.path.exists(os.path.join(self.ovr, "deck_startup.webm" + core.BACKUP_SUFFIX)))
 
-    def test_suspend_writes_both(self):
+    def test_writes_every_name(self):
         core.apply("suspend", "s", self.mov, self.ovr, self.store)
-        self.assertEqual(self.read("steam_os_suspend.webm"), b"SSS")
-        self.assertEqual(self.read("steam_os_suspend_from_throbber.webm"), b"SSS")
+        core.apply("boot", "a", self.mov, self.ovr, self.store)
+        for n in core.TARGETS["suspend"]:
+            self.assertEqual(self.read(n), b"SSS")
+        for n in ("deck_startup.webm", "steam_os_startup.webm", "bigpicture_startup.webm"):
+            self.assertEqual(self.read(n), b"AAA")
+
+    def test_bazzite_videos_set_aside_and_restored(self):
+        os.makedirs(self.ovr)
+        for n in core.TARGETS["boot"]:
+            open(os.path.join(self.ovr, n), "wb").write(b"BAZZITE")
+        core.apply("boot", "a", self.mov, self.ovr, self.store)
+        self.assertEqual(self.read("steam_os_startup.webm"), b"AAA")
+        self.assertEqual(self.read("steam_os_startup.webm" + core.BACKUP_SUFFIX), b"BAZZITE")
+        core.apply("boot", "", self.mov, self.ovr, self.store)
+        self.assertEqual(self.read("steam_os_startup.webm"), b"BAZZITE")
+
+    def test_repair_after_update(self):
+        os.makedirs(self.ovr)
+        core.apply("boot", "a", self.mov, self.ovr, self.store)
+        # simulate an old install: only deck_startup was ours, Bazzite owns the rest
+        for n in core.TARGETS["boot"][1:]:
+            os.remove(os.path.join(self.ovr, n)); self.store.data["written"].pop(n)
+            open(os.path.join(self.ovr, n), "wb").write(b"BAZZITE")
+        self.assertEqual(core.repair(self.mov, self.ovr, self.store), ["boot"])
+        self.assertEqual(self.read("steam_os_startup.webm"), b"AAA")
+        self.assertEqual(core.repair(self.mov, self.ovr, self.store), [])
+
+    def test_find_override_dir(self):
+        home = os.path.join(self.t.name, "h")
+        os.makedirs(os.path.join(home, ".local/share/Steam/config"))
+        os.makedirs(os.path.join(home, ".steam"))
+        os.symlink(os.path.join(home, ".local/share/Steam"), os.path.join(home, ".steam/root"))
+        self.assertEqual(core.find_override_dir(home),
+                         os.path.join(os.path.realpath(home), ".local/share/Steam/config/uioverrides/movies"))
 
     def test_foreign_file_is_kept_and_restored(self):
         os.makedirs(self.ovr)

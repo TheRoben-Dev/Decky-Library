@@ -1,9 +1,9 @@
 """Applies bundled movies as Steam's startup / suspend overrides.
 
-Steam (Game Mode) plays override videos from ~/.steam/root/config/uioverrides/movies:
-  deck_startup.webm                      startup movie (pick it once in Settings > Customization)
-  steam_os_suspend.webm                  suspend animation from the menus
-  steam_os_suspend_from_throbber.webm    suspend animation from in-game
+Steam (Game Mode) plays override videos from <Steam>/config/uioverrides/movies. Which file name it
+reads depends on the device (Steam Deck LCD/OLED, other SteamOS-style handhelds, Big Picture), so
+every name gets the same video, the way Bazzite installs its own videos (see Bazzite's
+/usr/bin/steam-tweaks). Bazzite only copies its videos where a file is missing, so ours stay.
 Files are copied (not linked) so they keep working if the plugin is removed mid-way; every file we
 write is remembered by SHA-256, so a file someone else put there (another plugin, by hand) is
 never deleted: it's moved aside to `<name>.before-nightgrid` and put back when ours is turned off.
@@ -15,9 +15,21 @@ import random
 import shutil
 
 TARGETS = {
-    "boot": ["deck_startup.webm"],
-    "suspend": ["steam_os_suspend.webm", "steam_os_suspend_from_throbber.webm"],
+    "boot": ["deck_startup.webm", "steam_os_startup.webm", "bigpicture_startup.webm", "oled_startup.webm"],
+    "suspend": ["steam_os_suspend.webm", "steam_os_suspend_from_throbber.webm",
+                "deck-suspend-animation.webm", "deck-suspend-animation-from-throbber.webm",
+                "oled-suspend-animation.webm", "oled-suspend-animation-from-throbber.webm"],
 }
+
+
+def find_override_dir(home: str) -> str:
+    """<Steam>/config/uioverrides/movies. ~/.local/share/Steam is the real folder on Bazzite and
+    SteamOS (~/.steam/root links to it); fall back to ~/.steam/root, then ~/.steam/steam."""
+    for base in (os.path.join(home, ".local", "share", "Steam"), os.path.join(home, ".steam", "root"),
+                 os.path.join(home, ".steam", "steam")):
+        if os.path.isdir(os.path.join(base, "config")):
+            return os.path.join(os.path.realpath(base), "config", "uioverrides", "movies")
+    return os.path.join(home, ".local", "share", "Steam", "config", "uioverrides", "movies")
 BACKUP_SUFFIX = ".before-nightgrid"
 
 
@@ -198,3 +210,19 @@ def movie_chunk(movies_dir: str, movie_id: str, offset: int) -> dict:
         data = f.read(CHUNK)
     return {"data": base64.b64encode(data).decode("ascii"), "size": size, "next": offset + len(data),
             "done": offset + len(data) >= size}
+
+
+def repair(movies_dir: str, override_dir: str, store: Store) -> list:
+    """Re-applies a selection that only partly holds (e.g. after an update added more file names,
+    or Bazzite filled in a name we didn't write yet). A slot with none of our files is left alone,
+    since then someone else chose to replace it."""
+    fixed = []
+    for kind, names in TARGETS.items():
+        sel = store.data.get(kind)
+        if not sel:
+            continue
+        st = [target_state(override_dir, n, store.data["written"]) for n in names]
+        if "ours" in st and any(x != "ours" for x in st):
+            apply(kind, sel, movies_dir, override_dir, store)
+            fixed.append(kind)
+    return fixed

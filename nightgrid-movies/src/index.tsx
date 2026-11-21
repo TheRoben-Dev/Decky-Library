@@ -159,7 +159,8 @@ function Content() {
         {s.boot && (
           <PanelSectionRow>
             <div style={note}>
-              One-time step: in Steam, Settings → Customization → Startup Movie, choose “deck_startup.webm”.
+              Plays on the next start-up. If you picked a Points Shop movie in Settings → Customization → Startup
+              Movie, set it back to the default there, or Steam plays that one instead.
             </div>
           </PanelSectionRow>
         )}

@@ -19,7 +19,7 @@ MOVIES_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "movies")
 
 
 def _override_dir() -> str:
-    return os.path.join(decky.DECKY_USER_HOME, ".steam", "root", "config", "uioverrides", "movies")
+    return core.find_override_dir(decky.DECKY_USER_HOME)
 
 
 def _store() -> core.Store:
@@ -66,6 +66,12 @@ class Plugin:
 
     async def _main(self):
         s = _store()
+        try:
+            fixed = await asyncio.to_thread(core.repair, MOVIES_DIR, _override_dir(), s)
+            if fixed:
+                decky.logger.info(f"re-applied {fixed} to every file name Steam may read")
+        except Exception as e:
+            decky.logger.error(f"repair failed: {e}")
         if s.data["shuffle"] and s.data["boot"]:
             try:
                 pick = await asyncio.to_thread(core.shuffle_boot, MOVIES_DIR, _override_dir(), s)
