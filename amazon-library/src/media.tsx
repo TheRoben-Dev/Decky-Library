@@ -1,7 +1,8 @@
 /*
  * Store-page pieces shared by the game page and the free-game page: a screenshot strip you can
  * open full screen (L1/R1 or the buttons to flip through), the description, and a details table.
- * Images load lazily straight from Amazon's CDN; nothing is fetched until a page is opened.
+ * Images come straight from Amazon's CDN; nothing is fetched until a page is opened. Modals render
+ * outside the page's <style>, so the viewer is styled inline.
  */
 import { DialogButton, Focusable, GamepadButton, ModalRoot, showModal } from "@decky/ui";
 import { Fragment, useState } from "react";
@@ -13,10 +14,10 @@ function Viewer({ shots, start, closeModal }: { shots: string[]; start: number; 
   const go = (d: number) => setI((n) => (n + d + shots.length) % shots.length);
   return (
     <ModalRoot onCancel={closeModal} closeModal={closeModal}>
-      <Focusable style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "center" }}
+      <Focusable style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "center", background: "#07080b", padding: 12, margin: -12 }}
         onButtonDown={(e: any) => { const b = e?.detail?.button; if (b === GamepadButton.BUMPER_LEFT) go(-1); else if (b === GamepadButton.BUMPER_RIGHT) go(1); }}>
         <img src={shots[i]} draggable={false}
-          style={{ maxWidth: "100%", maxHeight: "62vh", objectFit: "contain", border: `1px solid ${C.data}`, background: "#000" }} />
+          style={{ maxWidth: "100%", maxHeight: "68vh", width: "auto", height: "auto", objectFit: "contain", display: "block", border: `1px solid ${C.data}`, background: "#000" }} />
         <Focusable className="al-row" flow-children="row" style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <DialogButton style={{ minWidth: 0, width: "auto" }} onClick={() => go(-1)} disabled={shots.length < 2}>Previous</DialogButton>
           <span style={{ fontFamily: "monospace", fontSize: 12, color: C.text1 }}>{i + 1} / {shots.length}</span>
@@ -37,7 +38,7 @@ export function Gallery({ shots }: { shots: string[] }) {
         {shots.map((u, i) => (
           <Focusable key={u} className="al-shot" focusClassName="al-focus" onActivate={() => showModal(<Viewer shots={shots} start={i} />)}
             onClick={() => showModal(<Viewer shots={shots} start={i} />)} onOKActionDescription="View">
-            <img src={u} loading="lazy" decoding="async" draggable={false} />
+            <img src={u} decoding="async" draggable={false} />
           </Focusable>
         ))}
       </Focusable>

@@ -64,12 +64,13 @@ export const PAGE_CSS = `
 .al-tile .prog { position: absolute; left: 0; right: 0; bottom: 0; }
 .al-msg { font-family: ${MONO}; font-size: 13px; color: ${C.text1}; padding: 24px; white-space: normal; line-height: 1.5; }
 .al-msg.err { color: ${C.warn}; }
-.al-detail { display: flex; gap: 28px; padding: 8px 24px 32px; overflow-y: auto; flex: 1; min-height: 0; }
+.al-detail { display: flex; align-items: flex-start; gap: 28px; padding: 8px 24px 32px; overflow-y: auto; flex: 1; min-height: 0; }
 .al-detail .cover { flex: 0 0 300px; }
 .al-detail .cover .frame { aspect-ratio: 3 / 4; border: 1px solid ${C.data}; box-shadow: 0 0 18px color-mix(in srgb, ${C.data} 30%, transparent);
   background: ${C.bg1}; overflow: hidden; position: relative; }
 .al-detail .cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .al-detail .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.al-detail .info > * { flex-shrink: 0; }
 .al-detail h1 { margin: 0; font-family: ${MONO}; font-size: 26px; letter-spacing: .04em; text-transform: uppercase; line-height: 1.15; }
 .al-detail .by { color: ${C.text1}; font-size: 13px; }
 .al-detail .short { color: ${C.text0}; opacity: .85; font-size: 14px; line-height: 1.45; }
@@ -92,8 +93,8 @@ export const PAGE_CSS = `
 .al-chip.free { color: ${C.ok}; border-color: color-mix(in srgb, ${C.ok} 50%, transparent); }
 .al-chip.code { color: ${C.data}; border-color: color-mix(in srgb, ${C.data} 50%, transparent); }
 .al-chip.done { color: ${C.accent}; border-color: color-mix(in srgb, ${C.accent} 50%, transparent); }
-.al-shots { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 8px; scroll-behavior: smooth; }
-.al-shot { flex: 0 0 auto; width: 260px; aspect-ratio: 16 / 9; background: ${C.bg2}; border: 1px solid ${C.line}; overflow: hidden;
+.al-shots { display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden; padding: 6px 6px 10px; flex-shrink: 0; scroll-behavior: smooth; }
+.al-shot { flex: 0 0 auto; width: 260px; height: 146px; aspect-ratio: 16 / 9; background: ${C.bg2}; border: 1px solid ${C.line}; overflow: hidden;
   transition: border-color 80ms linear, transform 80ms linear; }
 .al-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .al-shot.al-focus { border-color: ${C.active}; transform: scale(1.03); box-shadow: 0 0 14px color-mix(in srgb, ${C.active} 45%, transparent); }
