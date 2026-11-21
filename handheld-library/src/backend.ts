@@ -25,7 +25,7 @@ export const setSettings = callable<[s: Settings], Settings>("set_settings");
 export const protonDBTiers = callable<[appids: number[]], Record<string, string>>("protondb_tiers");
 
 export interface PinResult { ok: boolean; retryIn?: number; error?: string }
-export const pinStatus = callable<[], { set: boolean; retryIn: number }>("pin_status");
+export const pinStatus = callable<[], { set: boolean; retryIn: number; length?: number }>("pin_status");
 export const pinVerify = callable<[code: string], PinResult>("pin_verify");
 export const pinSet = callable<[next: string, current: string], PinResult>("pin_set");
 export const pinClear = callable<[current: string], PinResult>("pin_clear");

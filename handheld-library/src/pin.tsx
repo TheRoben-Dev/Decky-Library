@@ -4,12 +4,13 @@
  * tab is hidden too.
  */
 import { DialogButton, Focusable, ModalRoot, showModal } from "@decky/ui";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { pinSet, pinStatus, pinVerify, pinClear, PinResult } from "./backend";
 
 export const RELOCK_MS = 15 * 60 * 1000;
 let unlockedAt = 0;
 let pinIsSet: boolean | null = null;
+let pinLength = 0;   // 0 = unknown (PIN saved by an older version until it's entered once)
 
 export function isUnlocked(): boolean { return unlockedAt > 0 && Date.now() - unlockedAt < RELOCK_MS; }
 export function lock() { unlockedAt = 0; }
@@ -48,35 +49,52 @@ export function stopSleepWatch() {
 }
 
 export async function refreshPinSet(): Promise<boolean> {
-  try { pinIsSet = (await pinStatus()).set; } catch { pinIsSet = false; }
+  try {
+    const st = await pinStatus();
+    pinIsSet = st.set;
+    pinLength = st.length ?? 0;
+  } catch { pinIsSet = false; pinLength = 0; }
   return pinIsSet;
 }
 export function knownPinSet(): boolean | null { return pinIsSet; }
 
 const KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "⌫", "0", "OK"];
 
-/** Controller-friendly numeric pad. Calls onSubmit with 4–8 digits. */
-export function PinPad({ title, hint, error, busy, onSubmit }: {
+/**
+ * Controller-friendly numeric pad. Calls onSubmit with 4–8 digits.
+ * autoLength: submit by itself as soon as that many digits are typed (no OK button).
+ * onDigits: called after every digit (used to try an older PIN of unknown length silently).
+ */
+export function PinPad({ title, hint, error, busy, onSubmit, autoLength = 0, onDigits }: {
   title: string; hint?: string; error?: string; busy?: boolean; onSubmit: (pin: string) => void;
+  autoLength?: number; onDigits?: (pin: string) => void;
 }) {
   const [pin, setPin] = useState("");
   useEffect(() => { if (error) setPin(""); }, [error]);
+  const auto = autoLength >= 4 && autoLength <= 8;
+  const keys = auto ? KEYS.map((k) => (k === "OK" ? "" : k)) : KEYS;
   const press = (k: string) => {
-    if (busy) return;
-    if (k === "⌫") setPin(pin.slice(0, -1));
-    else if (k === "OK") { if (pin.length >= 4) onSubmit(pin); }
-    else if (pin.length < 8) setPin(pin + k);
+    if (busy || !k) return;
+    if (k === "⌫") { setPin(pin.slice(0, -1)); return; }
+    if (k === "OK") { if (pin.length >= 4) onSubmit(pin); return; }
+    if (pin.length >= (auto ? autoLength : 8)) return;
+    const next = pin + k;
+    setPin(next);
+    if (auto && next.length === autoLength) onSubmit(next);
+    else onDigits?.(next);
   };
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", padding: "8px 0" }}>
       <div style={{ fontSize: "15px", fontWeight: 600 }}>{title}</div>
       <div style={{ fontSize: "22px", letterSpacing: "8px", minHeight: "28px" }}>
-        {pin.length ? "●".repeat(pin.length) : <span style={{ opacity: 0.4, letterSpacing: "normal", fontSize: "13px" }}>4–8 digits</span>}
+        {pin.length ? "●".repeat(pin.length) + (auto ? "○".repeat(autoLength - pin.length) : "")
+          : auto ? "○".repeat(autoLength)
+          : <span style={{ opacity: 0.4, letterSpacing: "normal", fontSize: "13px" }}>4–8 digits</span>}
       </div>
       {error && <div style={{ color: "#FF6B6B", fontSize: "12px", textAlign: "center" }}>{error}</div>}
       {hint && !error && <div style={{ fontSize: "12px", opacity: 0.7, textAlign: "center" }}>{hint}</div>}
       <Focusable style={{ display: "grid", gridTemplateColumns: "repeat(3, 64px)", gap: "6px" }} flow-children="grid">
-        {KEYS.map((k) => (
+        {keys.map((k, i) => (k === "" ? <div key={`blank-${i}`} /> :
           <DialogButton key={k} disabled={busy || (k === "OK" && pin.length < 4)}
             style={{ minWidth: 0, height: "44px", padding: 0, fontSize: k === "OK" ? "14px" : "18px" }}
             onClick={() => press(k)}>{k}</DialogButton>
@@ -95,8 +113,20 @@ function errorFor(r: PinResult, fallback: string): string {
 export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
   const [err, setErr] = useState<string>();
   const [busy, setBusy] = useState(false);
+  const len = pinLength;
+  // Older PIN of unknown length: quietly try it after each digit from 4 on; OK still shows "Wrong PIN".
+  const trying = useRef(0);
+  const quietTry = async (p: string) => {
+    if (len || p.length < 4) return;
+    const mine = ++trying.current;
+    try {
+      const r = await pinVerify(p);
+      if (r.ok && mine === trying.current) { pinLength = p.length; markUnlocked(); onUnlock(); }
+    } catch { /* ignore */ }
+  };
   return (
     <PinPad title="Hidden games are locked" hint="Enter your PIN" error={err} busy={busy}
+      autoLength={len} onDigits={quietTry}
       onSubmit={async (p) => {
         setErr(undefined);   // so the same "Wrong PIN" twice still clears the pad
         setBusy(true);
@@ -137,7 +167,7 @@ function PinFlow({ mode, closeModal, onDone }: { mode: "set" | "change" | "remov
         const r = await pinSet(p, current);
         setBusy(false);
         if (!r.ok) { setErr(errorFor(r, "Couldn't save the PIN.")); setStep(mode === "set" ? "new" : "current"); return; }
-        pinIsSet = true; lock();
+        pinIsSet = true; pinLength = p.length; lock();
         finish(mode === "set" ? "PIN set. The Hidden games tab is locked." : "PIN changed.");
       }
     } catch (e) {
@@ -149,7 +179,8 @@ function PinFlow({ mode, closeModal, onDone }: { mode: "set" | "change" | "remov
   const title = step === "current" ? "Enter your current PIN" : step === "new" ? "Choose a new PIN" : "Enter the new PIN again";
   return (
     <ModalRoot closeModal={closeModal}>
-      <PinPad key={step} title={title} error={err} busy={busy} onSubmit={submit} />
+      <PinPad key={step} title={title} error={err} busy={busy} onSubmit={submit}
+        autoLength={step === "current" ? pinLength : step === "confirm" ? first.length : 0} />
     </ModalRoot>
   );
 }

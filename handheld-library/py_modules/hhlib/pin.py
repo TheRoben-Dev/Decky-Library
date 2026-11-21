@@ -49,7 +49,10 @@ class PinStore:
         return self._load() is not None
 
     def status(self) -> dict:
-        return {"set": self.is_set(), "retryIn": 0}
+        """`length` lets the pad unlock as soon as the last digit is typed (0 = unknown, older file)."""
+        d = self._load()
+        n = d.get("length", 0) if d else 0
+        return {"set": d is not None, "retryIn": 0, "length": n if isinstance(n, int) and 4 <= n <= 8 else 0}
 
     def verify(self, pin) -> dict:
         """{"ok": bool, "retryIn": seconds}. No PIN set → always ok."""
@@ -64,6 +67,11 @@ class PinStore:
                 ok = hmac.compare_digest(want, got)
             except (ValueError, TypeError):
                 ok = False
+        if ok and "length" not in d:          # PIN set before 0.5.3: remember its length now
+            try:
+                self._write({**d, "length": len(pin)})
+            except OSError:
+                pass
         return {"ok": ok, "retryIn": 0}
 
     def set(self, new, current=None) -> dict:
@@ -74,7 +82,8 @@ class PinStore:
             if not r["ok"]:
                 return {"ok": False, "error": "Current PIN is wrong.", "retryIn": r["retryIn"]}
         salt = secrets.token_bytes(16)
-        self._write({"salt": salt.hex(), "hash": _hash(new, salt, ITERATIONS).hex(), "iterations": ITERATIONS})
+        self._write({"salt": salt.hex(), "hash": _hash(new, salt, ITERATIONS).hex(), "iterations": ITERATIONS,
+                     "length": len(new)})
         return {"ok": True}
 
     def clear(self, current) -> dict:

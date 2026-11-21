@@ -70,7 +70,7 @@ class PinTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             path = os.path.join(d, "pin.json")
             st = pin.PinStore(path)
-            self.assertEqual(st.status(), {"set": False, "retryIn": 0})
+            self.assertEqual(st.status(), {"set": False, "retryIn": 0, "length": 0})
             self.assertTrue(st.verify("x")["ok"])                 # no PIN → open
             self.assertFalse(st.set("12a4")["ok"])
             self.assertTrue(st.set("1234")["ok"])
@@ -85,3 +85,25 @@ class PinTest(unittest.TestCase):
             self.assertFalse(st.clear("1111")["ok"])
             self.assertTrue(st.clear("5678")["ok"])
             self.assertFalse(os.path.exists(path))
+
+
+class PinLengthTest(unittest.TestCase):
+    def test_length_reported_and_backfilled(self):
+        import json as _json
+        from hhlib import pin
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "pin.json")
+            st = pin.PinStore(path)
+            self.assertEqual(st.status()["length"], 0)
+            st.set("123456")
+            self.assertEqual(st.status()["length"], 6)
+            with open(path) as f:
+                raw = _json.load(f)
+            raw.pop("length")
+            with open(path, "w") as f:
+                _json.dump(raw, f)
+            self.assertEqual(st.status()["length"], 0)       # older file
+            self.assertFalse(st.verify("1234")["ok"])
+            self.assertEqual(st.status()["length"], 0)       # wrong PIN doesn't backfill
+            self.assertTrue(st.verify("123456")["ok"])
+            self.assertEqual(st.status()["length"], 6)

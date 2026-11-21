@@ -6,7 +6,7 @@
 2. **Hidden games tab** – its own Quick Access tab (eye icon, next to Notifications/Friends/Settings)
    listing the hidden games that are installed on this device (with their square Steam icons), with **Play**, **Unhide**, **Page** and
    **Unhide all**.
-   Optional **PIN lock** (4–8 digits, on-screen number pad): set, change or remove it in the plugin's
+   Optional **PIN lock** (4–8 digits, on-screen number pad; the tab opens as soon as the last digit is typed, no OK press): set, change or remove it in the plugin's
    panel (changing/removing needs the current PIN). Once unlocked it stays unlocked for 15 minutes (through
    Quick Access closing, Play, etc.) and locks again when that runs out or the device sleeps. A wrong PIN just shows an error (no lockout timer). Only a salted
    PBKDF2-SHA256 hash is stored, in `~/homebrew/settings/Handheld Library/pin.json`.
