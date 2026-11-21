@@ -15,6 +15,8 @@ import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
+from .net import context
+
 GRAPHQL = "https://store.epicgames.com/graphql"
 FREE_FEED = "https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale={locale}&country={country}&allowCountries={country}"
 STORE_PAGE = "https://store.epicgames.com/{locale}/p/{slug}"
@@ -85,7 +87,7 @@ def _request(url: str, body: dict | None = None) -> dict:
     for attempt in range(2):
         req = urllib.request.Request(url, data=data, headers=headers, method="POST" if data is not None else "GET")
         try:
-            with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+            with urllib.request.urlopen(req, timeout=TIMEOUT, context=context()) as r:
                 raw = r.read(6 * 1024 * 1024)
             return json.loads(raw.decode("utf-8", "replace"))
         except urllib.error.HTTPError as e:

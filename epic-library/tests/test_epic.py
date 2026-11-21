@@ -214,6 +214,36 @@ class Catalog(unittest.TestCase):
         self.assertEqual(out[0]["price"], "Free")
 
 
+class Tls(unittest.TestCase):
+    def test_context_uses_system_bundle_and_verifies(self):
+        import ssl
+        from epiclib import net
+        net._ctx = None
+        with mock.patch.object(net, "CA_FILES", ("/nonexistent", "/etc/ssl/certs/ca-certificates.crt")), \
+                mock.patch.object(net.ssl, "create_default_context", wraps=ssl.create_default_context) as cdc:
+            ctx = net.context()
+        net._ctx = None
+        if os.path.isfile("/etc/ssl/certs/ca-certificates.crt"):
+            cdc.assert_called_with(cafile="/etc/ssl/certs/ca-certificates.crt")
+        self.assertEqual(ctx.verify_mode, ssl.CERT_REQUIRED)
+        self.assertTrue(ctx.check_hostname)
+
+    def test_every_request_passes_the_context(self):
+        seen = []
+
+        class R:
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def read(self, n): return b"{}"
+
+        def fake(req, timeout=0, context=None):
+            seen.append(context)
+            return R()
+        with mock.patch.object(catalog.urllib.request, "urlopen", side_effect=fake):
+            catalog._request("https://store.epicgames.com/graphql", {"q": 1})
+        self.assertIsNotNone(seen[0])
+
+
 class StoreDetails(unittest.TestCase):
     def test_plain(self):
         t = catalog.plain("# Title\n\n**Bold** text with [a link](https://x) ![img](https://y)<br>next&amp;more\n\n- one\n- two")

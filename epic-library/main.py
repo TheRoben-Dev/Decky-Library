@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "py
 
 import decky  # noqa: E402
 
-from epiclib import catalog, library  # noqa: E402
+from epiclib import catalog, library, net  # noqa: E402
 from epiclib.device import DeviceLogin  # noqa: E402
 from epiclib.handoff import Handoff  # noqa: E402
 from epiclib.legendary import Cancelled, Legendary, LegendaryError, find_python  # noqa: E402
@@ -375,7 +375,7 @@ class Plugin:
 
         def fetch():
             req = urllib.request.Request(url, headers={"User-Agent": catalog.UA})
-            with urllib.request.urlopen(req, timeout=20) as r:
+            with urllib.request.urlopen(req, timeout=20, context=net.context()) as r:
                 ctype = (r.headers.get("Content-Type") or "").lower()
                 data = r.read(MAX_IMAGE + 1)
             if len(data) > MAX_IMAGE:
