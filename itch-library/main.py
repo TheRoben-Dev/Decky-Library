@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "py
 
 import decky  # noqa: E402
 
-from itchlib import api, install  # noqa: E402
+from itchlib import api, browse, install  # noqa: E402
 from itchlib.handoff import Handoff  # noqa: E402
 from itchlib.store import Installed, Settings, read_json, write_json  # noqa: E402
 
@@ -59,6 +59,7 @@ class Plugin:
         self.handoff = Handoff(self._handoff_key)
         self.update_info: dict = {}   # game id -> {"available": bool, "upload": {...}}
         self.last_update_check = 0.0
+        self.seen: dict = {}          # store games opened from Browse/Search (not owned), by id
 
     # ------------------------------------------------------------ plumbing
 
@@ -243,38 +244,85 @@ class Plugin:
         return {"ok": True, **lib, "installed": inst, "jobs": [self._job_view(j) for j in self.jobs],
                 "updatesDue": due}
 
-    def _find_game(self, game_id: int) -> dict | None:
+    def _owned(self, game_id: int) -> dict | None:
         cache = read_json(self._library_path(), {})
         for g in cache.get("games") or []:
             if g.get("id") == int(game_id):
                 return g
+        return None
+
+    def _find_game(self, game_id: int) -> dict | None:
+        g = self._owned(game_id)
+        if g:
+            return g
         rec = self.installed.get(game_id)
         if rec:
             return {"id": int(game_id), "title": rec.get("title", ""), "key": rec.get("key", 0),
                     "still": rec.get("cover", ""), "cover": rec.get("cover", ""), "short": "", "url": rec.get("url", ""),
-                    "author": "", "platforms": [], "classification": ""}
-        return None
+                    "author": "", "platforms": [], "classification": "", "min_price": rec.get("min_price", 0)}
+        return self.seen.get(int(game_id))
+
+    @staticmethod
+    def _allowed(g: dict, owned: bool, u: dict) -> bool:
+        """Owned or free games: any build. Paid games you don't own: only their free demos."""
+        return api.installable(u) and (owned or not g.get("min_price") or u["demo"])
 
     async def game(self, game_id: int):
-        g = self._find_game(game_id)
-        if not g:
-            return {"ok": False, "error": "That game isn't in your itch.io library"}
+        key = self._key()
+        owned_g = self._owned(game_id)
+        g = owned_g or self._find_game(game_id)
+        if not owned_g:
+            # Not in the library: look it up as a store page (price, platforms, cover).
+            try:
+                info = await asyncio.to_thread(api.game_detail, key, int(game_id))
+                info["key"] = (g or {}).get("key", 0)
+                g = {**(g or {}), **info}
+                self.seen[int(game_id)] = g
+            except Exception as e:
+                if not g:
+                    return _err(e)
+        owned = bool(owned_g) or bool(g.get("key"))
+        rec = self.installed.get(game_id)
+        base = {"game": g, "owned": owned, "installed": self._installed_view(rec) if rec else None}
         try:
-            ups = await asyncio.to_thread(api.uploads, self._key(), g["id"], g.get("key", 0))
+            ups = await asyncio.to_thread(api.uploads, key, g["id"], g.get("key", 0))
         except Exception as e:
             r = _err(e)
-            r["game"] = g
-            rec = self.installed.get(game_id)
-            r["installed"] = self._installed_view(rec) if rec else None
+            r.update(base)
             return r
-        usable = [u for u in ups if api.installable(u)]
-        best = api.pick_upload(ups, self.settings.data["prefer"])
-        rec = self.installed.get(game_id)
+        usable = [u for u in ups if self._allowed(g, owned, u)]
+        best = api.pick_upload(usable, self.settings.data["prefer"])
         for u in ups:
             u.pop("targets", None)
-            u["usable"] = api.installable(u)
-        return {"ok": True, "game": g, "uploads": ups, "best": best["id"] if best else 0,
-                "usable": len(usable), "installed": self._installed_view(rec) if rec else None}
+            u["usable"] = self._allowed(g, owned, u)
+        return {"ok": True, **base, "uploads": ups, "best": best["id"] if best else 0, "usable": len(usable)}
+
+    # ------------------------------------------------------------ store
+
+    async def browse(self, opts: dict):
+        o = opts if isinstance(opts, dict) else {}
+        try:
+            res = await asyncio.to_thread(browse.browse, str(o.get("sort", "")), str(o.get("price", "")),
+                                          str(o.get("genre", "")), str(o.get("controller", "gamepad")),
+                                          str(o.get("platform", "")), int(o.get("page", 1) or 1))
+            return {"ok": True, **res}
+        except Exception as e:
+            return _err(e)
+
+    async def search(self, query: str, page: int = 1):
+        try:
+            res = await asyncio.to_thread(browse.search, self._key(), query, int(page or 1))
+            return {"ok": True, **res}
+        except Exception as e:
+            return _err(e)
+
+    async def resolve(self, url: str):
+        """Game id for a Browse item (feed items only carry the page URL)."""
+        try:
+            gid = await asyncio.to_thread(browse.resolve, url)
+            return {"ok": True, "id": gid}
+        except Exception as e:
+            return _err(e)
 
     async def cover(self, game_id: int):
         g = self._find_game(game_id)
@@ -308,7 +356,7 @@ class Plugin:
     async def install(self, game_id: int, upload_id: int = 0):
         g = self._find_game(game_id)
         if not g:
-            return {"ok": False, "error": "That game isn't in your itch.io library"}
+            return {"ok": False, "error": "Open the game first so its details are known"}
         with self.job_lock:
             if any(j["game_id"] == int(game_id) for j in self.jobs):
                 return {"ok": True, "queued": True, "jobs": [self._job_view(j) for j in self.jobs]}
@@ -371,7 +419,8 @@ class Plugin:
         cancel = job["cancel"]
         prev = self.installed.get(gid)
         self._progress(job, "preparing")
-        ups = api.uploads(key, gid, g.get("key", 0))
+        owned = bool(self._owned(gid)) or bool(g.get("key"))
+        ups = [u for u in api.uploads(key, gid, g.get("key", 0)) if self._allowed(g, owned, u)]
         up = None
         want = job["upload_id"] or (prev or {}).get("upload_id", 0)
         if want:
@@ -456,6 +505,7 @@ class Plugin:
             "url": g.get("url", ""), "upload_id": up["id"], "upload_name": up["name"], "fingerprint": api.fingerprint(up),
             "version": up.get("version", ""), "root": root, "dir": final, "exe": exe, "kind": kind, "args": args,
             "installer": info.get("installer", ""), "appid": (prev or {}).get("appid", 0),
+            "min_price": int(g.get("min_price") or 0), "demo": bool(up.get("demo")),
             "installed_at": int(time.time()), "size": install.dir_size(final),
         }
         self.installed.put(gid, rec)
@@ -553,7 +603,9 @@ class Plugin:
 
         def one(rec):
             try:
-                ups = api.uploads(key, rec["game_id"], rec.get("key", 0))
+                owned = bool(self._owned(rec["game_id"])) or bool(rec.get("key"))
+                ups = [u for u in api.uploads(key, rec["game_id"], rec.get("key", 0))
+                       if self._allowed({"min_price": rec.get("min_price", 0)}, owned, u)]
             except api.ApiError as e:
                 return rec["game_id"], {"error": str(e)}
             same = next((u for u in ups if u["id"] == rec.get("upload_id") and api.installable(u)), None)

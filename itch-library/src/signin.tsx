@@ -9,14 +9,16 @@ import { loadLibrary, loadSettings } from "./actions";
 import { handoffStart, handoffStop, setKey } from "./backend";
 import { changed, state } from "./state";
 
-function Qr({ text }: { text: string }) {
+export function Qr({ text }: { text: string }) {
   const svg = useMemo(() => {
     const q = qrcode(0, "M");
     q.addData(text);
     q.make();
     return q.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
   }, [text]);
-  return <div className="il-qr" dangerouslySetInnerHTML={{ __html: svg }} />;
+  // Inline styles too, so it also renders inside modals (outside the page's stylesheet).
+  return <div className="il-qr" style={{ background: "#fff", padding: 14, lineHeight: 0, width: 240, height: 240, boxSizing: "content-box" }}
+    dangerouslySetInnerHTML={{ __html: svg.replace("<svg ", '<svg style="width:240px;height:240px;display:block" ') }} />;
 }
 
 export function SignIn() {

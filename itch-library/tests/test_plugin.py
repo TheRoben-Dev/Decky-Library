@@ -95,6 +95,26 @@ class Flow(unittest.IsolatedAsyncioTestCase):
             self.assertFalse(os.path.exists(rec["dir"]))
             self.assertEqual(await p.installed_list(), {})
 
+    async def test_store_game_paid_only_demo_free_installable(self):
+        p = main.Plugin()
+        p.settings.data["key"] = "k" * 30
+        p.loop = asyncio.get_running_loop()
+        ups = [api.upload_info({"id": 1, "filename": "full.zip", "storage": "hosted", "type": "default", "traits": ["p_linux"]}),
+               api.upload_info({"id": 2, "filename": "demo.zip", "storage": "hosted", "type": "default", "traits": ["p_linux", "demo"]})]
+        detail = {**GAME, "id": 77, "key": 0, "min_price": 499, "can_buy": True}
+        with mock.patch.object(api, "owned", return_value=[GAME]), mock.patch.object(api, "game_detail", return_value=dict(detail)), \
+                mock.patch.object(api, "uploads", return_value=ups):
+            await p.library(True)
+            r = await p.game(77)
+            self.assertFalse(r["owned"])
+            self.assertEqual([u["id"] for u in r["uploads"] if u["usable"]], [2])
+            self.assertEqual(r["best"], 2)
+        with mock.patch.object(api, "game_detail", return_value={**detail, "min_price": 0}), mock.patch.object(api, "uploads", return_value=ups):
+            r = await p.game(77)
+            self.assertEqual(r["best"], 1)
+            owned = await p.game(42)
+            self.assertTrue(owned["owned"])
+
     async def test_cancel_queued(self):
         p = main.Plugin()
         p.settings.data["key"] = "k" * 30

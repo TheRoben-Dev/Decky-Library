@@ -4,7 +4,7 @@
  * that has to survive that. Components subscribe with useStore() and re-render on change.
  */
 import { useEffect, useState } from "react";
-import type { Game, Installed, Job, Settings } from "./backend";
+import type { BrowseOpts, Game, Installed, Job, Settings, StoreItem } from "./backend";
 
 export const state = {
   settings: null as Settings | null,
@@ -16,6 +16,15 @@ export const state = {
   lastCheck: 0,
   tab: "all",
   sort: "added" as "added" | "title",
+  // Browse tab: filters, the query when searching, and the results loaded so far.
+  store: {
+    opts: { sort: "", price: "", genre: "", controller: "gamepad", platform: "", page: 1 } as BrowseOpts,
+    query: "",
+    items: null as StoreItem[] | null,
+    more: false,
+    key: "",
+  },
+  resolved: new Map<string, number>(),   // feed item URL -> game id
 };
 
 const subs = new Set<() => void>();

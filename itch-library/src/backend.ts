@@ -16,7 +16,15 @@ export interface Settings {
 export interface Game {
   id: number; title: string; short: string; url: string; cover: string; still: string;
   classification: string; author: string; platforms: Platform[]; key: number; added?: string;
+  min_price?: number; can_buy?: boolean;
 }
+
+/** A Browse/Search result. Feed items have only a page URL until resolved to an id. */
+export interface StoreItem {
+  id?: number; title: string; url: string; cover: string; still?: string; price: string; free: boolean | null;
+  platforms: Platform[]; author: string; sale: string;
+}
+export interface BrowseOpts { sort: string; price: string; genre: string; controller: string; platform: string; page: number }
 
 export interface Upload {
   id: number; filename: string; name: string; size: number; storage: string; type: string; build_id: number;
@@ -50,8 +58,11 @@ export const getRoots = callable<[], Root[]>("roots");
 export const getLibrary = callable<[refresh: boolean],
   { ok: true; games: Game[]; at: number; installed: Record<string, Installed>; jobs: Job[]; updatesDue: boolean } | Fail>("library");
 export const getGame = callable<[gameId: number],
-  ({ ok: true; game: Game; uploads: Upload[]; best: number; usable: number; installed: Installed | null }) |
-  (Fail & { game?: Game; installed?: Installed | null })>("game");
+  ({ ok: true; game: Game; owned: boolean; uploads: Upload[]; best: number; usable: number; installed: Installed | null }) |
+  (Fail & { game?: Game; owned?: boolean; installed?: Installed | null })>("game");
+export const browse = callable<[opts: BrowseOpts], { ok: true; items: StoreItem[]; page: number; more: boolean } | Fail>("browse");
+export const search = callable<[query: string, page: number], { ok: true; items: StoreItem[]; page: number; more: boolean } | Fail>("search");
+export const resolve = callable<[url: string], { ok: true; id: number } | Fail>("resolve");
 export const getCover = callable<[gameId: number], { ok: true; data: string; ext: string } | Fail>("cover");
 export const saveIcon = callable<[gameId: number, png: string], { ok: true; path: string } | Fail>("save_icon");
 

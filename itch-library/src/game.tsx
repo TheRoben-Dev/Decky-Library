@@ -4,9 +4,10 @@
  * the launch file, re-adding to Steam, fresh artwork and Uninstall (with an opt-in to delete the
  * Proton prefix, which holds Windows saves).
  */
-import { ConfirmModal, DialogButton, Dropdown, Focusable, Navigation, showModal, SteamSpinner, useParams } from "@decky/ui";
+import { ConfirmModal, DialogButton, Dropdown, Focusable, ModalRoot, Navigation, showModal, SteamSpinner, useParams } from "@decky/ui";
 import { ReactNode, useEffect, useState } from "react";
-import { addToSteam, cancelJob, refreshInstalled, removeGame, startInstall } from "./actions";
+import { addToSteam, cancelJob, loadLibrary, refreshInstalled, removeGame, startInstall } from "./actions";
+import { Qr } from "./signin";
 import { Exe, Game, getExecutables, getGame, Installed, setExe, Upload } from "./backend";
 import { fmtBytes, jobFor, jobLine, state, useStore } from "./state";
 import { applyArt, openInSteam, shortcutExists, toast } from "./steam";
@@ -37,6 +38,25 @@ function ExePicker({ rec }: { rec: Installed }) {
   );
 }
 
+function BuyQr({ url, title, onBought, closeModal }: { url: string; title: string; onBought: () => void; closeModal?: () => void }) {
+  return (
+    <ModalRoot onCancel={closeModal} closeModal={closeModal}>
+      <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
+        <Qr text={url} />
+        <div style={{ flex: 1, minWidth: 240, display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ fontSize: 18, fontWeight: 700 }}>Buy {title} on your phone</div>
+          <div style={{ fontSize: 13, color: C.text1 }}>Scan to open the game's itch.io page, buy it there with your itch.io account, then press I bought it.</div>
+          <div style={{ fontSize: 11, color: C.data, wordBreak: "break-all" }}>{url}</div>
+          <Focusable className="il-row" flow-children="row" style={{ display: "flex", gap: 8 }}>
+            <DialogButton onClick={() => { closeModal?.(); onBought(); }}>I bought it</DialogButton>
+            <DialogButton onClick={() => closeModal?.()}>Close</DialogButton>
+          </Focusable>
+        </div>
+      </div>
+    </ModalRoot>
+  );
+}
+
 export function GamePage() {
   const s = useStore();
   const id = Number(useParams<{ id: string }>().id);
@@ -45,19 +65,22 @@ export function GamePage() {
   const [pick, setPick] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [owned, setOwned] = useState(true);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     let live = true;
     getGame(id).then((r) => {
       if (!live) return;
       if (r.game) setGame(r.game);
+      setOwned(r.owned !== false);
       if (r.installed) { s.installed[String(id)] = r.installed; }
       if (!r.ok) { setError(r.error); setUploads([]); return; }
       setUploads(r.uploads);
       setPick(r.installed?.upload_id && r.uploads.some((u) => u.id === r.installed!.upload_id && u.usable) ? r.installed.upload_id : r.best);
     }).catch((e) => live && setError(String(e)));
     return () => { live = false; };
-  }, [id]);
+  }, [id, reload]);
 
   const rec = s.installed[String(id)];
   const job = jobFor(id);
@@ -112,6 +135,30 @@ export function GamePage() {
     );
   } else if (uploads === null) {
     actions = <div className="v" style={{ color: C.text1 }}>Looking up builds…</div>;
+  } else if (!owned && (game?.min_price ?? 0) > 0) {
+    const demo = usable.find((u) => u.id === pick) ?? usable[0];
+    const url = game?.url ?? "";
+    const bought = () => run("Refresh", async () => {
+      await loadLibrary(true);
+      setUploads(null); setReload((n) => n + 1);
+    });
+    actions = (
+      <>
+        <div className="il-row" style={{ justifyContent: "space-between" }}>
+          <span className="k">Price</span>
+          <span className="v" style={{ fontFamily: "monospace", color: C.accent }}>${((game?.min_price ?? 0) / 100).toFixed(2)}+ on itch.io</span>
+        </div>
+        <Focusable className="il-row" flow-children="row">
+          <DialogButton className="il-btn primary" disabled={!url} onClick={() => { Navigation.CloseSideMenus(); Navigation.NavigateToExternalWeb(url); }}>Buy on itch.io</DialogButton>
+          <DialogButton className="il-btn" disabled={!url} onClick={() => showModal(<BuyQr url={url} title={game?.title ?? ""} onBought={bought} />)}>Buy on phone</DialogButton>
+          <DialogButton className="il-btn" disabled={!!busy} onClick={bought}>{busy === "Refresh" ? "Checking…" : "I bought it"}</DialogButton>
+          {demo?.demo && <DialogButton className="il-btn" onClick={() => startInstall(id, demo.id)}>Install demo</DialogButton>}
+        </Focusable>
+        <div style={{ fontSize: 12, color: C.text1 }}>
+          Buy it on the game's itch.io page (sign in there with your itch.io account), then press I bought it. It moves to your library and installs like any other game.
+        </div>
+      </>
+    );
   } else if (!usable.length) {
     const mac = (uploads ?? []).some((u) => u.platforms.includes("mac"));
     actions = <div className="v" style={{ color: C.warn }}>{error ?? (mac ? "Only a macOS build, nothing to install here." : "No Linux or Windows build to download. It may be a web game: open it on itch.io.")}</div>;
@@ -134,6 +181,7 @@ export function GamePage() {
           </DialogButton>
           <span style={{ fontSize: 12, color: C.text1 }}>
             {cur.platforms.includes("linux") && (s.settings?.prefer !== "windows" || !cur.platforms.includes("windows")) ? "Native Linux build" : "Windows build · runs with Proton"}
+            {!owned && (cur.demo ? " · demo" : " · free on itch.io")}
           </span>
         </Focusable>
       </>
