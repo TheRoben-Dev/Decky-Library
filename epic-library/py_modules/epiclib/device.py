@@ -12,12 +12,13 @@ The temporary token never leaves this process and is not stored.
 """
 import base64
 import json
-import ssl
 import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+
+from .net import context
 
 HOST = "https://account-public-service-prod.ol.epicgames.com/account/api/oauth"
 # Epic's own Switch client: one of the public clients allowed to use the device-code grant.
@@ -26,15 +27,6 @@ BASIC = "basic " + base64.b64encode(f"{CLIENT[0]}:{CLIENT[1]}".encode()).decode(
 UA = "EpicLibrary-Decky"
 
 
-def _ctx():
-    try:
-        import certifi  # Decky bundles it; the frozen Python may not find the system CA store
-        return ssl.create_default_context(cafile=certifi.where())
-    except Exception:
-        return ssl.create_default_context()
-
-
-CTX = _ctx()
 
 
 class DeviceError(Exception):
@@ -47,7 +39,7 @@ def _call(method: str, path: str, auth: str, form: dict | None = None, timeout: 
                                  headers={"Authorization": auth, "User-Agent": UA, "Accept": "application/json",
                                           **({"Content-Type": "application/x-www-form-urlencoded"} if data is not None else {})})
     try:
-        with urllib.request.urlopen(req, timeout=timeout, context=CTX) as r:
+        with urllib.request.urlopen(req, timeout=timeout, context=context()) as r:
             body = r.read()
             return r.status, (json.loads(body) if body else {})
     except urllib.error.HTTPError as e:

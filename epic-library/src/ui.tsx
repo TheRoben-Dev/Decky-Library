@@ -96,5 +96,19 @@ export const PAGE_CSS = `
 .ep-steps { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 12px; font-size: 14px; line-height: 1.5; }
 .ep-steps ol { margin: 0; padding-left: 20px; color: ${C.text1}; }
 .ep-steps b { color: ${C.text0}; }
+.ep-sec { font-family: ${MONO}; font-size: 11px; color: ${C.text1}; text-transform: uppercase; letter-spacing: .12em; margin-top: 6px; }
+.ep-shots { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 8px; scroll-behavior: smooth; }
+.ep-shot { flex: 0 0 auto; height: 150px; aspect-ratio: 16 / 9; border: 1px solid ${C.line}; background: ${C.bg1}; overflow: hidden; transition: transform .1s; }
+.ep-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ep-shot.ep-focus { border-color: ${C.active}; transform: scale(1.04); box-shadow: 0 0 14px color-mix(in srgb, ${C.active} 45%, transparent); }
+.ep-about p { margin: 0 0 10px; font-size: 14px; line-height: 1.5; color: ${C.text0}; opacity: .9; white-space: pre-line; }
+.ep-about .ep-focus p, .ep-about p.ep-focus { opacity: 1; }
+.ep-about .para { padding: 2px 6px; margin: 0 -6px; border-left: 2px solid transparent; }
+.ep-about .para.ep-focus { border-left-color: ${C.data}; background: color-mix(in srgb, ${C.data} 6%, transparent); }
+.ep-reqs { display: grid; grid-template-columns: max-content 1fr 1fr; gap: 4px 14px; font-size: 12px; }
+.ep-reqs .h { font-family: ${MONO}; font-size: 10px; color: ${C.text1}; text-transform: uppercase; letter-spacing: .1em; }
+.ep-reqs .t { color: ${C.text1}; }
+.ep-viewer { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.ep-viewer img { max-width: 100%; max-height: 62vh; object-fit: contain; border: 1px solid ${C.line}; display: block; }
 .ep-code { font-family: ${MONO}; font-size: 12px; color: ${C.data}; word-break: break-all; }
 `;

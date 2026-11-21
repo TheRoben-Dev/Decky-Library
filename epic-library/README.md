@@ -8,7 +8,9 @@ Your Epic Games Store library in Steam Game Mode, Nightgrid-styled and fully con
 - **Browse & search the Epic Games Store** (Browse tab): this week's **free games** on top, then search, sort (Popular,
   Newest, price, A–Z), price (Free, On sale) and genre. **Controller support is on by default** (Epic's own
   *Controller Support* tag); switch to *All games* to see everything. Filters also apply to search.
-  Games you own open their library page. Others show their price: **Get/Buy on Epic** opens that game's store page in
+  Games you own open their library page. Others open a **store page**: screenshots (A for full screen), Epic player
+  rating, genres and features, developer, publisher, release date, the full description and PC requirements, fetched
+  when you open it and cached for 12 hours. Its price panel: **Get/Buy on Epic** opens that game's store page in
   Steam's browser, or **on phone** shows a QR code. **Free games (this week's giveaways too) can be claimed in one
   step**: X on the tile or *Claim free* opens Epic's own checkout for that game in Steam's browser (sign in to Epic
   there once, press Place Order; nothing is charged, Epic may show a captcha), or *Claim on phone* as a QR code. Then
@@ -32,7 +34,7 @@ Games that Epic sells but that are installed through another launcher (EA app, U
 and can't be installed here.
 
 Nothing runs in the background: the library is fetched (and cached for 30 minutes) and updates are checked only when
-you open it. The store is only contacted while the Browse tab is open. Downloads run one at a time.
+you open it. The store is only contacted while Browse or a store page is open. Downloads run one at a time.
 
 ## How it works
 

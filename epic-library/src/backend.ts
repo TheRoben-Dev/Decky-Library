@@ -22,7 +22,7 @@ export interface Game {
 /** A Browse/Search result from the Epic store. */
 export interface StoreItem {
   id: string; ns: string; title: string; seller: string; description: string;
-  tall: string; wide: string; url: string; checkout: string;
+  tall: string; wide: string; url: string; slug?: string; checkout: string;
   free: boolean | null; price: string; original: string; sale: number;
   controller: boolean; released: string; until?: string;
 }
@@ -69,6 +69,12 @@ export const getGame = callable<[app: string],
 export const installInfo = callable<[app: string], { ok: true; disk: number; download: number } | Fail>("install_info");
 export const browse = callable<[opts: BrowseOpts], BrowseResult | Fail>("browse");
 export const freeNow = callable<[country: string], { ok: true; items: StoreItem[] } | Fail>("free_now");
+export interface OfferDetails {
+  description: string; developer: string; publisher: string; released: string;
+  shots: string[]; genres: string[]; features: string[]; platforms: string[];
+  requirements: [string, string, string][]; rating: number; price: string; original: string;
+}
+export const offerDetails = callable<[ns: string, offer: string, slug: string, country: string], { ok: true; details: OfferDetails } | Fail>("offer_details");
 export const getImage = callable<[url: string], { ok: true; data: string; ext: string } | Fail>("image");
 export const saveIcon = callable<[app: string, png: string], { ok: true; path: string } | Fail>("save_icon");
 

@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "py
 
 import decky  # noqa: E402
 
-from epiclib import catalog, library  # noqa: E402
+from epiclib import catalog, library, net  # noqa: E402
 from epiclib.device import DeviceLogin  # noqa: E402
 from epiclib.handoff import Handoff  # noqa: E402
 from epiclib.legendary import Cancelled, Legendary, LegendaryError, find_python  # noqa: E402
@@ -357,6 +357,15 @@ class Plugin:
         self.free_cache = {"key": key, "at": time.time(), "items": items}
         return {"ok": True, "items": items}
 
+    async def offer_details(self, ns: str, offer: str, slug: str = "", country: str = "US"):
+        """Store page details for a Browse item (description, screenshots, rating...), cached 12h."""
+        try:
+            d = await asyncio.to_thread(catalog.details, ns, offer, slug, country, "en-US",
+                                        os.path.join(self.data, "cache"))
+            return {"ok": True, "details": d}
+        except Exception as e:
+            return _err(e)
+
     async def image(self, url: str):
         """An Epic CDN image as base64, for drawing Steam artwork on a canvas without tainting it."""
         u = urllib.parse.urlparse(url or "")
@@ -366,7 +375,7 @@ class Plugin:
 
         def fetch():
             req = urllib.request.Request(url, headers={"User-Agent": catalog.UA})
-            with urllib.request.urlopen(req, timeout=20) as r:
+            with urllib.request.urlopen(req, timeout=20, context=net.context()) as r:
                 ctype = (r.headers.get("Content-Type") or "").lower()
                 data = r.read(MAX_IMAGE + 1)
             if len(data) > MAX_IMAGE:
