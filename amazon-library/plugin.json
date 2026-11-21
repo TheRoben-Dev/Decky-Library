@@ -1,0 +1,17 @@
+{
+  "name": "Amazon Library",
+  "author": "Roben",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": [
+      "amazon",
+      "prime gaming",
+      "library",
+      "store",
+      "nightgrid"
+    ],
+    "description": "Your Amazon Games library in Game Mode: sign in from your phone, install Prime Gaming / Luna claims and purchases through Proton, play them from Steam with artwork, update, verify and uninstall. Nothing runs in the background.",
+    "image": "https://opengraph.githubassets.com/1/TheRoben-Dev/Decky-Library"
+  }
+}
