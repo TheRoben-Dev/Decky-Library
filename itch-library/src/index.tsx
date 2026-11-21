@@ -57,6 +57,10 @@ function SettingsSection({ s }: { s: Settings }) {
         <ToggleField label="Keep downloaded archives" description="Takes extra space; reinstalls skip the download." checked={s.keep_downloads}
           onChange={(v) => set({ keep_downloads: v })} />
       </PanelSectionRow>
+      <PanelSectionRow>
+        <ToggleField label="Show adult content in Browse" description="Off by default. Adds the Adult / NSFW tags to Browse filters."
+          checked={!!s.adult} onChange={(v) => { set({ adult: v }); state.store.items = null; state.store.key = ""; }} />
+      </PanelSectionRow>
       {s.signedIn && (
         <PanelSectionRow>
           <ButtonItem layout="below" onClick={async () => { state.settings = await signOut(); state.games = null; changed(); }}>

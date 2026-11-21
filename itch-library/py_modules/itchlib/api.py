@@ -7,6 +7,8 @@ background polling. Certificate checks are never disabled.
 import json
 import os
 import ssl
+import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -28,9 +30,61 @@ GAME_CLASSES = ("game", "tool", "")
 
 
 class ApiError(Exception):
-    def __init__(self, msg: str, status: int = 0):
+    def __init__(self, msg: str, status: int = 0, retry_after: int = 0):
         super().__init__(msg)
         self.status = status
+        self.retry_after = retry_after
+
+
+class Throttle:
+    """Per-host politeness: a minimum gap between requests, and after HTTP 429 no requests at all
+    until itch.io's Retry-After has passed (so retries can't make the limit worse)."""
+
+    def __init__(self, gap: float):
+        self.gap = gap
+        self.last = 0.0
+        self.until = 0.0
+        self.lock = threading.Lock()
+
+    def wait(self):
+        with self.lock:
+            left = self.until - time.time()
+            if left > 0:
+                raise ApiError(limited_message(left), 429, int(left + 0.999))
+            pause = self.last + self.gap - time.time()
+            if pause > 0:
+                time.sleep(pause)
+            self.last = time.time()
+
+    def limited(self, headers) -> int:
+        secs = retry_after(headers)
+        with self.lock:
+            self.until = max(self.until, time.time() + secs)
+        return secs
+
+
+def retry_after(headers, default: int = 60) -> int:
+    """Seconds from a Retry-After header (seconds or an HTTP date), kept within 5 s .. 15 min."""
+    raw = (headers.get("Retry-After") if headers is not None else None) or ""
+    secs = default
+    try:
+        secs = int(float(raw.strip()))
+    except ValueError:
+        try:
+            from email.utils import parsedate_to_datetime
+            secs = int(parsedate_to_datetime(raw).timestamp() - time.time())
+        except Exception:
+            pass
+    return max(5, min(900, secs))
+
+
+def limited_message(secs: float) -> str:
+    s = int(secs + 0.999)
+    when = f"{s} s" if s < 90 else f"{(s + 59) // 60} min"
+    return f"itch.io is limiting requests right now. Try again in {when}."
+
+
+API_THROTTLE = Throttle(0.25)
 
 
 def context() -> ssl.SSLContext:
@@ -99,10 +153,14 @@ def get(path: str, key: str, params: dict | None = None, timeout: float = 20) ->
     if not key:
         raise ApiError("Not signed in", 401)
     req = urllib.request.Request(_api_url(path, params), headers=_headers(key))
+    API_THROTTLE.wait()
     try:
         with _opener(True).open(req, timeout=timeout) as r:
             data = r.read(MAX_JSON + 1)
     except urllib.error.HTTPError as e:
+        if e.code == 429:
+            secs = API_THROTTLE.limited(e.headers)
+            raise ApiError(limited_message(secs), 429, secs) from None
         raise ApiError(_message(e.read(4096), e.code), e.code) from None
     except urllib.error.URLError as e:
         raise ApiError(f"Can't reach itch.io ({getattr(e, 'reason', e)})") from None

@@ -5,7 +5,10 @@ Your itch.io library in Steam Game Mode, Nightgrid-styled and fully controller-d
 - **Sign in without typing.** Scan a QR code with your phone, paste your itch.io API key on the page it opens, done.
   (Or save the key as `~/Desktop/itch-key.txt` in Desktop Mode, or type it.)
 - **Browse & search itch.io** for new games (Browse tab): sort by Popular, New & popular, Top sellers, Top rated or Newest,
-  filter by price (Free, On sale, $5/$15 or less), genre and platform. **Controller support is on by default**
+  filter by price (Free, Paid, On sale, $5/$15 or less), genre and platform, and under *More filters* by release date,
+  length, multiplayer, accessibility, engine, demo and up to three tags. Adult/NSFW tags are only offered once you
+  turn on *Show adult content in Browse* in Quick Access → Itch Library → Settings (off by default; itch.io itself also
+  limits which adult games its browse pages list). **Controller support is on by default**
   (itch.io's "Gamepad (any)" input filter; switch to Xbox controller or All games). Search uses the on-screen keyboard.
   Free games install directly (X on the tile). Paid games show their price and **Buy on itch.io** opens that game's
   store page in Steam's browser, or **Buy on phone** shows a QR code; after buying, *I bought it* moves it to your
@@ -23,7 +26,8 @@ Your itch.io library in Steam Game Mode, Nightgrid-styled and fully controller-d
 - Installs to internal storage or any SD card / USB drive (Quick Access → Itch Library → Settings).
 
 Browse uses itch.io's public RSS feeds for its browse pages (the same filters as the website), search uses the
-official API. Nothing runs in the background: the library is fetched (and cached for 30 minutes) and updates are checked only when
+official API. Pages are cached for 15 minutes, filter changes are batched, and if itch.io answers "too many requests"
+the plugin waits out its Retry-After before asking again (showing earlier results meanwhile). Nothing runs in the background: the library is fetched (and cached for 30 minutes) and updates are checked only when
 you open it. Downloads run one at a time and report progress only while they run.
 
 ## Signing in

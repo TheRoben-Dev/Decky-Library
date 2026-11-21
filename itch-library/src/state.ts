@@ -18,7 +18,9 @@ export const state = {
   sort: "added" as "added" | "title",
   // Browse tab: filters, the query when searching, and the results loaded so far.
   store: {
-    opts: { sort: "", price: "", genre: "", controller: "gamepad", platform: "", page: 1 } as BrowseOpts,
+    opts: { sort: "", price: "", genre: "", controller: "gamepad", platform: "", page: 1, released: "", duration: "",
+      multiplayer: "", accessibility: "", engine: "", tags: [], demo: false } as BrowseOpts,
+    moreFilters: false,
     query: "",
     items: null as StoreItem[] | null,
     more: false,
