@@ -199,3 +199,43 @@ class PlayTask(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StoreDetails(unittest.TestCase):
+    def test_text(self):
+        html = "<p>Fly <b>far</b> &amp; fast.</p><ul><li>One</li><li>Two</li></ul><img src=x><script>x()</script>"
+        self.assertEqual(api._text(html), ["Fly far & fast.", "• One", "• Two"])
+        self.assertEqual(len(api._text("<br>".join(["p"] * 99))), 40)
+
+    def test_names(self):
+        self.assertEqual(api._names([{"name": {"*": "Strategy", "en-US": "Strategy"}}, {"name": "New World"}, {"name": "New World"}]),
+                         ["Strategy", "New World"])
+
+    def test_gamesdb_fallback(self):
+        db = {"available_languages": [{"code": "en-US"}, {"code": "fr-FR"}],
+              "videos": [{"provider": "youtube", "video_id": "abcdefgh", "thumbnail_id": "abcdefgh", "name": None}],
+              "game": {"genres": [{"name": {"*": "Strategy"}}], "developers": [{"name": "NWC"}], "publishers": [{"name": "Ubi"}],
+                       "game_modes": [{"name": "Single player"}], "aggregated_rating": 81.6, "first_release_date": "2000-10-02T00:00:00+0000",
+                       "summary": {"*": "Line <one>\r\nLine two"},
+                       "screenshots": [{"url_format": "https://images.gog.com/h{formatter}.{ext}?namespace=gamesdb"}]}}
+
+        def fake(url, **kw):
+            if "gamesdb" in url:
+                return db
+            raise api.ApiError("blocked")
+        with mock.patch.object(api, "get_json", side_effect=fake):
+            d = api.details(7)
+        self.assertEqual(d["description"], ["Line <one>", "Line two"])
+        self.assertEqual(d["genres"], ["Strategy"])
+        self.assertEqual(d["developers"], ["NWC"])
+        self.assertEqual(d["modes"], ["Single player"])
+        self.assertEqual(d["rating"], 82)
+        self.assertEqual(d["released"], "2000-10-02")
+        self.assertEqual(d["languages"], 2)
+        self.assertEqual(d["screenshots"][0]["full"], "https://images.gog.com/h.jpg?namespace=gamesdb")
+        self.assertEqual(d["videos"][0]["url"], "https://www.youtube.com/watch?v=abcdefgh")
+
+    def test_no_details(self):
+        with mock.patch.object(api, "get_json", side_effect=api.ApiError("x")):
+            with self.assertRaises(api.ApiError):
+                api.details(7)

@@ -9,6 +9,7 @@ import { ConfirmModal, DialogButton, Dropdown, Focusable, ModalRoot, Navigation,
 import { ReactNode, useEffect, useState } from "react";
 import { addToSteam, cancelJob, loadLibrary, refreshInstalled, removeGame, startInstall } from "./actions";
 import { Qr } from "./signin";
+import { StoreDetails } from "./details";
 import { hintOf } from "./store";
 import { Exe, Game, getExecutables, getGame, Installed, Option, setExe } from "./backend";
 import { fmtBytes, jobFor, jobLine, state, useStore } from "./state";
@@ -249,6 +250,7 @@ export function GamePage() {
                   </Focusable>
                 </div>
               )}
+              <StoreDetails id={id} item={seen} />
             </Focusable>
           </div>
         )}

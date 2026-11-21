@@ -26,6 +26,14 @@ export interface Game {
 export interface StoreItem {
   id: number; title: string; slug: string; url: string; cover: string; vertical: string; price: string; free: boolean;
   amount: number | null; sale: string; platforms: Platform[]; controller: boolean; type: string; developer: string; state: string;
+  publisher: string; features: string[]; genres: string[]; tags: string[]; rating: number | null; reviews: number; released: string;
+}
+
+/** Store-page details for any GOG game (owned or not). */
+export interface Details {
+  id: number; description: string[]; screenshots: { full: string; thumb: string }[]; videos: { url: string; thumb: string; name: string }[];
+  genres: string[]; themes: string[]; modes: string[]; developers: string[]; publishers: string[]; released: string;
+  rating: number | null; languages: number;
 }
 export interface BrowseOpts { sort: string; price: string; genre: string; controller: string; platform: string; query: string; page: number }
 
@@ -64,6 +72,7 @@ export const getGame = callable<[gameId: number, hint: Partial<Game> | null],
   ({ ok: true; game: Game; owned: boolean; options: Option[]; dlcs: { id: number; title: string }[]; installed: Installed | null }) |
   (Fail & { game?: Game; owned?: boolean; installed?: Installed | null; options?: Option[] })>("game");
 export const browse = callable<[opts: BrowseOpts], { ok: true; items: StoreItem[]; page: number; more: boolean; total: number } | Fail>("browse");
+export const getDetails = callable<[gameId: number], ({ ok: true } & Details) | Fail>("details");
 export const getArt = callable<[gameId: number, kind: string], { ok: true; data: string; ext: string } | Fail>("art");
 export const saveIcon = callable<[gameId: number, png: string], { ok: true; path: string } | Fail>("save_icon");
 

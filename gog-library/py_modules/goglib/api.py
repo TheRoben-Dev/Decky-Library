@@ -5,6 +5,7 @@ Lutris, Minigalaxy). The sign-in is GOG's own OAuth page with the Galaxy client 
 returns stay in the plugin's settings and are only sent to *.gog.com over HTTPS. Nothing here runs
 unless the plugin asks for it: there is no background polling. Certificate checks are never off.
 """
+import html
 import json
 import os
 import re
@@ -396,6 +397,13 @@ def _price(p: dict) -> tuple:
     return final, free, (disc if disc and disc not in ("0%", "-0%") else ""), amount
 
 
+def _num(v):
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
 def catalog_item(p: dict) -> dict:
     final, free, disc, amount = _price(p.get("price") or {})
     feats = [f.get("slug") for f in p.get("features") or [] if isinstance(f, dict)]
@@ -411,7 +419,13 @@ def catalog_item(p: dict) -> dict:
         "price": final, "free": free, "amount": amount, "sale": disc, "platforms": oses,
         "controller": "controller_support" in feats, "type": str(p.get("productType") or ""),
         "developer": ", ".join(str(x) for x in (p.get("developers") or [])[:2]),
+        "publisher": ", ".join(str(x) for x in (p.get("publishers") or [])[:2]),
         "state": str(p.get("productState") or ""),
+        "features": [str(f.get("name")) for f in p.get("features") or [] if isinstance(f, dict) and f.get("name")],
+        "genres": [str(g.get("name")) for g in p.get("genres") or [] if isinstance(g, dict) and g.get("name")],
+        "tags": [str(t.get("name")) for t in (p.get("tags") or [])[:10] if isinstance(t, dict) and t.get("name")],
+        "rating": _num(p.get("reviewsRating")), "reviews": int(_num(p.get("reviewsCount")) or 0),
+        "released": str(p.get("releaseDate") or ""),
     }
 
 
@@ -468,3 +482,119 @@ def image(url: str) -> tuple:
     if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
         return data, "webp"
     raise ApiError("Not an image Steam can use")
+
+
+# ------------------------------------------------------------------ store page details
+
+def _text(raw: str, max_paras: int = 40, max_chars: int = 9000) -> list:
+    """GOG's HTML description -> plain paragraphs (bullets kept, images and markup dropped)."""
+    t = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", " ", raw or "")
+    t = re.sub(r"(?i)<li[^>]*>", "\n• ", t)
+    t = re.sub(r"(?i)<br\s*/?>|</(p|li|h\d|div|ul|ol|tr)>|<hr[^>]*>", "\n", t)
+    t = html.unescape(re.sub(r"<[^>]+>", "", t))
+    out, total = [], 0
+    for line in t.split("\n"):
+        line = re.sub(r"[ \t\u00a0]+", " ", line).strip()
+        if not line:
+            continue
+        out.append(line)
+        total += len(line)
+        if len(out) >= max_paras or total >= max_chars:
+            break
+    return out
+
+
+def _lang(v) -> str:
+    if isinstance(v, dict):
+        return str(v.get("*") or v.get("en-US") or next(iter(v.values()), "") or "")
+    return str(v or "")
+
+
+def _names(lst) -> list:
+    out = []
+    for x in lst or []:
+        n = _lang(x.get("name")) if isinstance(x, dict) else str(x)
+        if n and n not in out:
+            out.append(n)
+    return out
+
+
+def _shot(entry: dict) -> dict | None:
+    """A screenshot from api.gog.com/products (formatted sizes) as {full, thumb}."""
+    imgs = {str(f.get("formatter_name")): str(f.get("image_url")) for f in entry.get("formatted_images") or []
+            if isinstance(f, dict) and f.get("image_url")}
+    tmpl = str(entry.get("formatter_template_url") or "")
+
+    def pick(names):
+        for n in names:
+            if imgs.get(n):
+                return imgs[n]
+        return tmpl.replace("{formatter}", names[0]) if "{formatter}" in tmpl else ""
+    full = pick(["ggvgl_2x", "ggvgl", "1600", "ggvgm_2x", "ggvgm"])
+    thumb = pick(["ggvgm", "ggvgt_2x", "ggvgt"]) or full
+    if not full:
+        return None
+    fix = lambda u: ("https:" + u) if u.startswith("//") else u
+    return {"full": fix(full), "thumb": fix(thumb)}
+
+
+def details(game_id: int) -> dict:
+    """Everything a store page shows: description, screenshots, trailers, genres, developer,
+    publisher, release date, rating. From api.gog.com/products and GOG's games database."""
+    gid = int(game_id)
+    out = {"id": gid, "description": [], "screenshots": [], "videos": [], "genres": [], "themes": [], "modes": [],
+           "developers": [], "publishers": [], "released": "", "rating": None, "languages": 0}
+    try:
+        p = get_json(f"{API}/products/{gid}?expand=description,screenshots,videos&locale=en-US", timeout=20)
+    except ApiError:
+        p = {}
+    desc = p.get("description") or {}
+    out["description"] = _text(str(desc.get("full") or desc.get("lead") or ""))
+    for e in p.get("screenshots") or []:
+        if isinstance(e, dict):
+            sh = _shot(e)
+            if sh:
+                out["screenshots"].append(sh)
+    for v in p.get("videos") or []:
+        if isinstance(v, dict):
+            m = re.search(r"(?:embed/|v=|youtu\.be/)([A-Za-z0-9_-]{6,20})", str(v.get("video_url") or ""))
+            if m:
+                out["videos"].append({"url": f"https://www.youtube.com/watch?v={m.group(1)}",
+                                      "thumb": str(v.get("thumbnail_url") or ""), "name": ""})
+    out["released"] = str(p.get("release_date") or "")[:10]
+    langs = p.get("languages")
+    out["languages"] = len(langs) if isinstance(langs, dict) else 0
+    try:
+        d = get_json(f"{GAMESDB}/{gid}", timeout=15)
+    except ApiError:
+        d = {}
+    g = d.get("game") or {}
+    if g:
+        out["genres"] = _names(g.get("genres"))
+        out["themes"] = _names(g.get("themes"))
+        out["modes"] = _names(g.get("game_modes") or d.get("game_modes"))
+        out["developers"] = _names(g.get("developers"))
+        out["publishers"] = _names(g.get("publishers"))
+        r = _num(g.get("aggregated_rating"))
+        out["rating"] = round(r) if r is not None else None
+        out["released"] = out["released"] or str(g.get("first_release_date") or "")[:10]
+        if not out["description"]:
+            out["description"] = _text(html.escape(_lang(g.get("summary") or d.get("summary"))).replace("\n", "<br>"))
+        if not out["screenshots"]:
+            for sh in g.get("screenshots") or []:
+                fmt = (sh or {}).get("url_format") if isinstance(sh, dict) else ""
+                if fmt:
+                    out["screenshots"].append({"full": fmt.replace("{formatter}", "").replace("{ext}", "jpg"),
+                                               "thumb": fmt.replace("{formatter}", "_ggvgm").replace("{ext}", "jpg")})
+        if not out["videos"]:
+            for v in (g.get("videos") or d.get("videos") or []):
+                if isinstance(v, dict) and v.get("provider") == "youtube" and v.get("video_id"):
+                    out["videos"].append({"url": f"https://www.youtube.com/watch?v={v['video_id']}",
+                                          "thumb": f"https://img.youtube.com/vi/{v.get('thumbnail_id') or v['video_id']}/mqdefault.jpg",
+                                          "name": str(v.get("name") or "")})
+        out["languages"] = out["languages"] or len(d.get("available_languages") or [])
+    out["screenshots"] = out["screenshots"][:24]
+    out["videos"] = out["videos"][:4]
+    if not p and not g:
+        raise ApiError("GOG has no store details for this game")
+    return out

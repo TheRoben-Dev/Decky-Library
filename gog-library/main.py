@@ -28,6 +28,7 @@ from goglib.handoff import Handoff  # noqa: E402
 from goglib.store import Installed, Settings, read_json, write_json  # noqa: E402
 
 LIBRARY_TTL = 30 * 60          # owned-games list is refreshed on open after this
+DETAILS_TTL = 3 * 86400        # store-page details cache
 UPDATE_TTL = 6 * 3600          # automatic update check on open at most this often
 ART_KINDS = ("capsule", "wide", "hero", "logo", "icon")
 LANGUAGES = ("en-US", "de-DE", "fr-FR", "es-ES", "it-IT", "pl-PL", "pt-BR", "ru-RU", "zh-Hans", "ja-JP", "ko-KR")
@@ -318,6 +319,23 @@ class Plugin:
             return {"ok": True, **res}
         except Exception as e:
             return _err(e)
+
+    async def details(self, game_id: int):
+        """Store-page details (description, screenshots, trailers, genres...), cached for 3 days."""
+        gid = int(game_id)
+        path = os.path.join(self.runtime, "details", f"{gid}.json")
+        cached = read_json(path, {})
+        if cached.get("at", 0) > time.time() - DETAILS_TTL and cached.get("id") == gid:
+            return {"ok": True, **cached}
+        try:
+            d = await asyncio.to_thread(api.details, gid)
+        except Exception as e:
+            if cached.get("id") == gid:
+                return {"ok": True, **cached}   # stale beats nothing when offline
+            return _err(e)
+        d["at"] = time.time()
+        write_json(path, d)
+        return {"ok": True, **d}
 
     # ------------------------------------------------------------ artwork
 
