@@ -239,6 +239,17 @@ def owned(key: str) -> list:
     return list(seen.values())
 
 
+def game_detail(key: str, game_id: int) -> dict:
+    """A game anyone can see, owned or not, with its price (cents) for the store view."""
+    g = get(f"/games/{int(game_id)}", key).get("game") or {}
+    if not g.get("id"):
+        raise ApiError("itch.io doesn't have that game", 404)
+    info = game_info(g)
+    info["min_price"] = int(g.get("min_price") or 0)
+    info["can_buy"] = "can_be_bought" in _traits(g) or bool(g.get("can_be_bought"))
+    return info
+
+
 def uploads(key: str, game_id: int, download_key: int) -> list:
     d = get(f"/games/{int(game_id)}/uploads", key, {"download_key_id": int(download_key or 0)})
     return [upload_info(u) for u in d.get("uploads") or [] if isinstance(u, dict)]

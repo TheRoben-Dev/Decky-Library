@@ -4,7 +4,13 @@ Your itch.io library in Steam Game Mode, Nightgrid-styled and fully controller-d
 
 - **Sign in without typing.** Scan a QR code with your phone, paste your itch.io API key on the page it opens, done.
   (Or save the key as `~/Desktop/itch-key.txt` in Desktop Mode, or type it.)
-- **Browse** every game you bought or claimed on itch.io in a full-screen grid: All, Installed, Updates, Downloads.
+- **Browse & search itch.io** for new games (Browse tab): sort by Popular, New & popular, Top sellers, Top rated or Newest,
+  filter by price (Free, On sale, $5/$15 or less), genre and platform. **Controller support is on by default**
+  (itch.io's "Gamepad (any)" input filter; switch to Xbox controller or All games). Search uses the on-screen keyboard.
+  Free games install directly (X on the tile). Paid games show their price and **Buy on itch.io** opens that game's
+  store page in Steam's browser, or **Buy on phone** shows a QR code; after buying, *I bought it* moves it to your
+  library. Paid games' free demos can be installed too.
+- **Your library**: every game you bought or claimed in a full-screen grid: All, Installed, Updates, Downloads.
   L1/R1 switch tabs, A opens a game, X installs or plays it right from the grid.
 - **Install** native Linux builds, or Windows builds through Proton (you choose which wins when a game has both, and
   which Proton). Pick a specific build on the game page when there's more than one.
@@ -16,7 +22,8 @@ Your itch.io library in Steam Game Mode, Nightgrid-styled and fully controller-d
   which holds their saves.
 - Installs to internal storage or any SD card / USB drive (Quick Access → Itch Library → Settings).
 
-Nothing runs in the background: the library is fetched (and cached for 30 minutes) and updates are checked only when
+Browse uses itch.io's public RSS feeds for its browse pages (the same filters as the website), search uses the
+official API. Nothing runs in the background: the library is fetched (and cached for 30 minutes) and updates are checked only when
 you open it. Downloads run one at a time and report progress only while they run.
 
 ## Signing in

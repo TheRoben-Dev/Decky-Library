@@ -1,6 +1,6 @@
 /*
  * Full-screen library: /itch-library
- * L1/R1 switch tabs (All, Installed, Updates). A opens a game, X installs or plays it straight
+ * L1/R1 switch tabs (Browse, All, Installed, Updates). A opens a game, X installs or plays it straight
  * from the grid. The owned-games list comes from a cache refreshed at most every 30 minutes.
  */
 import { DialogButton, Dropdown, Focusable, Navigation, SteamSpinner, Tabs } from "@decky/ui";
@@ -8,6 +8,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { checkUpdates, loadLibrary, loadSettings, startInstall } from "./actions";
 import { Game, Installed } from "./backend";
 import { SignIn } from "./signin";
+import { BrowseTab } from "./store";
 import { changed, jobFor, jobLine, state, updateCount, useStore } from "./state";
 import { openInSteam, shortcutExists } from "./steam";
 import { Bar, C, PAGE_CSS, Plats } from "./ui";
@@ -95,6 +96,7 @@ export function LibraryPage() {
       </Focusable>
     );
     const tabs = [
+      { id: "browse", title: "Browse", content: <BrowseTab /> },
       { id: "all", title: `All · ${all.length}`, content: <>{bar}<Grid games={all} empty="Nothing here yet. Games you buy or claim on itch.io show up after Refresh." /></> },
       { id: "installed", title: `Installed · ${installedGames.length}`, content: <>{bar}<Grid games={installedGames} empty="No itch.io games installed yet. Pick one in All and press Install." /></> },
       { id: "updates", title: `Updates · ${updates.length}`, content: <>{bar}<Grid games={updates} empty={s.checking ? "Checking…" : "Everything is up to date."} /></> },
