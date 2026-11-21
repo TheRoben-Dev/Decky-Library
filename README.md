@@ -19,6 +19,7 @@ Install a theme by extracting its zip into `~/homebrew/themes/`, then refresh CS
 | [grid-art](grid-art/) | SteamGridDB artwork browser: capsule, wide, hero, logo and shortcut icons in a full-screen Nightgrid page, applied through Steam's own custom artwork. Needs a free SteamGridDB API key. |
 | [nightgrid-sounds](nightgrid-sounds/) | Original Nightgrid UI sound packs (synthesized in the plugin, no audio files): four packs, volume, per-sound Pack/Steam/Off. |
 | [storage-sweep](storage-sweep/) | Frees space left by uninstalled games (shader caches, workshop files, Proton prefixes with a save warning) and resets single shader caches. SD-card aware; scans only on demand. |
+| [nightgrid-control](nightgrid-control/) | Nightgrid homelab hosts in Quick Access: online state, CPU, memory, disk and temperature, with Wake, Reboot and Shut down (confirmed). Uses your existing Nightgrid profile export or the Nightgrid app on the device; SSH only, refreshes only while open, controller-only. |
 | [ally-tweaks](ally-tweaks/) | ROG Ally 2023 tweaks: ring RGB (kernel LED on Bazzite 44+/InputPlumber, HHD where present) that survives reboots, per-game/reactive/follow-screen lighting, left/right ring colors, charge limiter with one-tap full charge, panel overdrive. No TDP/fan/firmware changes. |
 
 ## Building a plugin

@@ -1,0 +1,17 @@
+{
+  "name": "Nightgrid Control",
+  "author": "Roben",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": [
+      "nightgrid",
+      "homelab",
+      "ssh",
+      "wake-on-lan",
+      "utility"
+    ],
+    "description": "Your Nightgrid hosts in Quick Access: online state, CPU, memory, disk and temperature, plus Wake, Reboot and Shut down. Uses your existing Nightgrid profile, fully controller-driven.",
+    "image": "https://opengraph.githubassets.com/1/TheRoben-Dev/Decky-Library"
+  }
+}
