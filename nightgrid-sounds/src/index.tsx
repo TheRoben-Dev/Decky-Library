@@ -3,7 +3,7 @@ import { definePlugin } from "@decky/api";
 import { useState } from "react";
 import { FaVolumeUp } from "react-icons/fa";
 import { getConfig, setConfig } from "./backend";
-import { Config, DEFAULT_CONFIG, hookStatus, Mode, otherSoundPlugin, preview, start, stop, update } from "./engine";
+import { Config, DEFAULT_CONFIG, engineError, hookStatus, Mode, otherSoundPlugin, preview, start, stop, update } from "./engine";
 import { sectionFactory } from "./section";
 import { Cat, CATS, PACKS } from "./sounds";
 
@@ -40,6 +40,7 @@ function Content() {
             checked={c.enabled} onChange={(on) => set({ enabled: on })} />
         </PanelSectionRow>
         {loaded && !hookStatus() && <PanelSectionRow><div style={warn}>This Steam build's sound player wasn't found, so sounds can't be swapped. Steam's own sounds keep playing.</div></PanelSectionRow>}
+        {c.enabled && engineError() && <PanelSectionRow><div style={warn}>Couldn't set up the sounds ({engineError()}), so Steam's own sounds play.</div></PanelSectionRow>}
         {other && <PanelSectionRow><div style={warn}>{other} is installed too. Set its pack to Default (or turn this off) so the two don't fight over the same sounds.</div></PanelSectionRow>}
       </Section>
 
