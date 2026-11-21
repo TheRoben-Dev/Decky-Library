@@ -19,7 +19,8 @@ Quick Access; install or update it from Library Hub.
 | Power Down | old-CRT switch-off: the picture collapses to a line, then a dot (2.4 s) |
 | Static Out | the wordmark breaks into static, then the static rolls away to black (2.4 s) |
 
-**Shuffle each boot** picks a different startup movie every time the plugin loads.
+Each movie has a thumbnail in the picker and a **Preview** button that plays it fullscreen
+(any input stops it). **Shuffle each boot** picks a different startup movie every time the plugin loads.
 
 ## Screensaver
 After a set time with no input (1–30 min, default 5), a fullscreen Nightgrid animation covers
@@ -62,7 +63,8 @@ and encoded to 1280×720 VP9 at 30 fps with no audio:
 cd render && NODE_PATH=$(npm root -g) node render.cjs ../movies            # all
 NODE_PATH=$(npm root -g) node render.cjs --stills /tmp/stills signal       # 8 preview stills
 ```
-You need Playwright (Chromium) and ffmpeg. The rendered `.webm` files are committed, so the
+You need Playwright (Chromium) and ffmpeg. Thumbnails in `movies/thumbs/` are one frame per
+movie (`ffmpeg -ss <t> -i movies/<id>.webm -frames:v 1 -vf scale=320:180 movies/thumbs/<id>.jpg`). The rendered `.webm` files are committed, so the
 release build only runs `pnpm build` and `package.sh`.
 
 JetBrains Mono (in `render/`) is under the SIL Open Font License; see `render/JetBrainsMono-OFL.txt`.

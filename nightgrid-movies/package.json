@@ -1,6 +1,6 @@
 {
   "name": "nightgrid-movies",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Nightgrid startup movies and suspend animations for Steam Game Mode",
   "type": "module",
   "scripts": {

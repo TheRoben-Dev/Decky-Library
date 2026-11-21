@@ -78,6 +78,30 @@ class Core(unittest.TestCase):
         self.store.save()
         self.assertEqual(core.Store(self.store.path).data["saver"]["style"], "clock")
 
+    def test_movie_chunk(self):
+        import base64
+        old = core.CHUNK
+        core.CHUNK = 2
+        try:
+            got, off = b"", 0
+            while True:
+                c = core.movie_chunk(self.mov, "s", off)
+                got += base64.b64decode(c["data"]); off = c["next"]
+                if c["done"]:
+                    break
+            self.assertEqual(got, b"SSS")
+        finally:
+            core.CHUNK = old
+        with self.assertRaises(ValueError):
+            core.movie_chunk(self.mov, "../etc", 0)
+
+    def test_thumbs(self):
+        os.makedirs(os.path.join(self.mov, "thumbs"))
+        open(os.path.join(self.mov, "thumbs", "a.jpg"), "wb").write(b"\xff\xd8x")
+        cat = core.status(self.mov, self.ovr, self.store)["catalog"]
+        self.assertTrue(cat["boot"][0]["thumb"].startswith("data:image/jpeg;base64,"))
+        self.assertIsNone(cat["boot"][1]["thumb"])
+
     def test_unknown(self):
         with self.assertRaises(ValueError):
             core.apply("boot", "nope", self.mov, self.ovr, self.store)

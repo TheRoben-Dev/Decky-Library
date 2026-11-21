@@ -2,8 +2,8 @@ import { ButtonItem, DropdownItem, Field, Navigation, PanelSectionRow, staticCla
 import { definePlugin, routerHook } from "@decky/api";
 import { useEffect, useState } from "react";
 import { FaFilm } from "react-icons/fa";
-import { applyMovie, getSaver, getStatus, Kind, SaverSettings, setSaver, setShuffle, Status } from "./backend";
-import { DEFAULT_SAVER, previewSaver, SaverConfig, ScreensaverHost, setSaverConfig, watchController } from "./screensaver";
+import { applyMovie, movieUrl, getSaver, getStatus, Kind, SaverSettings, setSaver, setShuffle, Status } from "./backend";
+import { DEFAULT_SAVER, playMovie, previewSaver, SaverConfig, ScreensaverHost, setSaverConfig, watchController } from "./screensaver";
 import { STYLES } from "./saverArt";
 import { sectionFactory } from "./section";
 
@@ -53,10 +53,41 @@ function SaverSection({ s, setS }: { s: Status; setS: (s: Status) => void }) {
 
 const nameOf = (s: Status, kind: Kind) => s.catalog[kind].find((m) => m.id === s[kind])?.name ?? "Steam default";
 
+function PreviewButton({ id, name }: { id: string; name: string }) {
+  const [state, setState] = useState<string | null>(null);
+  const go = async () => {
+    try {
+      setState("Loading… 0%");
+      const url = await movieUrl(id, (p) => setState(`Loading… ${p}%`));
+      setState(null);
+      Navigation.CloseSideMenus();
+      setTimeout(() => playMovie(url), 400);
+    } catch (e) { setState(`Preview failed: ${e}`); }
+  };
+  return (
+    <>
+      <PanelSectionRow>
+        <ButtonItem layout="below" disabled={!!state && state.startsWith("Loading")} onClick={go}>
+          {state && state.startsWith("Loading") ? state : `Preview ${name}`}
+        </ButtonItem>
+      </PanelSectionRow>
+      {state && !state.startsWith("Loading") && <PanelSectionRow><div style={warn}>{state}</div></PanelSectionRow>}
+    </>
+  );
+}
+
 function Picker({ s, kind, label, busy, onPick }: {
   s: Status; kind: Kind; label: string; busy: boolean; onPick: (kind: Kind, id: string) => void;
 }) {
-  const opts = [{ data: "", label: "Steam default" }, ...s.catalog[kind].map((m) => ({ data: m.id, label: m.name }))];
+  const opts = [{ data: "", label: "Steam default" }, ...s.catalog[kind].map((m) => ({
+    data: m.id,
+    label: (
+      <span style={{ display: "inline-flex", alignItems: "center", gap: "10px" }}>
+        {m.thumb && <img src={m.thumb} style={{ width: "64px", height: "36px", objectFit: "cover", border: "1px solid #1F2633" }} />}
+        {m.name}
+      </span>
+    ),
+  }))];
   const cur = s.catalog[kind].find((m) => m.id === s[kind]);
   return (
     <>
@@ -64,7 +95,13 @@ function Picker({ s, kind, label, busy, onPick }: {
         <DropdownItem label={label} rgOptions={opts} selectedOption={s[kind]} disabled={busy}
           onChange={(o) => onPick(kind, o.data as string)} />
       </PanelSectionRow>
+      {cur?.thumb && (
+        <PanelSectionRow>
+          <img src={cur.thumb} style={{ width: "100%", aspectRatio: "16 / 9", objectFit: "cover", display: "block", border: "1px solid #1F2633" }} />
+        </PanelSectionRow>
+      )}
       {cur?.about && <PanelSectionRow><div style={note}>{cur.about}</div></PanelSectionRow>}
+      {cur && <PreviewButton id={cur.id} name={cur.name} />}
       {s.states[kind] === "other" && (
         <PanelSectionRow>
           <div style={warn}>

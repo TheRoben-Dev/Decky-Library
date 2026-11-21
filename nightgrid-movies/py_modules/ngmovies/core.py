@@ -38,6 +38,22 @@ def load_catalog(movies_dir: str) -> dict:
     return out
 
 
+def with_thumbs(cat: dict, movies_dir: str) -> dict:
+    """Adds a small JPEG thumbnail (data: URI) from movies/thumbs/<id>.jpg to each movie."""
+    import base64
+    out = {}
+    for kind, movies in cat.items():
+        out[kind] = []
+        for m in movies:
+            p = os.path.join(movies_dir, "thumbs", f"{m['id']}.jpg")
+            thumb = None
+            if os.path.isfile(p) and os.path.getsize(p) < 64 * 1024:
+                with open(p, "rb") as f:
+                    thumb = "data:image/jpeg;base64," + base64.b64encode(f.read()).decode("ascii")
+            out[kind].append({**m, "thumb": thumb})
+    return out
+
+
 SAVER_STYLES = ("random", "grid", "signal", "terminal", "clock")
 SAVER_MINUTES = (1, 2, 3, 5, 10, 15, 30)
 
@@ -155,10 +171,30 @@ def status(movies_dir: str, override_dir: str, store: Store) -> dict:
                        "partial" if "ours" in s else "none"
     # a selection whose files were replaced behind our back no longer counts as applied
     sel = {k: (store.data[k] if states[k] == "ours" else "") for k in TARGETS}
-    return {"catalog": cat, "boot": sel["boot"], "suspend": sel["suspend"], "shuffle": bool(store.data["shuffle"]),
+    return {"catalog": with_thumbs(cat, movies_dir), "boot": sel["boot"], "suspend": sel["suspend"], "shuffle": bool(store.data["shuffle"]),
             "states": states, "overrideDir": override_dir, "saver": store.data["saver"]}
 
 
 def restore_all(movies_dir: str, override_dir: str, store: Store):
     for kind in TARGETS:
         apply(kind, "", movies_dir, override_dir, store)
+
+
+CHUNK = 768 * 1024
+
+
+def movie_chunk(movies_dir: str, movie_id: str, offset: int) -> dict:
+    """One base64 piece of a bundled video, for the in-plugin preview."""
+    import base64
+    cat = load_catalog(movies_dir)
+    movie = next((m for k in TARGETS for m in cat[k] if m["id"] == movie_id), None)
+    if movie is None:
+        raise ValueError(f"no movie {movie_id!r}")
+    path = os.path.join(movies_dir, movie["file"])
+    size = os.path.getsize(path)
+    offset = max(0, int(offset))
+    with open(path, "rb") as f:
+        f.seek(offset)
+        data = f.read(CHUNK)
+    return {"data": base64.b64encode(data).decode("ascii"), "size": size, "next": offset + len(data),
+            "done": offset + len(data) >= size}

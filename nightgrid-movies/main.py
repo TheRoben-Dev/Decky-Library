@@ -49,6 +49,12 @@ class Plugin:
         s.save()
         return True
 
+    async def movie_chunk(self, movie_id: str, offset: int):
+        try:
+            return {"ok": True, **await asyncio.to_thread(core.movie_chunk, MOVIES_DIR, movie_id, offset)}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
     async def get_saver(self):
         return _store().data["saver"]
 

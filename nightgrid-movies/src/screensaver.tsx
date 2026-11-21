@@ -18,11 +18,13 @@ let cfg: SaverConfig = { ...DEFAULT_SAVER };
 let lastInput = Date.now();
 let ignoreUntil = 0;       // after "Preview", ignore the button release that started it
 let previewAsked = false;
+let movieUrlToPlay: string | null = null;   // in-plugin preview of a startup / sleep movie
 const subs = new Set<() => void>();
 const notify = () => subs.forEach((f) => f());
 
 export function setSaverConfig(c: SaverConfig) { cfg = { ...DEFAULT_SAVER, ...c }; lastInput = Date.now(); notify(); }
 export function previewSaver() { ignoreUntil = Date.now() + 1500; previewAsked = true; notify(); }
+export function playMovie(url: string) { ignoreUntil = Date.now() + 1500; movieUrlToPlay = url; notify(); }
 export function noteInput() {
   if (Date.now() < ignoreUntil) return;
   lastInput = Date.now();
@@ -90,18 +92,31 @@ function Layer({ style, onWake }: { style: SaverStyle; onWake: () => void }) {
   );
 }
 
-/** Always mounted (global component); shows the layer when idle. */
+function MoviePlayer({ url, onEnd }: { url: string; onEnd: () => void }) {
+  const box: CSSProperties = { position: "fixed", inset: 0, zIndex: 2147483001, background: "#000", cursor: "none",
+    display: "flex", alignItems: "center", justifyContent: "center" };
+  return (
+    <div style={box} onPointerDown={onEnd}>
+      <video src={url} autoPlay muted playsInline onEnded={onEnd} onError={onEnd}
+        style={{ width: "100%", height: "100%", objectFit: "contain", background: "#000" }} />
+    </div>
+  );
+}
+
+/** Always mounted (global component); shows the layer when idle, and movie previews. */
 export function ScreensaverHost() {
   const anchor = useRef<HTMLDivElement>(null);
   const [style, setStyle] = useState<SaverStyle | null>(null);
+  const [movie, setMovie] = useState<string | null>(null);
   const shownAt = useRef(0);
 
   useEffect(() => {
     const show = () => { shownAt.current = Date.now(); setStyle(pickStyle()); };
     const hide = () => setStyle(null);
     const onChange = () => {
+      if (movieUrlToPlay) { const u = movieUrlToPlay; movieUrlToPlay = null; shownAt.current = Date.now(); setStyle(null); setMovie(u); return; }
       if (previewAsked) { previewAsked = false; show(); return; }
-      if (lastInput > shownAt.current) hide();
+      if (lastInput > shownAt.current) { hide(); setMovie(null); }
     };
     subs.add(onChange);
     const tick = window.setInterval(() => {
@@ -124,6 +139,7 @@ export function ScreensaverHost() {
     <>
       <div ref={anchor} style={{ display: "none" }} />
       {style && <Layer style={style} onWake={() => noteInput()} />}
+      {movie && <MoviePlayer url={movie} onEnd={() => setMovie(null)} />}
     </>
   );
 }
