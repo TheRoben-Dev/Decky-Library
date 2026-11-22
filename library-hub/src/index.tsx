@@ -53,20 +53,20 @@ function ItemRows({ it, busy, act }: { it: Item; busy: boolean; act: (fn: () => 
 
   const install = () => it.kind === "theme"
     ? act(async () => {
-      const r = await installTheme();
-      if (!r.ok) return `Nightgrid: ${r.error}`;
+      const r = await installTheme(it.id);
+      if (!r.ok) return `${it.name}: ${r.error}`;
       const reloaded = await reloadCssLoader();
-      return reloaded ? null : `Nightgrid ${r.version} installed. Open CSS Loader and press Refresh to apply it.`;
-    }, "Nightgrid installed.")
+      return reloaded ? null : `${it.name} ${r.version} installed. Open CSS Loader and press Refresh to apply it.`;
+    }, `${it.name} installed. Enable it in CSS Loader.`)
     : act(() => installPlugin(it.id), `Confirm the install in Decky's prompt.`);
 
   const remove = async () => {
     if (!(await confirm(`Uninstall ${it.name}?`, it.kind === "theme"
-      ? "Removes the Nightgrid theme and its saved options from CSS Loader."
+      ? `Removes the ${it.name} theme and its saved options from CSS Loader.`
       : `Removes the ${it.name} plugin and its Decky settings.`, "Uninstall"))) return;
     act(async () => {
       if (it.kind === "theme") {
-        const r = await uninstallTheme();
+        const r = await uninstallTheme(it.id);
         if (!r.ok) return r.error ?? "failed";
         await reloadCssLoader();
         return null;
@@ -122,17 +122,18 @@ function Content() {
     } finally { setBusy(false); }
   };
 
-  // Theme first (done here), then every plugin with an update in one Decky prompt, Library Hub last
+  // Themes first (done here), then every plugin with an update in one Decky prompt, Library Hub last
   // (Decky reloads it when its turn comes, after the others are in).
   const updateAll = () => act(async () => {
     const todo = (status?.items ?? []).filter((i) => i.installed && i.updateAvailable);
     const errs: string[] = [];
-    const t = todo.find((i) => i.kind === "theme");
-    if (t) {
-      setMsg({ text: "Updating Nightgrid…", bad: false });
-      const r = await installTheme();
-      if (!r.ok) errs.push(`Nightgrid: ${r.error}`); else await reloadCssLoader();
+    const themes = todo.filter((i) => i.kind === "theme");
+    for (const t of themes) {
+      setMsg({ text: `Updating ${t.name}…`, bad: false });
+      const r = await installTheme(t.id);
+      if (!r.ok) errs.push(`${t.name}: ${r.error}`);
     }
+    if (themes.length) await reloadCssLoader();
     const ids = [
       ...todo.filter((i) => i.kind === "plugin" && !i.isSelf).map((i) => i.id),
       ...todo.filter((i) => i.isSelf).map((i) => i.id),
@@ -174,7 +175,7 @@ function Content() {
         {s && !s.cssLoader && (
           <>
             <PanelSectionRow>
-              <div style={warn}>CSS Loader isn't installed. The Nightgrid theme needs it.</div>
+              <div style={warn}>CSS Loader isn't installed. The Nightgrid and Lowpoly themes need it.</div>
             </PanelSectionRow>
             <PanelSectionRow>
               <ButtonItem layout="below" disabled={busy}

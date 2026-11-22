@@ -12,8 +12,8 @@ interface Prepared { ok: boolean; error?: string; artifact?: string; hash?: stri
 export const getStatus = callable<[force?: boolean], Status>("status");
 const preparePlugin = callable<[id: string], Prepared>("prepare_plugin");
 const prepareStorePlugin = callable<[name: string], Prepared>("prepare_store_plugin");
-export const installTheme = callable<[], { ok: boolean; version?: string; error?: string }>("install_theme");
-export const uninstallTheme = callable<[], { ok: boolean; removed?: boolean; error?: string }>("uninstall_theme");
+export const installTheme = callable<[id: string], { ok: boolean; version?: string; error?: string }>("install_theme");
+export const uninstallTheme = callable<[id: string], { ok: boolean; removed?: boolean; error?: string }>("uninstall_theme");
 
 /** Decky Loader's own websocket router (the one its store and Developer page use). */
 function deckyBackend(): { call: (route: string, ...args: any[]) => Promise<any> } {

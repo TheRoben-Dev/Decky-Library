@@ -24,6 +24,11 @@ CACHE_TTL = 120        # seconds; GitHub allows 60 unauthenticated API calls per
 DOWNLOAD_PREFIX = f"https://github.com/{OWNER}/{REPO}/releases/download/"
 
 THEME_ID = "nightgrid-theme"
+# CSS Loader themes published from this repo: release id -> theme folder / theme.json name.
+THEMES = {
+    THEME_ID: "Nightgrid",
+    "lowpoly-theme": "Lowpoly",
+}
 SELF_ID = "library-hub"
 # Released once, now replaced by Library Hub: never offered for install.
 RETIRED = {"nightgrid-updater"}
@@ -53,10 +58,12 @@ def fmt(ver) -> str:
 
 
 def _name(rid: str, title: str) -> str:
-    if rid in KNOWN_NAMES and rid in (THEME_ID, SELF_ID):
+    if rid in THEMES:
+        return THEMES[rid]
+    if rid == SELF_ID:
         return KNOWN_NAMES[rid]
     m = _TITLE.match((title or "").strip())
-    if m and rid != THEME_ID:
+    if m:
         return m.group(1).strip()
     return KNOWN_NAMES.get(rid, rid)
 
@@ -85,7 +92,7 @@ def catalog(releases: list) -> dict:
         best[rid] = {
             "_ver": ver,
             "id": rid,
-            "kind": "theme" if rid == THEME_ID else "plugin",
+            "kind": "theme" if rid in THEMES else "plugin",
             "name": _name(rid, r.get("name", "")),
             "version": fmt(ver),
             "tag": tag,

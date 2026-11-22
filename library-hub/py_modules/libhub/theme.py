@@ -1,7 +1,8 @@
-"""Installs a verified Nightgrid theme zip into CSS Loader's themes folder.
+"""Installs a verified theme zip (Nightgrid, Lowpoly, …) into CSS Loader's themes folder.
 
+Every function takes the theme's folder name (= its theme.json "name", releases.THEMES).
 The zip has already passed the release checksum (releases.download). It's then checked entry by entry
-(only `Nightgrid/…`, no absolute paths, `..`, links or oversized files) before it's
+(only `<Folder>/…`, no absolute paths, `..`, links or oversized files) before it's
 extracted to a staging folder and swapped in, keeping CSS Loader's saved options
 (config_*.json) and rolling back if the swap fails.
 """
@@ -16,7 +17,7 @@ import time
 import zipfile
 
 
-THEME_DIR = "Nightgrid"
+THEME_DIR = "Nightgrid"   # default folder, kept for callers that predate multiple themes
 
 MAX_UNPACKED = 40 * 1024 * 1024
 MAX_ENTRIES = 500
@@ -28,8 +29,8 @@ def themes_dir(user_home: str) -> str:
     return os.path.join(user_home, "homebrew", "themes")
 
 
-def installed_version(user_home: str):
-    p = os.path.join(themes_dir(user_home), THEME_DIR, "theme.json")
+def installed_version(user_home: str, folder: str = THEME_DIR):
+    p = os.path.join(themes_dir(user_home), folder, "theme.json")
     try:
         with open(p, "r", encoding="utf-8") as f:
             v = json.load(f).get("version")
@@ -38,7 +39,7 @@ def installed_version(user_home: str):
         return None
 
 
-def verify_zip(data: bytes) -> dict:
+def verify_zip(data: bytes, folder: str = THEME_DIR) -> dict:
     """Validates every entry and returns the packaged theme.json."""
     zf = zipfile.ZipFile(io.BytesIO(data))
     infos = zf.infolist()
@@ -49,7 +50,7 @@ def verify_zip(data: bytes) -> dict:
         name = i.filename
         parts = name.split("/")
         if (name.startswith("/") or "\\" in name or ":" in parts[0]
-                or parts[0] != THEME_DIR or ".." in parts):
+                or parts[0] != folder or ".." in parts):
             raise ValueError(f"unexpected path in zip: {name}")
         mode = i.external_attr >> 16
         if mode and stat.S_ISLNK(mode):
@@ -58,29 +59,29 @@ def verify_zip(data: bytes) -> dict:
         if total > MAX_UNPACKED:
             raise ValueError("zip unpacks too large")
     try:
-        meta = json.loads(zf.read(f"{THEME_DIR}/theme.json").decode("utf-8"))
+        meta = json.loads(zf.read(f"{folder}/theme.json").decode("utf-8"))
     except KeyError:
-        raise ValueError("zip has no Nightgrid/theme.json")
-    if meta.get("name") != THEME_DIR:
-        raise ValueError("theme.json is not the Nightgrid theme")
+        raise ValueError(f"zip has no {folder}/theme.json")
+    if meta.get("name") != folder:
+        raise ValueError(f"theme.json is not the {folder} theme")
     if int(meta.get("manifest_version", 1)) > MAX_MANIFEST:
         raise ValueError("theme needs a newer CSS Loader")
     return meta
 
 
-def install_zip(data: bytes, user_home: str, work_dir: str) -> str:
-    """Extracts a verified zip and swaps it in for ~/homebrew/themes/Nightgrid."""
-    meta = verify_zip(data)
+def install_zip(data: bytes, user_home: str, work_dir: str, folder: str = THEME_DIR) -> str:
+    """Extracts a verified zip and swaps it in for ~/homebrew/themes/<folder>."""
+    meta = verify_zip(data, folder)
     tdir = themes_dir(user_home)
     os.makedirs(tdir, exist_ok=True)
     os.makedirs(work_dir, exist_ok=True)
-    target = os.path.join(tdir, THEME_DIR)
+    target = os.path.join(tdir, folder)
     # Stage outside the themes folder so CSS Loader never sees a half-written theme.
     stage = tempfile.mkdtemp(prefix="stage-", dir=work_dir)
     backup = None
     try:
         zipfile.ZipFile(io.BytesIO(data)).extractall(stage)
-        new = os.path.join(stage, THEME_DIR)
+        new = os.path.join(stage, folder)
         if os.path.isdir(target):
             for f in os.listdir(target):        # CSS Loader's saved on/off state + options
                 if re.fullmatch(r"config_[A-Za-z]+\.json", f):
@@ -101,9 +102,9 @@ def install_zip(data: bytes, user_home: str, work_dir: str) -> str:
     return meta.get("version", "")
 
 
-def uninstall(user_home: str, work_dir: str) -> bool:
-    """Removes ~/homebrew/themes/Nightgrid (moved aside first, so a failure leaves it intact)."""
-    target = os.path.join(themes_dir(user_home), THEME_DIR)
+def uninstall(user_home: str, work_dir: str, folder: str = THEME_DIR) -> bool:
+    """Removes ~/homebrew/themes/<folder> (moved aside first, so a failure leaves it intact)."""
+    target = os.path.join(themes_dir(user_home), folder)
     if not os.path.isdir(target):
         return False
     os.makedirs(work_dir, exist_ok=True)

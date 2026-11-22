@@ -10,7 +10,7 @@
       "theme",
       "css-loader"
     ],
-    "description": "Installs, updates and removes Roben's Decky-Library plugins and the Nightgrid theme from Quick Access. SHA-256 checked, installed through Decky's own installer.",
+    "description": "Installs, updates and removes Roben's Decky-Library plugins and themes (Nightgrid, Lowpoly) from Quick Access. SHA-256 checked, installed through Decky's own installer.",
     "image": "https://opengraph.githubassets.com/1/TheRoben-Dev/Decky-Library"
   }
 }

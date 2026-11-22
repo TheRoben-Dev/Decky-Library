@@ -1,7 +1,7 @@
 # Library Hub (Decky plugin)
 
 One Quick Access panel that installs, updates and removes everything published from this repo:
-the [Nightgrid](../nightgrid-theme/) CSS Loader theme and every Decky plugin here (Vex Performance,
+the CSS Loader themes ([Nightgrid](../nightgrid-theme/), [Lowpoly](../lowpoly-theme/)) and every Decky plugin here (Vex Performance,
 Proton Picker, Ally Tweaks, and any later ones), including Library Hub itself.
 
 It replaces **Nightgrid Updater**: on first start Library Hub removes it (through Decky's uninstaller)
@@ -10,12 +10,12 @@ and shows a toast.
 ## What it does
 - Lists every published item with the installed and latest version, and **Install**, **Update to X**
   and **Uninstall** buttons. Library Hub's own update is in its own section.
-- **Update all** updates every installed item that has a newer release: the theme first, then all
+- **Update all** updates every installed item that has a newer release: themes first, then all
   plugins in one Decky confirmation (each one checksum-checked first), Library Hub itself last.
 - Plugins are installed through Decky Loader's own installer (`utilities/install_plugin`), so you get
   Decky's normal confirmation prompt and Decky loads the new version without a restart.
-- The theme is installed into `~/homebrew/themes/Nightgrid` and CSS Loader is reloaded; your Nightgrid
-  options in CSS Loader are kept.
+- Themes are installed into `~/homebrew/themes/<Theme>` (`Nightgrid`, `Lowpoly`) and CSS Loader is
+  reloaded; your options in CSS Loader are kept. Enable one full theme at a time in CSS Loader.
 - Dependencies:
   - No CSS Loader? A banner offers **Install CSS Loader** from Decky's own store (Decky's prompt again).
   - Vex Performance shows whether **Lossless Scaling** is installed in Steam (needed for frame
@@ -33,7 +33,7 @@ and shows a toast.
   means a bad release can't leave you with neither version.)
 - Plugin zips are inspected first: exactly one folder whose name matches its `plugin.json`, a `main.py`,
   no absolute paths, `..`, links or oversized content, and the version must match the release.
-- Theme zips: only `Nightgrid/…`, valid `theme.json`, staged and swapped in with rollback.
+- Theme zips: only `<Theme>/…` for the expected theme, valid `theme.json` with that name, staged and swapped in with rollback.
 - CSS Loader comes from Decky's store index (`plugins.deckbrew.xyz`), with the hash the store publishes;
   that host is allowed only for that one lookup.
 - Runs as your user (no root flag). Root-level work (placing plugin folders) is done by Decky itself.
@@ -41,8 +41,9 @@ and shows a toast.
 ## Releasing (maintainer)
 Bump `version` in a plugin's `package.json` and push to `main`, a `claude/*` or an `add-*` branch:
 `.github/workflows/plugin-release.yml` builds it, tags `<folder>-vX.Y.Z` on that commit and publishes
-the zip + `.sha256` (title `<plugin.json name> vX.Y.Z`). The theme works the same way from
-`theme.json` via `nightgrid-release.yml`. Versions that already have a release are skipped.
+the zip + `.sha256` (title `<plugin.json name> vX.Y.Z`). Themes work the same way from
+`theme.json` via `nightgrid-release.yml` / `lowpoly-release.yml`; a new theme also needs an entry in
+`releases.THEMES` (release id → folder name). Versions that already have a release are skipped.
 A new plugin needs `plugin.json`, `package.json` and a `package.sh` that leaves one `out/*.zip`.
 
 ## Build

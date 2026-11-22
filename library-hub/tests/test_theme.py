@@ -165,5 +165,35 @@ class Install(unittest.TestCase):
             self.assertEqual(os.listdir(work), [])
 
 
+class Lowpoly(unittest.TestCase):
+    def lp_zip(self, version="v0.1.0", folder="Lowpoly", name="Lowpoly"):
+        return make_zip({f"{folder}/theme.json": json.dumps({"name": name, "version": version, "manifest_version": 9}),
+                         f"{folder}/css/tokens.css": ":root{}"})
+
+    def test_catalog_kind_and_name(self):
+        cat = releases.catalog([release("lowpoly-theme-v0.1.0", zipname="Lowpoly.zip", title="Lowpoly theme v0.1.0"),
+                                release("nightgrid-theme-v0.6.4")])
+        self.assertEqual(cat["lowpoly-theme"]["kind"], "theme")
+        self.assertEqual(cat["lowpoly-theme"]["name"], "Lowpoly")
+        self.assertEqual(cat["nightgrid-theme"]["name"], "Nightgrid")
+
+    def test_installs_beside_nightgrid(self):
+        with tempfile.TemporaryDirectory() as home:
+            work = os.path.join(home, "w")
+            theme.install_zip(make_zip(version="v0.6.4"), home, work)
+            self.assertEqual(theme.install_zip(self.lp_zip(), home, work, "Lowpoly"), "v0.1.0")
+            self.assertEqual(theme.installed_version(home, "Lowpoly"), "v0.1.0")
+            self.assertEqual(theme.installed_version(home), "v0.6.4")
+            self.assertTrue(theme.uninstall(home, work, "Lowpoly"))
+            self.assertIsNone(theme.installed_version(home, "Lowpoly"))
+            self.assertEqual(theme.installed_version(home), "v0.6.4")
+
+    def test_wrong_theme_rejected(self):
+        with self.assertRaises(ValueError):
+            theme.verify_zip(make_zip(), "Lowpoly")                     # a Nightgrid zip
+        with self.assertRaises(ValueError):
+            theme.verify_zip(self.lp_zip(name="Nightgrid"), "Lowpoly")  # mislabelled theme.json
+
+
 if __name__ == "__main__":
     unittest.main()

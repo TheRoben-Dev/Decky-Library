@@ -1,10 +1,10 @@
 """Library Hub - Decky backend.
 
 Installs, updates and removes everything published from TheRoben-Dev/Decky-Library: the
-Nightgrid CSS Loader theme and every Decky plugin in the repo, including Library Hub itself.
+CSS Loader themes (Nightgrid, Lowpoly) and every Decky plugin in the repo, including Library Hub itself.
 
 Runs as the normal user (no "root" flag):
-- the theme is written to ~/homebrew/themes/Nightgrid here, after the checksum and zip checks;
+- themes are written to ~/homebrew/themes/<Theme> here, after the checksum and zip checks;
 - plugins are downloaded and checked here, then handed to Decky Loader's own installer by the
   frontend with the same URL and SHA-256. Decky asks for confirmation, checks the hash again,
   installs (as root) and reloads the plugin.
@@ -65,7 +65,7 @@ class Plugin:
         for rid, it in sorted(cat.items(), key=lambda kv: (kv[0] != releases.SELF_ID,
                                                            kv[1]["kind"] != "theme", kv[1]["name"].lower())):
             if it["kind"] == "theme":
-                inst = theme.installed_version(_home())
+                inst = theme.installed_version(_home(), releases.THEMES[rid])
                 inst = inst.lstrip("v") if inst else None
             else:
                 inst = have.get(it["name"])
@@ -117,23 +117,29 @@ class Plugin:
             decky.logger.error(f"store lookup for {name} failed: {e}")
             return {"ok": False, "error": str(e)}
 
-    async def install_theme(self):
+    async def install_theme(self, rid: str = releases.THEME_ID):
+        folder = releases.THEMES.get(rid)
+        if not folder:
+            return {"ok": False, "error": f"{rid} isn't a theme from this repo."}
         try:
             cat = await asyncio.to_thread(releases.fetch_catalog)
-            it = cat.get(releases.THEME_ID)
+            it = cat.get(rid)
             if not it:
-                return {"ok": False, "error": "No Nightgrid release published yet."}
+                return {"ok": False, "error": f"No {folder} release published yet."}
             data, _ = await asyncio.to_thread(releases.download, it)
-            ver = await asyncio.to_thread(theme.install_zip, data, _home(), decky.DECKY_PLUGIN_RUNTIME_DIR)
-            decky.logger.info(f"installed Nightgrid {ver} from {it['tag']}")
+            ver = await asyncio.to_thread(theme.install_zip, data, _home(), decky.DECKY_PLUGIN_RUNTIME_DIR, folder)
+            decky.logger.info(f"installed {folder} {ver} from {it['tag']}")
             return {"ok": True, "version": ver}
         except Exception as e:
             decky.logger.error(f"theme install failed: {e}")
             return {"ok": False, "error": str(e)}
 
-    async def uninstall_theme(self):
+    async def uninstall_theme(self, rid: str = releases.THEME_ID):
+        folder = releases.THEMES.get(rid)
+        if not folder:
+            return {"ok": False, "error": f"{rid} isn't a theme from this repo."}
         try:
-            removed = await asyncio.to_thread(theme.uninstall, _home(), decky.DECKY_PLUGIN_RUNTIME_DIR)
+            removed = await asyncio.to_thread(theme.uninstall, _home(), decky.DECKY_PLUGIN_RUNTIME_DIR, folder)
             return {"ok": True, "removed": removed}
         except Exception as e:
             decky.logger.error(f"theme uninstall failed: {e}")

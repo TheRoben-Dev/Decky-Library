@@ -24,6 +24,7 @@ CSS_LOADER = "CSS Loader"
 # What each item needs to be useful. "decky" = a plugin from Decky's store, "steam" = a Steam app.
 DEPENDENCIES = {
     "nightgrid-theme": [{"kind": "decky", "name": CSS_LOADER}],
+    "lowpoly-theme": [{"kind": "decky", "name": CSS_LOADER}],
     "vex-performance": [{"kind": "steam", "appid": 993090, "name": "Lossless Scaling",
                          "why": "needed for frame generation"}],
 }
