@@ -75,6 +75,9 @@ def install_zip(data: bytes, user_home: str, work_dir: str, folder: str = THEME_
     tdir = themes_dir(user_home)
     os.makedirs(tdir, exist_ok=True)
     os.makedirs(work_dir, exist_ok=True)
+    if not os.access(tdir, os.W_OK):
+        raise PermissionError(f"{tdir} isn't writable by this user (CSS Loader may have created it as root). "
+                              f"Fix once in Desktop Mode: sudo chown -R $USER: ~/homebrew/themes")
     target = os.path.join(tdir, folder)
     # Stage outside the themes folder so CSS Loader never sees a half-written theme.
     stage = tempfile.mkdtemp(prefix="stage-", dir=work_dir)
