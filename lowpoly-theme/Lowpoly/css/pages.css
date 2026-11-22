@@ -16,23 +16,9 @@
   background-color: color-mix(in srgb, var(--lp-bg-1) 92%, transparent);
 }
 .BasicUI .downloads_Rule.downloads_Rule { background-color: var(--lp-line); }
-.BasicUI .downloads_Title {
-  text-transform: uppercase;
-  letter-spacing: var(--lp-tracking);
-}
-.BasicUI .downloads_Title::before {
-  content: "";
-  display: inline-block;
-  width: .5em;
-  height: .62em;
-  margin-right: .5em;
-  vertical-align: .02em;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-  background: linear-gradient(160deg, color-mix(in srgb, var(--lp-data) 55%, white), var(--lp-data) 55%, var(--lp-active));
-}
 .BasicUI .downloads_Count { color: var(--lp-data); }
 .BasicUI .downloads_PatchNotes { color: var(--lp-data); }
-/* Graph: network = partner colour, disk = ok green (Steam: blue / green) */
+/* Graph: network = accent tint, disk = ok green (Steam: blue / green) */
 .BasicUI .downloadgraph_DownloadGraph .downloadgraph_GraphBarDownload { color: color-mix(in srgb, var(--lp-data) 70%, transparent); }
 .BasicUI .downloadgraph_DownloadGraph .downloadgraph_GraphLine { stroke: var(--lp-ok); }
 .BasicUI .downloadgraph_Network.downloadgraph_Network svg { color: var(--lp-data); }

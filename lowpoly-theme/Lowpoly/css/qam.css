@@ -59,7 +59,6 @@
   box-shadow: none !important;
   text-shadow: none !important;
   animation: none !important;
-  padding-left: 0;
 }
 .BasicUI .quickaccessmenu_Title .quickaccessmenu_Title::before,
 .BasicUI .quickaccessmenu_Title .quickaccessmenu_Title::after {
