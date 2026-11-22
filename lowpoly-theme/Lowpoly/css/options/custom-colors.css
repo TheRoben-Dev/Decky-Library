@@ -1,0 +1,6 @@
+/* Accent: "Custom" — the two color pickers (CSS Loader injects them as --lp-custom-*).
+ * 0,2,1 so it beats both tokens.css and the accent options, whatever the inject order. */
+html:root:root {
+  --lp-c1: var(--lp-custom-1);
+  --lp-c2: var(--lp-custom-2);
+}

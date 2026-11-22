@@ -1,0 +1,126 @@
+{
+  "name": "Lowpoly",
+  "author": "TheRoben-Dev",
+  "version": "v0.1.0",
+  "description": "32-bit-era Game Mode theme inspired by late-90s low-poly 3D: a night-sky gouraud wash with flat-shaded polygons and ordered dithering, bevelled blocky controls, bright gouraud selection polygons, a chunky pixel font and optional CRT scanlines. Covers Home, Library, game pages, Settings, menus, Quick Access, Friends & Chat, Store, Downloads, Search, Media, Achievements, keyboard and notifications. Options: accent color (7 pairs or custom), dither, polygons, CRT, font, bloom, animations.",
+  "target": "System-Wide",
+  "manifest_version": 9,
+  "tabs": {
+    "sp": ["bigpicture"],
+    "menu": ["MainMenu"],
+    "qam": ["QuickAccess"],
+    "toasts": ["notificationtoasts_.*"],
+    "web": ["store"],
+    "all": ["bigpicture", "MainMenu", "QuickAccess", "notificationtoasts_.*"],
+    "default": ["all", "web"]
+  },
+  "inject": {
+    "css/tokens.css": [],
+    "css/fonts.css": [],
+    "css/accents.css": ["sp", "menu", "qam"],
+    "css/controls.css": ["sp", "menu", "qam"],
+    "css/labels.css": ["sp", "menu", "qam"],
+    "css/canvas.css": ["sp"],
+    "css/shell.css": ["sp"],
+    "css/home.css": ["sp"],
+    "css/mainmenu.css": ["menu"],
+    "css/qam.css": ["qam"],
+    "css/toasts.css": ["sp", "qam", "toasts"],
+    "css/chat.css": ["sp", "qam"],
+    "css/pages.css": ["sp", "menu", "qam"],
+    "css/keyboard.css": ["sp"],
+    "css/store.css": ["web"]
+  },
+  "patches": {
+    "Accent": {
+      "type": "dropdown",
+      "default": "Cobalt",
+      "values": {
+        "Cobalt": {},
+        "Crimson": { "css/options/accent-crimson.css": [] },
+        "Jade": { "css/options/accent-jade.css": [] },
+        "Amber": { "css/options/accent-amber.css": [] },
+        "Violet": { "css/options/accent-violet.css": [] },
+        "Teal": { "css/options/accent-teal.css": [] },
+        "Slate": { "css/options/accent-slate.css": [] },
+        "Custom": { "css/options/custom-colors.css": [] }
+      },
+      "components": [
+        {
+          "name": "Selection color",
+          "type": "color-picker",
+          "on": "Custom",
+          "default": "#4F8BFF",
+          "css_variable": "lp-custom-1",
+          "tabs": []
+        },
+        {
+          "name": "Gradient partner",
+          "type": "color-picker",
+          "on": "Custom",
+          "default": "#B66BFF",
+          "css_variable": "lp-custom-2",
+          "tabs": []
+        }
+      ]
+    },
+    "Dither": {
+      "type": "dropdown",
+      "default": "Light",
+      "values": {
+        "Off": { "css/options/dither-off.css": [] },
+        "Light": {},
+        "Heavy": { "css/options/dither-heavy.css": [] }
+      }
+    },
+    "Polygons": {
+      "type": "checkbox",
+      "default": "Yes",
+      "values": {
+        "No": { "css/options/polygons-off.css": [] },
+        "Yes": {}
+      }
+    },
+    "CRT": {
+      "type": "dropdown",
+      "default": "Scanlines",
+      "values": {
+        "Off": {},
+        "Scanlines": { "css/options/crt-scanlines.css": ["sp"] },
+        "Tube": { "css/options/crt-tube.css": ["sp"] }
+      }
+    },
+    "Font": {
+      "type": "dropdown",
+      "default": "Pixel labels",
+      "values": {
+        "Pixel labels": { "css/font-labels.css": ["sp", "menu", "qam"] },
+        "Pixel everywhere": {
+          "css/font-labels.css": ["sp", "menu", "qam"],
+          "css/options/font-all.css": []
+        },
+        "Steam default": {}
+      }
+    },
+    "Bloom": {
+      "type": "checkbox",
+      "default": "Yes",
+      "values": {
+        "No": { "css/options/bloom-off.css": [] },
+        "Yes": {}
+      }
+    },
+    "Animations": {
+      "type": "dropdown",
+      "default": "Subtle",
+      "values": {
+        "Off": {},
+        "Subtle": { "css/anim/subtle.css": ["sp", "menu", "qam", "toasts"] },
+        "Full": {
+          "css/anim/subtle.css": ["sp", "menu", "qam", "toasts"],
+          "css/anim/full.css": ["sp", "menu", "qam"]
+        }
+      }
+    }
+  }
+}

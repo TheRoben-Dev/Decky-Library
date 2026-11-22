@@ -1,0 +1,44 @@
+/* Lowpoly — anim/full.css  (Animations: "Full", on top of subtle.css)
+ * Adds the looping effects: a menu-cursor blink on the focus ring, a vertex-wobble as a game
+ * cover takes focus, and moving stripes on running download bars. Loops stop while a game runs.
+ * The blink animates the ring's opacity only, in two hard steps (no per-frame interpolation).
+ */
+@media (prefers-reduced-motion: no-preference) {
+
+  /* ── Focus ring: hard two-step blink, like a menu cursor ── */
+  @keyframes lp-cursor { 0%, 64% { opacity: 1; } 65%, 100% { opacity: .55; } }
+  .focusring_FocusRing {
+    animation: lp-ring-in var(--lp-dur) steps(3, end), lp-cursor 1.1s steps(1, end) var(--lp-dur) infinite;
+  }
+
+  /* ── Recent Games cover: a short affine "wobble" as it takes focus (one-shot, transform only).
+   * Ends exactly on Steam's own lifted pose (translateZ + scale from home.css). */
+  @keyframes lp-wobble {
+    0%   { transform: translateZ(15px) scale(1.03) rotate(-1.2deg) skewX(1.5deg); }
+    33%  { transform: translateZ(15px) scale(1.03) rotate(.8deg) skewX(-1deg); }
+    66%  { transform: translateZ(15px) scale(1.03) rotate(-.4deg) skewX(.5deg); }
+    100% { transform: translateZ(15px) scale(1.03); }
+  }
+  .BasicUI .appportrait_InRecentGames.Focusable:focus {
+    animation: lp-wobble 240ms steps(1, end);
+  }
+
+  /* ── Moving stripes on running download bars ───────────
+   * A stripe layer over the fill's gouraud gradient, scrolled with background-position. Nothing
+   * about the bar's box (position, overflow, size) is touched. */
+  @keyframes lp-stripes { from { background-position: 0 0, 0 0; } to { background-position: 24px 0, 0 0; } }
+  .BasicUI .downloads_ProgressBar.downloads_ProgressBar:not([class*="_2XedpgsgZ3gMAUuPRtnfld"]):not([class*="HifZB5TP6WNuubp1dzyxS"]) > div {
+    background-image: repeating-linear-gradient(-45deg, rgba(0, 0, 0, .25) 0 6px, transparent 6px 12px), var(--lp-grad-data);
+    background-size: 24px 100%, 100% 100%;
+    animation: lp-stripes .9s linear infinite;
+  }
+
+  /* ── While a game is running: no loops ──────────────── */
+  :root:has(.gamepadui_BasicHome.gamepadui_TransparentBackground) .focusring_FocusRing,
+  :root:has([class*="RAI0lLN8sCtqCMI36rLiB"]) .focusring_FocusRing {
+    animation: lp-ring-in var(--lp-dur) steps(3, end);
+  }
+  :root:has(.gamepadui_BasicHome.gamepadui_TransparentBackground) .downloads_ProgressBar > div {
+    animation: none;
+  }
+}
