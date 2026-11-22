@@ -78,6 +78,12 @@ class Api(unittest.TestCase):
         self.assertIn("/logos/game/5?", r.call_args_list[0][0][0])
         self.assertTrue(r.call_args_list[1][0][0].endswith("/search/autocomplete/AC%252FDC%2520Live"))
 
+    def test_interleave_round_robin_without_repeats(self):
+        a = [{"id": 1}, {"id": 2}, {"id": 3}]
+        b = [{"id": 9}, {"id": 2}]
+        self.assertEqual([x["id"] for x in sgdb.interleave([a, b])], [1, 9, 2, 3])
+        self.assertEqual(sgdb.interleave([]), [])
+
 
 class Settings(unittest.TestCase):
     def test_key_never_public_and_file_private(self):

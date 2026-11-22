@@ -6,7 +6,7 @@ Change a game's library artwork from [SteamGridDB](https://www.steamgriddb.com) 
 - Uses Steam's own custom artwork (`SteamClient.Apps.SetCustomArtworkForApp`), so Steam keeps the files in `userdata/<id>/config/grid` and the art stays even if the plugin is removed. **Reset to Steam's** puts the original back.
 - **From file** applies any PNG/JPEG on the device (Decky's file browser).
 - Filters: style per slot, animated (APNG) art, humor, flashing images, adult content (off by default).
-- **Custom search**: press **Search…** (or **Y** on any picture), type any name with the on-screen keyboard and pick the SteamGridDB game to take art from. Handy for remasters, demos, mods, or a game SteamGridDB files under another name. The pick is remembered per game; **Use Steam's own** (or **Match by name again** for shortcuts) undoes it.
+- **Custom search**: press **Search…** (or **Y** on any picture), type any text with the on-screen keyboard and press Enter or **Search “…”**: the browser shows art for that text as typed, merged from its 5 best-matching SteamGridDB games (each tile names its game). The game list under the field is optional help; pick one to narrow the art to that game. Remembered per game; **Use Steam's own** (or **Match by name again** for shortcuts) undoes it.
 - Non-Steam shortcuts are matched on SteamGridDB by name automatically; Search fixes a wrong match.
 
 ## Light on resources
@@ -28,7 +28,7 @@ In the library, open a game's menu and pick **Change artwork…** (between Manag
 | `main.py` | Decky backend (API calls, downloads, settings) |
 | `py_modules/gridart/sgdb.py` | SteamGridDB client: query building, host allow-list, size cap, PNG/JPEG check |
 | `src/page.tsx` | Full-screen browser (`/grid-art/:appid`) |
-| `src/search.tsx` | Custom search dialog (debounced, newest answer wins) |
+| `src/search.tsx` | Custom search dialog (free-text term or one game; debounced suggestions) |
 | `src/index.tsx` | Quick Access panel |
 | `src/menu.tsx` | "Change artwork…" entry in the library game menu |
 

@@ -33,14 +33,14 @@ function Thumb({ a }: { a: Asset }) {
   return <img src={src} loading="lazy" decoding="async" draggable={false} />;
 }
 
-function SlotTab({ appid, gameId, slot, settings, onSettings, applied, setApplied, shortcut, onSearch }: {
-  appid: number; gameId: number; slot: Slot; settings: Settings; onSettings: (s: Settings) => void;
+function SlotTab({ appid, gameIds, names, slot, settings, onSettings, applied, setApplied, shortcut, onSearch }: {
+  appid: number; gameIds: number[]; names: Map<number, string>; slot: Slot; settings: Settings; onSettings: (s: Settings) => void;
   applied: Partial<Record<string, number>>; setApplied: (a: Partial<Record<string, number>>) => void; shortcut: boolean;
   onSearch: () => void;
 }) {
   // Filters are part of the key, so changing one starts a fresh list instead of showing stale results.
   const filt = [settings.animated, settings.nsfw, settings.humor, settings.epilepsy, (settings.styles[slot.kind] ?? []).join(",")].join("|");
-  const key = `${appid}:${slot.id}:${gameId}:${filt}`;
+  const key = `${appid}:${slot.id}:${gameIds.join(",")}:${filt}`;
   const [data, setData] = useState(() => state.pages.get(key) ?? null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +54,7 @@ function SlotTab({ appid, gameId, slot, settings, onSettings, applied, setApplie
     const forKey = key;
     setLoading(true); setError(null);
     try {
-      const r = await getAssets(slot.kind, appid, gameId, slot.shape, page);
+      const r = await getAssets(slot.kind, appid, gameIds, slot.shape, page);
       if (!alive.current || keyRef.current !== forKey) return;
       if (!r.ok) { setError(r.error); return; }
       const prev = page > 0 ? state.pages.get(forKey)?.items ?? [] : [];
@@ -173,7 +173,7 @@ function SlotTab({ appid, gameId, slot, settings, onSettings, applied, setApplie
               onSecondaryButton={onSearch} onSecondaryActionDescription="Search">
               <Thumb a={a} />
               {cur === a.id && <div className="mark">SET</div>}
-              <div className="meta">{[STYLE_NAMES[a.style] ?? a.style, a.width && `${a.width}×${a.height}`, a.author && `by ${a.author}`].filter(Boolean).join("  ·  ")}</div>
+              <div className="meta">{[a.game && names.get(a.game), STYLE_NAMES[a.style] ?? a.style, a.width && `${a.width}×${a.height}`, a.author && `by ${a.author}`].filter(Boolean).join("  ·  ")}</div>
               {busy === a.id && <div className="busy">APPLYING…</div>}
             </Focusable>
           ))}
@@ -210,7 +210,7 @@ function useMatch(appid: number, name: string, shortcut: boolean, hasKey: boolea
     setError(null);
     const r = await searchGames(name);
     if (!live.current) return;
-    if (!r.ok) { setError(r.error); setReady(true); return; }
+    if (!r.ok) { state.matched.delete(appid); setM(null); setError(r.error); setReady(true); return; }
     if (r.games[0]) put({ id: r.games[0].id, name: r.games[0].name, custom: false });
     else { state.matched.delete(appid); setM(null); setReady(true); setError(`SteamGridDB has nothing called “${name}”.`); }
   };
@@ -250,9 +250,11 @@ export function ArtPage() {
 
   const onSettings = (s: Settings) => { state.settings = s; setSettings(s); };
   const slots = SLOTS;
-  const gameId = sc.match?.id ?? 0;
+  const m = sc.match;
+  const gameIds = m ? m.ids ?? [m.id] : [];
+  const names = useMemo(() => new Map(gameIds.map((id, i) => [id, m?.names?.[i] ?? ""] as [number, string])), [gameIds.join(",")]);
   const openSearch = () => showModal(
-    <SearchModal start={sc.match?.custom ? sc.match.name : app?.name ?? ""} current={gameId}
+    <SearchModal start={m?.custom ? m.name : app?.name ?? ""} current={m && !m.term ? m.id : 0}
       auto={app?.shortcut ? "Match by name again" : "Use Steam's own"} onPick={sc.choose} />);
 
   let body: ReactNode;
@@ -275,7 +277,7 @@ export function ArtPage() {
       <Tabs activeTab={tab} onShowTab={setTab} autoFocusContents
         tabs={slots.map((s) => ({
           id: s.id, title: s.title,
-          content: <SlotTab key={`${s.id}:${gameId}`} appid={appid} gameId={gameId} slot={s} settings={settings} onSettings={onSettings}
+          content: <SlotTab key={`${s.id}:${gameIds.join(",")}`} appid={appid} gameIds={gameIds} names={names} slot={s} settings={settings} onSettings={onSettings}
             applied={applied} setApplied={setApplied} shortcut={app.shortcut} onSearch={openSearch} />,
         }))} />
     </div>);
@@ -288,7 +290,7 @@ export function ArtPage() {
           <span className="t">{app?.name ?? "Unknown app"}</span>
           <span className="s">Artwork</span>
           {sc.match && (sc.match.custom || sc.match.name !== app?.name) &&
-            <span className="as">as <b>{sc.match.name}</b>{sc.match.custom ? "" : " (auto)"}</span>}
+            <span className="as">{sc.match.term ? "search" : "as"} <b>{sc.match.term ? `“${sc.match.name}”` : sc.match.name}</b>{sc.match.custom ? "" : " (auto)"}</span>}
           <span className="tag" style={{ color: C.data }}>STEAMGRIDDB</span>
         </div>
         {body}

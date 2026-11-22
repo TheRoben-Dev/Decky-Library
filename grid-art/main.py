@@ -134,15 +134,32 @@ class Plugin:
         s.save()
         return _public(s)
 
-    async def assets(self, kind: str, appid: int, game_id: int, shape: str, page: int):
+    async def assets(self, kind: str, appid: int, game_ids, shape: str, page: int):
+        """Art for the Steam app id (game_ids empty/0), one SteamGridDB game, or the top games of a
+        typed search term (up to MAX_TERM_GAMES, merged so every game gets a turn near the top)."""
         s = store()
         try:
+            ids = game_ids if isinstance(game_ids, list) else [game_ids]
+            ids = list(dict.fromkeys(int(x) for x in ids if int(x or 0) > 0))[:sgdb.MAX_TERM_GAMES]
             q = sgdb.build_query(
                 kind, styles=s.data["styles"].get(kind, []), dimensions=sgdb.DIMENSIONS.get(shape, ""),
                 animated=s.data["animated"] and kind != "icons", nsfw=s.data["nsfw"], humor=s.data["humor"],
                 epilepsy=s.data["epilepsy"], page=page)
-            items = await asyncio.to_thread(sgdb.assets, kind, s.data["key"], appid=appid, game_id=game_id, query=q)
-            return {"ok": True, "items": items, "page": page, "more": len(items) >= 50}
+            if not ids:
+                items = await asyncio.to_thread(sgdb.assets, kind, s.data["key"], appid=appid, query=q)
+                return {"ok": True, "items": items, "page": page, "more": len(items) >= 50}
+            lists, errors = [], []
+            for gid in ids:
+                try:
+                    got = await asyncio.to_thread(sgdb.assets, kind, s.data["key"], game_id=gid, query=q)
+                    lists.append([{**x, "game": gid} for x in got])
+                except sgdb.ApiError as e:
+                    if e.status in (401, 403) or len(ids) == 1:
+                        raise
+                    errors.append(e)   # one missing game shouldn't hide the others
+            if errors and not lists:
+                raise errors[0]
+            return {"ok": True, "items": sgdb.interleave(lists), "page": page, "more": any(len(x) >= 50 for x in lists)}
         except Exception as e:
             return _err(e)
 
@@ -202,8 +219,14 @@ class Plugin:
         """Remember (game = {id, name}) or forget (game = None) a custom search pick."""
         s = store()
         k = str(int(appid))
-        if isinstance(game, dict) and int(game.get("id") or 0) > 0:
-            s.data["matches"][k] = {"id": int(game["id"]), "name": str(game.get("name") or "")[:200]}
+        ids = []
+        if isinstance(game, dict):
+            raw = game.get("ids") if isinstance(game.get("ids"), list) else [game.get("id")]
+            ids = list(dict.fromkeys(int(x) for x in raw if int(x or 0) > 0))[:sgdb.MAX_TERM_GAMES]
+        if ids:
+            names = game.get("names") if isinstance(game.get("names"), list) else []
+            s.data["matches"][k] = {"id": ids[0], "ids": ids, "names": [str(x)[:200] for x in names[:len(ids)]],
+                                    "name": str(game.get("name") or "")[:200], "term": bool(game.get("term"))}
         else:
             s.data["matches"].pop(k, None)
         s.save()

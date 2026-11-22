@@ -184,6 +184,21 @@ def assets(kind: str, key: str, *, appid: int = 0, game_id: int = 0, query: str 
     return [slim(x) for x in data if x.get("url")]
 
 
+# A typed search term shows art from this many of its best-matching games at once.
+MAX_TERM_GAMES = 5
+
+
+def interleave(lists: list) -> list:
+    """Round-robin merge (first of each list, then second of each...), dropping repeated ids."""
+    out, seen = [], set()
+    for i in range(max((len(x) for x in lists), default=0)):
+        for lst in lists:
+            if i < len(lst) and lst[i].get("id") not in seen:
+                seen.add(lst[i].get("id"))
+                out.append(lst[i])
+    return out
+
+
 def search(term: str, key: str) -> list:
     term = (term or "").strip()
     if not term:
