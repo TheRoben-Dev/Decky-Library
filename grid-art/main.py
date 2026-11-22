@@ -194,6 +194,21 @@ class Plugin:
         s.save()
         return dict(cur)
 
+    async def match(self, appid: int):
+        """The SteamGridDB game the user picked for this app with the custom search, or None."""
+        return store().data["matches"].get(str(int(appid)))
+
+    async def set_match(self, appid: int, game):
+        """Remember (game = {id, name}) or forget (game = None) a custom search pick."""
+        s = store()
+        k = str(int(appid))
+        if isinstance(game, dict) and int(game.get("id") or 0) > 0:
+            s.data["matches"][k] = {"id": int(game["id"]), "name": str(game.get("name") or "")[:200]}
+        else:
+            s.data["matches"].pop(k, None)
+        s.save()
+        return s.data["matches"].get(k)
+
     async def _main(self):
         decky.logger.info("Grid Art ready (idle until the artwork browser is opened)")
 

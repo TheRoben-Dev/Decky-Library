@@ -97,6 +97,20 @@ class Settings(unittest.TestCase):
             open(p, "w").write("{nope")
             self.assertEqual(Store(p).data["key"], "")
 
+    def test_custom_matches_persist_but_stay_private(self):
+        with tempfile.TemporaryDirectory() as d:
+            s = Store(os.path.join(d, "settings.json"))
+            s.data["matches"]["620"] = {"id": 5251, "name": "Portal 2"}
+            s.save()
+            self.assertNotIn("matches", s.public())
+            self.assertEqual(Store(s.path).data["matches"], {"620": {"id": 5251, "name": "Portal 2"}})
+
+    def test_old_settings_file_gets_empty_matches(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "settings.json")
+            json.dump({"key": "abcdefgh12345678", "applied": {}}, open(p, "w"))
+            self.assertEqual(Store(p).data["matches"], {})
+
 
 if __name__ == "__main__":
     unittest.main()

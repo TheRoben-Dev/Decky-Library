@@ -2,13 +2,15 @@
  * Full-screen artwork browser: /grid-art/:appid
  * One tab per artwork slot (L1/R1 switch tabs). Pick a tile to apply it, Reset to go back to
  * Steam's own art. Pages of results are fetched only when a tab is opened or "More" is pressed.
+ * Search (or Y on a tile) looks the art up under any name; the pick is remembered per app.
  */
-import { DialogButton, Dropdown, Focusable, Navigation, SteamSpinner, Tabs, Toggle, useParams } from "@decky/ui";
+import { DialogButton, Dropdown, Focusable, Navigation, showModal, SteamSpinner, Tabs, Toggle, useParams } from "@decky/ui";
 import { openFilePicker, toaster } from "@decky/api";
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
-import { Asset, getApplied, getAssets, getImage, getSettings, markApplied, readLocal, saveIcon, searchGames, setOptions, Settings } from "./backend";
+import { Asset, getApplied, getAssets, getImage, getMatch, getSettings, markApplied, Match, readLocal, saveIcon, searchGames, setMatch, setOptions, Settings } from "./backend";
 import { appInfo, clearArt, setArt, setShortcutIcon, Slot, SLOTS } from "./steam";
-import { clearPages, state } from "./state";
+import { state } from "./state";
+import { SearchModal } from "./search";
 
 import { C, PAGE_CSS } from "./ui";
 
@@ -31,9 +33,10 @@ function Thumb({ a }: { a: Asset }) {
   return <img src={src} loading="lazy" decoding="async" draggable={false} />;
 }
 
-function SlotTab({ appid, gameId, slot, settings, onSettings, applied, setApplied, shortcut }: {
+function SlotTab({ appid, gameId, slot, settings, onSettings, applied, setApplied, shortcut, onSearch }: {
   appid: number; gameId: number; slot: Slot; settings: Settings; onSettings: (s: Settings) => void;
   applied: Partial<Record<string, number>>; setApplied: (a: Partial<Record<string, number>>) => void; shortcut: boolean;
+  onSearch: () => void;
 }) {
   // Filters are part of the key, so changing one starts a fresh list instead of showing stale results.
   const filt = [settings.animated, settings.nsfw, settings.humor, settings.epilepsy, (settings.styles[slot.kind] ?? []).join(",")].join("|");
@@ -139,7 +142,8 @@ function SlotTab({ appid, gameId, slot, settings, onSettings, applied, setApplie
   return (
     <div style={{ padding: "0 24px" }}>
       <Focusable className="ga-bar" flow-children="row">
-        <span className="lbl">Style</span>
+        <DialogButton className="ga-btn" onClick={onSearch}>Search…</DialogButton>
+        <span className="lbl" style={{ marginLeft: "6px" }}>Style</span>
         <div style={{ minWidth: "170px" }}>
           <Dropdown selectedOption={styleSel}
             rgOptions={[{ data: "", label: "Any" }, ...STYLES[slot.kind].map((x) => ({ data: x, label: STYLE_NAMES[x] ?? x }))]}
@@ -159,13 +163,14 @@ function SlotTab({ appid, gameId, slot, settings, onSettings, applied, setApplie
       </Focusable>
       {error && <div className="ga-msg err">{error}</div>}
       {data && data.items.length === 0 && !loading && !error &&
-        <div className="ga-msg">Nothing on SteamGridDB for this with the current filters. Try Style: Any{canAnimate && settings.animated ? " or turn Animated off" : ""}.</div>}
+        <div className="ga-msg">Nothing on SteamGridDB for this with the current filters. Try Style: Any{canAnimate && settings.animated ? " or turn Animated off" : ""}, or Search under another name.</div>}
       {data && data.items.length > 0 && (
         <Focusable className="ga-grid" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${slot.min}px, 1fr))` }}>
           {data.items.map((a) => (
             <Focusable key={a.id} className={`ga-tile${contain ? " contain" : ""}`} focusClassName="ga-focus"
               style={{ aspectRatio: slot.ratio }} onActivate={() => apply(a)} onClick={() => apply(a)}
-              onOKActionDescription={`Set ${slot.title.toLowerCase()}`}>
+              onOKActionDescription={`Set ${slot.title.toLowerCase()}`}
+              onSecondaryButton={onSearch} onSecondaryActionDescription="Search">
               <Thumb a={a} />
               {cur === a.id && <div className="mark">SET</div>}
               <div className="meta">{[STYLE_NAMES[a.style] ?? a.style, a.width && `${a.width}×${a.height}`, a.author && `by ${a.author}`].filter(Boolean).join("  ·  ")}</div>
@@ -184,26 +189,49 @@ function SlotTab({ appid, gameId, slot, settings, onSettings, applied, setApplie
   );
 }
 
-/** Non-Steam shortcuts have no Steam app id on SteamGridDB, so match them by name. */
-function useShortcutMatch(appid: number, name: string, shortcut: boolean, hasKey: boolean) {
-  const [match, setMatch] = useState(() => state.matched.get(appid) ?? null);
-  const [options, setOptionsList] = useState<{ id: number; name: string }[]>([]);
+/**
+ * Which SteamGridDB game the browser shows. Steam games are looked up by app id unless the user
+ * picked another game with Search; non-Steam shortcuts have no Steam app id, so they are matched
+ * by name (first hit) until the user picks one. A pick is saved per app in the settings file.
+ */
+function useMatch(appid: number, name: string, shortcut: boolean, hasKey: boolean) {
+  const [match, setM] = useState(() => state.matched.get(appid) ?? null);
+  const [ready, setReady] = useState(() => state.matched.has(appid));
   const [error, setError] = useState<string | null>(null);
+  const live = useRef(true);
+  useEffect(() => () => { live.current = false; }, []);
+
+  const put = (m: (Match & { custom: boolean }) | null) => {
+    state.matched.set(appid, m);
+    if (live.current) { setM(m); setReady(true); }
+  };
+  const auto = async () => {
+    if (!shortcut) return put(null);
+    setError(null);
+    const r = await searchGames(name);
+    if (!live.current) return;
+    if (!r.ok) { setError(r.error); setReady(true); return; }
+    if (r.games[0]) put({ id: r.games[0].id, name: r.games[0].name, custom: false });
+    else { state.matched.delete(appid); setM(null); setReady(true); setError(`SteamGridDB has nothing called “${name}”.`); }
+  };
+
   useEffect(() => {
-    if (!shortcut || !hasKey) return;
-    let live = true;
-    searchGames(name).then((r) => {
-      if (!live) return;
-      if (!r.ok) { setError(r.error); return; }
-      const list = r.games.map((g) => ({ id: g.id, name: g.year ? `${g.name} (${g.year})` : g.name }));
-      setOptionsList(list);
-      if (!state.matched.get(appid) && list[0]) { state.matched.set(appid, list[0]); setMatch(list[0]); }
-      if (!list.length) setError(`SteamGridDB has nothing called “${name}”.`);
-    }).catch((e) => live && setError(String(e)));
-    return () => { live = false; };
-  }, [appid, shortcut, hasKey]);
-  const choose = (m: { id: number; name: string }) => { state.matched.set(appid, m); clearPages(); setMatch(m); };
-  return { match, options, error, choose };
+    if (!hasKey || state.matched.has(appid)) return;
+    getMatch(appid)
+      .then((m) => (m ? put({ ...m, custom: true }) : auto()))
+      .catch((e) => { if (live.current) { setError(String(e)); setReady(true); } });
+  }, [appid, hasKey]);
+
+  const choose = async (m: Match | null) => {
+    try {
+      await setMatch(appid, m);
+    } catch (e: any) {
+      toast(`Couldn't save the search: ${e?.message ?? e}`);
+    }
+    if (m) put({ ...m, custom: true });
+    else { setReady(false); await auto().catch((e) => live.current && setError(String(e))); }
+  };
+  return { match, ready, error, choose };
 }
 
 export function ArtPage() {
@@ -213,7 +241,7 @@ export function ArtPage() {
   const [settings, setSettings] = useState<Settings | null>(state.settings);
   const [applied, setApplied] = useState<Partial<Record<string, number>>>({});
   const [tab, setTab] = useState<string>("capsule");
-  const sc = useShortcutMatch(appid, app?.name ?? "", !!app?.shortcut, !!settings?.hasKey);
+  const sc = useMatch(appid, app?.name ?? "", !!app?.shortcut, !!settings?.hasKey);
 
   useEffect(() => {
     getSettings().then((s) => { state.settings = s; setSettings(s); }).catch(() => {});
@@ -222,7 +250,10 @@ export function ArtPage() {
 
   const onSettings = (s: Settings) => { state.settings = s; setSettings(s); };
   const slots = SLOTS;
-  const gameId = app?.shortcut ? sc.match?.id ?? 0 : 0;
+  const gameId = sc.match?.id ?? 0;
+  const openSearch = () => showModal(
+    <SearchModal start={sc.match?.custom ? sc.match.name : app?.name ?? ""} current={gameId}
+      auto={app?.shortcut ? "Match by name again" : "Use Steam's own"} onPick={sc.choose} />);
 
   let body: ReactNode;
   if (!app) body = <div className="ga-msg err" style={{ padding: "24px" }}>Steam doesn't know app {params.appid}.</div>;
@@ -232,15 +263,20 @@ export function ArtPage() {
       Add your free SteamGridDB API key first: Quick Access → Grid Art → API key.
       <div style={{ marginTop: "16px" }}><DialogButton className="ga-btn" onClick={() => Navigation.NavigateBack()}>Back</DialogButton></div>
     </div>);
-  else if (app.shortcut && !sc.match) body = (
-    <div className="ga-msg" style={{ padding: "24px" }}>{sc.error ?? "Looking this shortcut up on SteamGridDB…"}</div>);
+  else if (!sc.ready || (app.shortcut && !sc.match)) body = (
+    <div className="ga-msg" style={{ padding: "24px" }}>
+      {sc.error ?? (app.shortcut ? "Looking this shortcut up on SteamGridDB…" : <SteamSpinner background="transparent" />)}
+      {sc.error && <Focusable style={{ marginTop: "16px", display: "flex" }}>
+        <DialogButton className="ga-btn" onClick={openSearch}>Search under another name…</DialogButton>
+      </Focusable>}
+    </div>);
   else body = (
     <div className="ga-tabs">
       <Tabs activeTab={tab} onShowTab={setTab} autoFocusContents
         tabs={slots.map((s) => ({
           id: s.id, title: s.title,
           content: <SlotTab key={`${s.id}:${gameId}`} appid={appid} gameId={gameId} slot={s} settings={settings} onSettings={onSettings}
-            applied={applied} setApplied={setApplied} shortcut={app.shortcut} />,
+            applied={applied} setApplied={setApplied} shortcut={app.shortcut} onSearch={openSearch} />,
         }))} />
     </div>);
 
@@ -251,13 +287,8 @@ export function ArtPage() {
         <div className="ga-head">
           <span className="t">{app?.name ?? "Unknown app"}</span>
           <span className="s">Artwork</span>
-          {app?.shortcut && sc.options.length > 1 && (
-            <Focusable style={{ minWidth: "240px", marginLeft: "12px" }}>
-              <Dropdown selectedOption={sc.match?.id} menuLabel="SteamGridDB match"
-                rgOptions={sc.options.map((o) => ({ data: o.id, label: o.name }))}
-                onChange={(o) => { const m = sc.options.find((x) => x.id === o.data); if (m) sc.choose(m); }} />
-            </Focusable>
-          )}
+          {sc.match && (sc.match.custom || sc.match.name !== app?.name) &&
+            <span className="as">as <b>{sc.match.name}</b>{sc.match.custom ? "" : " (auto)"}</span>}
           <span className="tag" style={{ color: C.data }}>STEAMGRIDDB</span>
         </div>
         {body}

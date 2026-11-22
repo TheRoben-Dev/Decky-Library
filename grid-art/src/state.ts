@@ -9,8 +9,8 @@ export const state = {
   settings: null as Settings | null,
   // `${appid}:${slot}:${gameId}` -> pages loaded so far, kept for the session (cleared on filter change).
   pages: new Map<string, { items: Asset[]; page: number; more: boolean }>(),
-  // non-Steam shortcut -> SteamGridDB game it was matched to
-  matched: new Map<number, { id: number; name: string }>(),
+  // appid -> SteamGridDB game the browser shows (custom = picked with Search; null = Steam app id)
+  matched: new Map<number, { id: number; name: string; custom: boolean } | null>(),
 };
 
 export function clearPages() { state.pages.clear(); }
