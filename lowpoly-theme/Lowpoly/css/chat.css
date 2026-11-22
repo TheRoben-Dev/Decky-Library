@@ -39,11 +39,9 @@
   background: var(--lp-bg-1);
 }
 .BasicUI :is(.gpfocus .friendGroup .groupName, .friendGroup .groupName.gpfocus) {
-  background: color-mix(in srgb, var(--lp-active) 16%, var(--lp-bg-1));
+  background: var(--lp-sel-fill);
 }
 .BasicUI .friendGroup .groupName {
-  text-transform: uppercase;
-  letter-spacing: var(--lp-tracking);
   color: var(--lp-text-1);
 }
 .BasicUI .friendGroup.gameGroup .groupName .groupCount.groupCount { color: var(--lp-ok); }

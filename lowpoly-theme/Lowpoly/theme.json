@@ -1,7 +1,7 @@
 {
   "name": "Lowpoly",
   "author": "TheRoben-Dev",
-  "version": "v0.2.0",
+  "version": "v0.2.1",
   "description": "Late-90s 3D Game Mode theme: a low-resolution pre-rendered scene (fogged grid floor, flat-shaded low-poly toys, 15-bit colour with ordered dither) shown with hard pixels behind dark flat rows, thin borders and one warm accent. Covers Home, Library, game pages, Settings, menus, Quick Access, Friends & Chat, Store, Downloads, Search, Media, Achievements, keyboard and notifications. Options: accent (8 + custom), backdrop, CRT, font, animations.",
   "target": "System-Wide",
   "manifest_version": 9,

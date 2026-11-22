@@ -1,8 +1,7 @@
 /* Lowpoly — home.css  (bigpicture)
  * Home spotlight: Steam shows the focused recent game's hero art behind the Recent Games row and
- * swaps it as focus moves. Lowpoly keeps it but dimmer, sinking into the 3D scene's fog, and
- * turns the focused cover a few degrees in 3D, like a cartridge picked up off the shelf.
- * Layout (card positions, heights) stays Steam's.
+ * swaps it as focus moves. Lowpoly keeps it but dimmer, sinking into the 3D scene's fog.
+ * Style only: card positions, sizes and Steam's own focus lift are untouched.
  */
 .BasicUI {
   --lp-hero-filter: brightness(.55) saturate(.9);
@@ -18,10 +17,8 @@
 .gamepadhomerecentgames_RecentGamesBackgroundImage {
   filter: var(--lp-hero-filter);
 }
-/* Focused cover: Steam's lift (translateZ) and +3%, plus a small 3D turn; accent frame and a
- * hard floor shadow instead of Steam's white glow. */
+/* Focused cover: accent frame and a hard drop shadow instead of Steam's white glow. */
 .BasicUI .appportrait_InRecentGames.Focusable:focus {
-  transform: translateZ(15px) scale(1.03) perspective(700px) rotateY(-9deg) rotateX(4deg);
   box-shadow: 0 0 0 2px var(--lp-active), 6px 10px 0 rgba(0, 0, 0, .45);
 }
 .basicgamecarousel_CarouselCapsuleBackgroundGlow {
@@ -29,8 +26,6 @@
 }
 .gamepadhomerecentgames_RecentGamesHeaderLabel {
   color: var(--lp-text-1);
-  text-transform: uppercase;
-  letter-spacing: var(--lp-tracking);
 }
 .gamepadhomerecentgames_RecentGamesContainer .marquee_Content {
   text-shadow: var(--lp-text-shadow);

@@ -45,8 +45,6 @@
 
   /* Type */
   --lp-font-pixel: "Lowpoly Pixel", "Pixelify Sans", ui-monospace, monospace;
-  --lp-tracking: 0.06em;
-  --lp-tracking-tight: 0.02em;
 
   /* Motion: short; 3D-era things snap rather than glide */
   --lp-dur-fast: 100ms;
