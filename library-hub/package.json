@@ -1,6 +1,6 @@
 {
   "name": "library-hub",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Installs and updates Decky-Library plugins and the Nightgrid theme from GitHub releases",
   "type": "module",
   "scripts": {

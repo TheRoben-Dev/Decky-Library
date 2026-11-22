@@ -110,12 +110,16 @@ function Content() {
   const check = async (force = false) => { setBusy(true); setMsg(null); try { await refresh(force); } finally { setBusy(false); } };
 
   // Runs one action; Decky installs finish in the background, so look again a little later too.
+  // The outcome is also toasted: the inline message sits in the Updates section at the top, which
+  // is scrolled out of view when the button pressed was further down the panel.
   const act = async (fn: () => Promise<string | null>, done?: string) => {
     setBusy(true);
     setMsg(null);
     try {
-      const err = await fn();
+      let err: string | null;
+      try { err = await fn(); } catch (e) { err = String(e); console.error("[Library Hub]", e); }
       setMsg(err ? { text: err, bad: true } : done ? { text: done, bad: false } : null);
+      if (err || done) toaster.toast({ title: err ? "Library Hub: failed" : "Library Hub", body: err ?? done! });
       await refresh();
       setTimeout(() => refresh(), 4000);
       setTimeout(() => refresh(), 12000);
