@@ -1,0 +1,117 @@
+/* Lowpoly — keyboard.css  (bigpicture)
+ * On-screen keyboard, Default keyboard theme only (Points Shop keyboards stay untouched).
+ * Steam drives the Default theme with CSS variables on `.virtualkeyboard_Keyboard.DefaultTheme`
+ * (0,2,0); they're redefined here at 0,3,0. Steam paints the focused key white and the pressed key
+ * with a literal blue (0,4,0); those are answered at 0,5,0.
+ * Look: a 32-bit-era keypad. Gouraud panel with dither and an accent top edge, square bevelled
+ * keys (pixel font via font-labels.css), modifiers a step darker with muted labels, the focused key
+ * outlined in the selection colour (like every other focus ring in Lowpoly), Enter in the partner
+ * colour, Caps/Shift lit, the text bar sunk into the panel with an accent cursor.
+ */
+.BasicUI .virtualkeyboard_Keyboard.DefaultTheme {
+  /* panel */
+  --background-color: var(--lp-bg-1);
+  --foreground-color: var(--lp-text-0);
+  /* letter keys */
+  --key-background-color: var(--lp-bg-2);
+  --key-color: var(--lp-text-0);
+  --key-shift-label-color: var(--lp-text-1);
+  --key-spacebar-background-color: var(--lp-bg-2);
+  --key-spacebar-color: var(--lp-text-1);
+  --key-spacer-background-color: transparent;
+  /* modifiers: a step darker, muted labels */
+  --key-meta-background-color: var(--lp-bg-0);
+  --key-meta-color: var(--lp-text-1);
+  --key-tab-background-color: var(--lp-bg-0);
+  --key-tab-color: var(--lp-text-1);
+  --key-caps-background-color: var(--lp-bg-0);
+  --key-caps-color: var(--lp-text-1);
+  --key-shift-background-color: var(--lp-bg-0);
+  --key-shift-color: var(--lp-text-1);
+  --key-backspace-background-color: var(--lp-bg-0);
+  --key-backspace-color: var(--lp-text-1);
+  --key-enter-background-color: var(--lp-bg-0);
+  --key-enter-color: var(--lp-data);
+  --key-deadkey-background-color: var(--lp-bg-0);
+  --key-deadkeyinactive-color: var(--lp-text-1);
+  --key-deadkeyactive-color: var(--lp-accent);
+  --key-action-button-glyph-color: var(--lp-text-1);
+  --key-enter-action-button-glyph-color: var(--lp-data);
+  /* focus: dark cell, selection-colour label (the outline/glow is on the key below) */
+  --key-focused-background-color: var(--lp-bg-0);
+  --key-focused-color: var(--lp-active);
+  --key-focused-shift-label-color: color-mix(in srgb, var(--lp-active) 65%, transparent);
+  --key-focused-action-button-left-color: var(--lp-active);
+  --key-focused-action-button-right-color: var(--lp-active);
+  /* pressed + toggles */
+  --key-touched-background-color: var(--lp-active);
+  --key-touched-color: var(--lp-on-fill);
+  --key-toggleon-background-color: var(--lp-active);
+  --key-toggleon-color: var(--lp-on-fill);
+  --key-toggleoneshot-color: var(--lp-active);
+  --key-pointer-background-color: var(--lp-active);
+  --key-pointer-stroke-color: var(--lp-on-fill);
+  /* long-press accent popup */
+  --key-extendedkey-background-color: var(--lp-bg-2);
+  --key-extendedkey-color: var(--lp-text-0);
+  --key-extendedkey-focused-background-color: var(--lp-data);
+  --key-extendedkey-focused-color: var(--lp-on-fill);
+  --key-extendedkey-hover-background-color: var(--lp-data);
+  --key-extendedkey-hover-color: var(--lp-on-fill);
+  /* emoji picker */
+  --key-emoji-category-highlight-background-color: var(--lp-line);
+  --key-emoji-focused-background-color: var(--lp-bg-0);
+  --key-emoji-focused-color: var(--lp-active);
+
+  background-image: var(--lp-dither), var(--lp-grad-panel);
+  background-size: 8px 8px, 100% 100%;
+  background-repeat: repeat, no-repeat;
+  border-radius: var(--lp-radius);
+  box-shadow: inset 0 2px 0 var(--lp-active), 0 -1px 0 color-mix(in srgb, var(--lp-active) 30%, transparent),
+              0 -18px 40px rgba(0, 0, 0, .55);
+}
+/* Keys: square bevelled cells; a translucent light-to-dark wash gouraud-shades whatever colour
+ * the key state sets underneath (normal, focused, pressed, toggled). */
+.BasicUI .virtualkeyboard_Keyboard.DefaultTheme :is(.virtualkeyboard_KeyboardKey, .virtualkeyboard_KeyboardExtendedKey, .virtualkeyboard_KeyboardEmojiKey) {
+  border-radius: var(--lp-radius);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(0, 0, 0, .2));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .5), var(--lp-bevel);
+  text-shadow: none;
+}
+/* Focused key: selection-colour outline + glow, like the focus ring everywhere else. */
+.BasicUI .virtualkeyboard_Keyboard.DefaultTheme .virtualkeyboard_KeyboardKey.virtualkeyboard_Focused,
+.BasicUI .virtualkeyboard_Keyboard.DefaultTheme :is(.virtualkeyboard_KeyboardExtendedKey, .virtualkeyboard_KeyboardEmojiKey).gpfocus {
+  box-shadow: inset 0 0 0 2px var(--lp-active), var(--lp-glow-active);
+  z-index: 2;
+}
+.BasicUI .virtualkeyboard_Keyboard.DefaultTheme .virtualkeyboard_KeyboardKey.virtualkeyboard_Focused::before {
+  border-radius: var(--lp-radius);
+}
+/* Caps / Shift on: lit selection-colour cell. */
+.BasicUI .virtualkeyboard_Keyboard.DefaultTheme .virtualkeyboard_KeyboardKey.virtualkeyboard_ToggleOn {
+  box-shadow: inset 0 0 0 1px var(--lp-active), var(--lp-glow-active);
+}
+.BasicUI .virtualkeyboard_Keyboard.DefaultTheme .virtualkeyboard_KeyboardKey.virtualkeyboard_ToggleOn :is(.virtualkeyboard_ShiftedLabel, .virtualkeyboard_AltGrLabel) {
+  color: var(--lp-on-fill);
+}
+/* Pressed: selection-colour flash (Steam's is a literal blue at 0,4,0). */
+.BasicUI .virtualkeyboard_Keyboard.DefaultTheme .virtualkeyboard_KeyboardKey.virtualkeyboard_Touched {
+  background-color: var(--lp-active);
+  color: var(--lp-on-fill);
+}
+.BasicUI .virtualkeyboard_Keyboard.DefaultTheme .virtualkeyboard_KeyboardKey.virtualkeyboard_Touched::after {
+  border-radius: var(--lp-radius);
+}
+/* Text bar above the keyboard: sunk into the panel. */
+.BasicUI .virtualkeyboardcontainer_VirtualKeyboardTextBuffer {
+  background-color: var(--lp-bg-0);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-bevel-sunk), inset 0 -2px 0 var(--lp-active);
+}
+.BasicUI .virtualkeyboardcontainer_VirtualKeyboardTextBufferText {
+  color: var(--lp-text-0);
+}
+.BasicUI .virtualkeyboardcontainer_VirtualKeyboardTextBufferCursor {
+  background-color: var(--lp-active);
+  box-shadow: var(--lp-glow-active);
+}

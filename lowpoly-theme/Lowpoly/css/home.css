@@ -1,0 +1,48 @@
+/* Lowpoly — home.css  (bigpicture)
+ * Home spotlight: Steam already shows the focused recent game's hero art behind the Recent Games
+ * row and swaps it as focus moves (RecentGamesBackgroundImage). Lowpoly keeps that art, a touch
+ * brighter, faded into the night-sky canvas, and frames the focused cover with a chunky
+ * sprite-style outline. Layout (card positions, heights) stays Steam's.
+ */
+.BasicUI {
+  --lp-hero-filter: brightness(.7) saturate(1.05) contrast(1.05);
+}
+/* Art: brighter than Steam's 50% dim, faded out toward the bottom into the canvas. */
+.gamepadhomerecentgames_RecentGamesBackgroundContainer {
+  -webkit-mask-image: radial-gradient(120% 100% at 50% 20%, #000 0%, rgba(0, 0, 0, .85) 55%, transparent 100%);
+          mask-image: radial-gradient(120% 100% at 50% 20%, #000 0%, rgba(0, 0, 0, .85) 55%, transparent 100%);
+}
+.gamepadhomerecentgames_RecentGamesBackgroundImages {
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, .85) 0%, rgba(0, 0, 0, .55) 45%, rgba(0, 0, 0, .15) 78%, transparent 100%);
+          mask-image: linear-gradient(to bottom, rgba(0, 0, 0, .85) 0%, rgba(0, 0, 0, .55) 45%, rgba(0, 0, 0, .15) 78%, transparent 100%);
+}
+.gamepadhomerecentgames_RecentGamesBackgroundImage {
+  filter: var(--lp-hero-filter);
+}
+/* Focused cover: lifted like Steam (translateZ) and grown 3% (the row has ~12px headroom),
+ * framed by an accent outline inside a black pixel border instead of Steam's white glow. */
+.BasicUI .appportrait_InRecentGames.Focusable:focus {
+  transform: translateZ(15px) scale(1.03);
+  box-shadow: 0 0 0 3px var(--lp-active), 0 0 0 6px rgba(0, 0, 0, .7), var(--lp-glow-active), 0 18px 36px rgba(0, 0, 0, .6);
+}
+.basicgamecarousel_CarouselCapsuleBackgroundGlow {
+  opacity: 0;
+}
+.gamepadhomerecentgames_RecentGamesHeaderLabel {
+  color: var(--lp-text-1);
+  text-transform: uppercase;
+  letter-spacing: var(--lp-tracking);
+}
+.gamepadhomerecentgames_RecentGamesHeaderLabel::before {
+  content: "";
+  display: inline-block;
+  width: .5em;
+  height: .62em;
+  margin-right: .5em;
+  vertical-align: .02em;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--lp-data) 55%, white), var(--lp-data) 55%, var(--lp-active));
+}
+.gamepadhomerecentgames_RecentGamesContainer .marquee_Content {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .8), 0 0 4px rgba(0, 0, 0, .4);
+}

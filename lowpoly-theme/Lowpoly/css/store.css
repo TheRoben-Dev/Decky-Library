@@ -1,0 +1,155 @@
+/* Lowpoly — store.css  (CSS Loader "store" target: store.steampowered.com + steamcommunity.com tabs)
+ * The Store is a website shown inside Game Mode. Scoped to `html.GamepadMode` (doubled for 0,2,1: a
+ * Store update in Nov 2026 raised some of its own selectors above a single prefix), so the desktop
+ * client's store window is untouched.
+ * Approach: the Store resolves its Gaming Mode palette from variables on <html>; overriding those
+ * re-tints most of the new React store in one place. A few React-module classes have no stable name and
+ * are matched by hash substring (`[class*="…-"]`): if Valve renames them the rule simply stops matching.
+ * Prices, discount green, review scores and Deck-compat status colors are information and stay as-is.
+ * The bundled font isn't reachable from the store's origin, so the store keeps Steam's fonts.
+ */
+html.GamepadMode.GamepadMode {
+  --gpBackground-DarkHard: color-mix(in srgb, var(--lp-bg-0) 80%, transparent);
+  --gpBackground-DarkMedium: color-mix(in srgb, var(--lp-bg-0) 60%, transparent);
+  --gpBackground-DarkSoft: color-mix(in srgb, var(--lp-bg-0) 40%, transparent);
+  --gpBackground-DarkSofter: color-mix(in srgb, var(--lp-bg-0) 20%, transparent);
+  --gpBackground-LightSofter: color-mix(in srgb, var(--lp-text-0) 6%, transparent);
+  --gpBackground-LightSoft: color-mix(in srgb, var(--lp-line) 70%, transparent);
+  --gpBackground-LightMedium: color-mix(in srgb, var(--lp-text-1) 40%, transparent);
+  --gpBackground-LightHard: color-mix(in srgb, var(--lp-text-1) 55%, transparent);
+  --gpStoreDarkestGrey: var(--lp-bg-0);
+  --gpStoreDarkerGrey: var(--lp-bg-1);
+  --gpStoreDarkGrey: var(--lp-bg-2);
+  --gpStoreGrey: color-mix(in srgb, var(--lp-text-1) 45%, var(--lp-line));
+  --gpStoreLightGrey: var(--lp-text-1);
+  --gpGradient-StoreBackground: linear-gradient(180deg, var(--lp-bg-2) 0%, var(--lp-bg-0) 80%);
+  --gpColor-Blue: color-mix(in srgb, var(--lp-data) 55%, black);
+  --gpColor-BlueHi: var(--lp-data);
+  --gpColor-ChalkyBlue: color-mix(in srgb, var(--lp-data) 60%, white);
+  --gpColor-DustyBlue: color-mix(in srgb, var(--lp-data) 40%, var(--lp-text-1));
+  --gpColor-Green: color-mix(in srgb, var(--lp-ok) 45%, black);
+  --gpColor-GreenHi: var(--lp-ok);
+  --color-greyneutral-2: var(--lp-bg-0);
+  --color-greyneutral-4: var(--lp-bg-1);
+  --color-greyneutral-6: var(--lp-bg-2);
+  --color-greyneutral-8: var(--lp-line);
+  --color-blue-8: color-mix(in srgb, var(--lp-data) 55%, black);
+}
+
+/* Canvas */
+html.GamepadMode.GamepadMode body {
+  background-color: var(--lp-bg-0);
+  background-image: var(--lp-canvas-image);
+  background-size: var(--lp-canvas-size);
+  background-repeat: var(--lp-canvas-repeat);
+  color: var(--lp-text-0);
+}
+html.GamepadMode.GamepadMode :is(.page_content.middle_page, .block_content.page_content) {
+  background-color: color-mix(in srgb, var(--lp-bg-0) 85%, transparent);
+}
+html.GamepadMode.GamepadMode .game_background_lighten {
+  background: radial-gradient(1000px 153px at 50% top, var(--lp-bg-2), transparent);
+}
+html.GamepadMode.GamepadMode :is(.react_landing_background, .ContentHubSalePage .SaleCustomCSS) {
+  background-color: var(--lp-bg-0);
+}
+
+/* Store top nav and wishlist header (navy radials) */
+html.GamepadMode.GamepadMode :is([class*="XLbP8xOkCYw-"], [class*="WCG-2-OYepA-"]) {
+  background-image: none;
+  background-color: var(--lp-bg-1);
+  box-shadow: inset 0 -1px 0 var(--lp-line);
+}
+
+/* Focus ring (one overlay element that follows focus, like Steam's) */
+html.GamepadMode.GamepadMode [class*="bXqaBMkoZYQ-"] {
+  border-color: var(--lp-active) !important;
+  outline-color: var(--lp-active) !important;
+  border-radius: var(--lp-radius) !important;
+  box-shadow: var(--lp-glow-active) !important;
+}
+
+/* Capsules and panels: flat dark surfaces with hairlines instead of blue glass */
+html.GamepadMode.GamepadMode :is(.store_main_capsule, .sale_capsule, .community_recommendation_capsule, .community_recommendation_app) {
+  border-radius: var(--lp-radius);
+  overflow: hidden;
+}
+html.GamepadMode.GamepadMode .store_main_capsule .info,
+html.GamepadMode.GamepadMode .home_discount_games_ctn,
+html.GamepadMode.GamepadMode .sale_capsule :is(.creator_capsule_ctn, .deep_dive_key_tags, .recently_updated_desc) {
+  background: var(--lp-bg-1);
+  box-shadow: none;
+}
+html.GamepadMode.GamepadMode .community_recommendation_app { background-color: var(--lp-bg-1); }
+html.GamepadMode.GamepadMode .ds_steam_deck_compat { background-color: color-mix(in srgb, var(--lp-bg-0) 75%, transparent); }
+html.GamepadMode.GamepadMode .ds_flag:is(.ds_wishlist_flag, .ds_owned_flag) {
+  background-color: var(--lp-data);
+  color: var(--lp-on-fill);
+}
+html.GamepadMode.GamepadMode .tab_row_item { border-radius: var(--lp-radius); }
+html.GamepadMode.GamepadMode .tab_row_item.focus {
+  background-color: color-mix(in srgb, var(--lp-active) 14%, var(--lp-bg-1));
+  box-shadow: inset 2px 0 0 var(--lp-active);
+}
+html.GamepadMode.GamepadMode .LoadingThrobber .Bar { background-color: var(--lp-data); }
+html.GamepadMode.GamepadMode [class*="x8jWPgfdVoI-"] { background-color: var(--lp-data); color: var(--lp-on-fill); }  /* NEW chip */
+html.GamepadMode.GamepadMode [class*="maxz19gKOQc-"] {  /* calendar day column */
+  background-image: none;
+  background-color: var(--lp-bg-1);
+  border: var(--lp-hairline);
+}
+
+/* Game page (React): info panels, purchase box, tags, sidebar rows */
+html.GamepadMode.GamepadMode [class*="alRCY87ae-s-"] { background-color: color-mix(in srgb, var(--lp-bg-0) 60%, transparent); }
+html.GamepadMode.GamepadMode :is([class*="icJTR-r-wDw-"], [class*="FneGtSBNXCI-"]) {
+  background: var(--lp-bg-1);
+  border: var(--lp-hairline);
+  border-top: 2px solid var(--lp-data);
+  border-radius: var(--lp-radius);
+}
+html.GamepadMode.GamepadMode :is([class*="bEoYeP62vKg-"], [class*="_3qdZjzvKgfw-"]) {  /* tag chips */
+  background-color: transparent;
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-radius);
+  color: var(--lp-text-1);
+}
+html.GamepadMode.GamepadMode :is([class*="vEPSMT4v-yc-"], [class*="RAdU2xWu3-4-"], [class*="yDw9gqlgbxM-"], [class*="ftI4LxM9C-k-"], [class*="k4U-U7-NtBA-"]) {
+  background-color: var(--lp-bg-1);
+  border-radius: var(--lp-radius);
+}
+html.GamepadMode.GamepadMode [class*="dA19VXylzCQ-"] { background-color: var(--lp-bg-2); }
+html.GamepadMode.GamepadMode :is([class*="GeWSoC6e568-"], [class*="WGUFkBLPn8E-"], [class*="heKA7rr02xo-"]) { color: var(--lp-data); }
+html.GamepadMode.GamepadMode [class*="onLSYXBtvEU-"] { color: var(--lp-text-0); }
+html.GamepadMode.GamepadMode [class*="PvkZ1H4YD7c-"] { color: var(--lp-text-1); border-color: var(--lp-line); }
+html.GamepadMode.GamepadMode [class*="BffT7IQWKYg-"][class*="eBjRkRA8NpA-"] { background-color: var(--lp-data); }  /* trailer progress */
+html.GamepadMode.GamepadMode .OtherEvents_EventCtn {
+  background: var(--lp-bg-1);
+  border: var(--lp-hairline);
+}
+
+/* Dialogs (Deck compatibility etc.) */
+html.GamepadMode.GamepadMode .DialogContent {
+  background-color: var(--lp-bg-1);
+  border: 1px solid var(--lp-line);
+  border-top: 2px solid var(--lp-active);
+  border-radius: var(--lp-radius);
+}
+html.GamepadMode.GamepadMode :is(.DeckVerifiedModalDialogClient, .DeckVerifiedModalDialog) .DialogContent._DialogLayout {
+  background: var(--lp-bg-1) !important;   /* Steam forces #0e141b with !important here */
+}
+
+/* Buttons */
+html.GamepadMode.GamepadMode :is(.btnv6_blue_hoverfade, .btnv6_blue_hoverfade > span) {
+  background: var(--lp-bg-2);
+  border-radius: var(--lp-radius);
+}
+html.GamepadMode.GamepadMode [class*="j8iZOirRLc8-"] { border-radius: var(--lp-radius); }
+
+/* Discovery queue widget */
+html.GamepadMode.GamepadMode :is([class*="q6mo6TFfdDs-"], [class*="tyZYjXnErOU-"]) { background-color: var(--lp-bg-1); }
+html.GamepadMode.GamepadMode [class*="dycaOmod9zw-"] { background-image: linear-gradient(77deg, var(--lp-bg-2) 0%, var(--lp-bg-1) 60%, transparent 80%); }
+
+/* Steam Community pages in Game Mode (profiles, guides, workshop): page backgrounds only */
+html.GamepadMode.GamepadMode .responsive_page_template_content {
+  background-color: var(--lp-bg-0);
+}

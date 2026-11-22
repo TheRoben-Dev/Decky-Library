@@ -1,0 +1,78 @@
+/* Lowpoly — accents.css  (bigpicture, MainMenu, QuickAccess)
+ * Steam's own color variables, re-pointed at Lowpoly tokens on the page root so every
+ * component that reads them (old and new) follows the theme, palettes and custom colors.
+ * Scales are mixed from the tokens with color-mix, so a palette change re-tints all steps.
+ */
+.BasicUI {
+  --color-blue-8: var(--lp-data);
+  --color-progress-bar-foreground: var(--lp-data);
+  --virtualmenu-accent: var(--lp-active);
+  --virtualmenupointer-color: var(--lp-active);
+
+  /* Neutral greys (Steam: navy greys #060a0e … #b8bcbf) → Lowpoly blue-greys */
+  --color-greyneutral-1:  var(--lp-bg-0);                                          --color-dull-1:  var(--lp-bg-0);
+  --color-greyneutral-2:  var(--lp-bg-1);                                          --color-dull-2:  var(--lp-bg-1);
+  --color-greyneutral-3:  color-mix(in srgb, var(--lp-bg-2) 60%, var(--lp-bg-1));  --color-dull-3:  color-mix(in srgb, var(--lp-bg-2) 60%, var(--lp-bg-1));
+  --color-greyneutral-4:  var(--lp-bg-2);                                          --color-dull-4:  var(--lp-bg-2);
+  --color-greyneutral-5:  color-mix(in srgb, var(--lp-line) 50%, var(--lp-bg-2));  --color-dull-5:  color-mix(in srgb, var(--lp-line) 50%, var(--lp-bg-2));
+  --color-greyneutral-6:  var(--lp-line);                                          --color-dull-6:  var(--lp-line);
+  --color-greyneutral-7:  color-mix(in srgb, var(--lp-text-1) 20%, var(--lp-line)); --color-dull-7: color-mix(in srgb, var(--lp-text-1) 20%, var(--lp-line));
+  --color-greyneutral-8:  color-mix(in srgb, var(--lp-text-1) 35%, var(--lp-line)); --color-dull-8: color-mix(in srgb, var(--lp-text-1) 35%, var(--lp-line));
+  --color-greyneutral-9:  color-mix(in srgb, var(--lp-text-1) 55%, var(--lp-line)); --color-dull-9: color-mix(in srgb, var(--lp-text-1) 55%, var(--lp-line));
+  --color-greyneutral-10: color-mix(in srgb, var(--lp-text-1) 80%, var(--lp-line)); --color-dull-10: color-mix(in srgb, var(--lp-text-1) 80%, var(--lp-line));
+  --color-greyneutral-11: var(--lp-text-1);                                        --color-dull-11: var(--lp-text-1);
+  --color-greyneutral-12: color-mix(in srgb, var(--lp-text-0) 70%, var(--lp-text-1)); --color-dull-12: color-mix(in srgb, var(--lp-text-0) 70%, var(--lp-text-1));
+
+  /* Accent / blue scale → partner colour (data) */
+  --color-accent-1:  color-mix(in srgb, var(--lp-data) 5%,  var(--lp-bg-0)); --color-blue-1:  color-mix(in srgb, var(--lp-data) 5%,  var(--lp-bg-0));
+  --color-accent-2:  color-mix(in srgb, var(--lp-data) 8%,  var(--lp-bg-0)); --color-blue-2:  color-mix(in srgb, var(--lp-data) 8%,  var(--lp-bg-0));
+  --color-accent-3:  color-mix(in srgb, var(--lp-data) 12%, var(--lp-bg-0)); --color-blue-3:  color-mix(in srgb, var(--lp-data) 12%, var(--lp-bg-0));
+  --color-accent-4:  color-mix(in srgb, var(--lp-data) 18%, var(--lp-bg-0)); --color-blue-4:  color-mix(in srgb, var(--lp-data) 18%, var(--lp-bg-0));
+  --color-accent-5:  color-mix(in srgb, var(--lp-data) 25%, var(--lp-bg-0)); --color-blue-5:  color-mix(in srgb, var(--lp-data) 25%, var(--lp-bg-0));
+  --color-accent-6:  color-mix(in srgb, var(--lp-data) 34%, var(--lp-bg-0)); --color-blue-6:  color-mix(in srgb, var(--lp-data) 34%, var(--lp-bg-0));
+  --color-accent-7:  color-mix(in srgb, var(--lp-data) 50%, var(--lp-bg-0)); --color-blue-7:  color-mix(in srgb, var(--lp-data) 50%, var(--lp-bg-0));
+  --color-accent-8:  var(--lp-data);
+  --color-accent-9:  color-mix(in srgb, var(--lp-data) 85%, white);          --color-blue-9:  color-mix(in srgb, var(--lp-data) 85%, white);
+  --color-accent-10: color-mix(in srgb, var(--lp-data) 75%, white);          --color-blue-10: color-mix(in srgb, var(--lp-data) 75%, white);
+  --color-accent-11: color-mix(in srgb, var(--lp-data) 60%, white);          --color-blue-11: color-mix(in srgb, var(--lp-data) 60%, white);
+  --color-accent-12: color-mix(in srgb, var(--lp-data) 40%, white);          --color-blue-12: color-mix(in srgb, var(--lp-data) 40%, white);
+
+  /* Green scale → ok (steps 1/2/6 are #00ff00 placeholders in Steam and are left alone) */
+  --color-green-3:  color-mix(in srgb, var(--lp-ok) 12%, var(--lp-bg-0));
+  --color-green-4:  color-mix(in srgb, var(--lp-ok) 18%, var(--lp-bg-0));
+  --color-green-5:  color-mix(in srgb, var(--lp-ok) 25%, var(--lp-bg-0));
+  --color-green-7:  color-mix(in srgb, var(--lp-ok) 50%, var(--lp-bg-0));
+  --color-green-8:  var(--lp-ok);
+  --color-green-9:  color-mix(in srgb, var(--lp-ok) 85%, white);
+  --color-green-10: color-mix(in srgb, var(--lp-ok) 75%, white);
+  --color-green-11: color-mix(in srgb, var(--lp-ok) 60%, white);
+  --color-green-12: color-mix(in srgb, var(--lp-ok) 40%, white);
+}
+
+/* Battery icon: Steam draws the normal state as <rect fill="#59BF40">; low-charge colors stay Steam's */
+.BasicUI svg rect[fill="#59BF40" i] {
+  fill: var(--lp-ok);
+}
+
+/* Friend presence: online → partner colour, in-game → ok green (Steam selectors are 0,3,0 and load after) */
+.BasicUI .online .steamavatar_avatarStatus.steamavatar_avatarStatus { background: var(--lp-data); }
+.BasicUI .ingame .steamavatar_avatarStatus.steamavatar_avatarStatus { background: var(--lp-ok); }
+.BasicUI .online .personanameandstatus_playerName.personanameandstatus_playerName {
+  color: color-mix(in srgb, var(--lp-data) 45%, white);
+}
+.BasicUI .online .personanameandstatus_richPresenceLabel.personanameandstatus_richPresenceLabel,
+.BasicUI .online .personanameandstatus_gameName.personanameandstatus_gameName {
+  color: var(--lp-data);
+}
+.BasicUI .ingame .personanameandstatus_playerName.personanameandstatus_playerName {
+  color: color-mix(in srgb, var(--lp-ok) 45%, white);
+}
+.BasicUI .ingame .personanameandstatus_richPresenceLabel.personanameandstatus_richPresenceLabel,
+.BasicUI .ingame .personanameandstatus_gameName.personanameandstatus_gameName {
+  color: var(--lp-ok);
+}
+
+/* Achievements progress, download bars etc. that read --color-blue-8 already follow; checkmarks: */
+.BasicUI :is(.networksettings_Checkmark, .customizationsettings_Checkmark) {
+  color: var(--lp-ok);
+}

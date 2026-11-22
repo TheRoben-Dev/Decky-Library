@@ -1,0 +1,27 @@
+/* Lowpoly — toasts.css  (bigpicture, QuickAccess, notification toast windows)
+ * Toast windows have no `.BasicUI` root → `:root` + doubled classes for specificity.
+ * Steam ships four copies of the notification templates; each rule lists all four.
+ */
+:root :is(.standardtemplates_AvatarStatus, .shorttemplates_AvatarStatus, .steamtemplates_AvatarStatus, .notificationcontent_AvatarStatus).online { background: var(--lp-data); }
+:root :is(.standardtemplates_AvatarStatus, .shorttemplates_AvatarStatus, .steamtemplates_AvatarStatus, .notificationcontent_AvatarStatus).ingame { background: var(--lp-ok); }
+:root :is(.standardtemplates_FriendInGameAppColor, .shorttemplates_FriendInGameAppColor, .steamtemplates_FriendInGameAppColor, .notificationcontent_FriendInGameAppColor):is(.standardtemplates_FriendInGameAppColor, .shorttemplates_FriendInGameAppColor, .steamtemplates_FriendInGameAppColor, .notificationcontent_FriendInGameAppColor) {
+  color: var(--lp-ok);
+}
+:root :is(.standardtemplates_NewIndicator, .shorttemplates_NewIndicator, .steamtemplates_NewIndicator, .notificationcontent_NewIndicator) svg {
+  color: var(--lp-active);
+  fill: var(--lp-active);
+}
+
+/* Toast cards and the notification list: gouraud panel, hairline, partner-colour top edge */
+:root :is(.standardtemplates_StandardTemplate, .notificationcontent_StandardTemplate,
+          .standardtemplates_PinnedTemplate, .notificationcontent_PinnedTemplate,
+          .shorttemplates_ShortTemplate):is(.standardtemplates_StandardTemplate, .notificationcontent_StandardTemplate,
+          .standardtemplates_PinnedTemplate, .notificationcontent_PinnedTemplate, .shorttemplates_ShortTemplate) {
+  background: var(--lp-grad-panel) !important;
+  border-radius: var(--lp-radius);
+  box-shadow: inset 0 0 0 1px var(--lp-line), inset 0 2px 0 var(--lp-data);
+}
+:root .shorttemplates_ShortTemplate .shorttemplates_Count,
+:root .standardtemplates_NewIndicator {
+  background-color: var(--lp-active);
+}

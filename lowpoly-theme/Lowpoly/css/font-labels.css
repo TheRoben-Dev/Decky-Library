@@ -1,0 +1,24 @@
+/* Lowpoly — font-labels.css  (Font: "Pixel labels", also part of "Pixel everywhere")
+ * Pixelify Sans on labels, tabs, menus and numbers. */
+.BasicUI .gamepadtabbedpage_Tab,
+.BasicUI .gamepadtabbedpage_TabCount,
+.BasicUI .footer_BasicFooter,
+.BasicUI .footer_QuickAccessFooter,
+.BasicUI .header_Clock,
+.BasicUI .quickaccessmenu_Title,
+.BasicUI .mainmenu_Menu,
+.BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem,
+.BasicUI .gamepaddialog_GamepadDialogContent .DialogHeader,
+.BasicUI .DialogControlsSectionHeader,
+.BasicUI .gamepadcontextmenu_contextMenuItem,
+.BasicUI .homestorecarousel_Header,
+.BasicUI .gamepadslider_DescriptionValue,
+.BasicUI .gamepadslider_EditableValue,
+.BasicUI .progressbar_ProgressBar,
+.BasicUI button.DialogButton,
+.BasicUI .virtualkeyboard_Keyboard.DefaultTheme,
+.BasicUI .virtualkeyboard_Keyboard.DefaultTheme :is(.virtualkeyboard_KeyboardKey, .virtualkeyboard_KeyboardExtendedKey, .virtualkeyboard_KeyboardEmojiKey),
+.BasicUI .virtualkeyboardcontainer_VirtualKeyboardTextBuffer,
+.BasicUI .virtualkeyboardcontainer_VirtualKeyboardTextBufferText {
+  font-family: var(--lp-font-pixel) !important;
+}

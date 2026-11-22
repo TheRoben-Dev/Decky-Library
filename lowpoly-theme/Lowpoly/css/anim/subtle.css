@@ -1,0 +1,79 @@
+/* Lowpoly — anim/subtle.css  (Animations: "Subtle" and "Full"; bigpicture, MainMenu, QuickAccess, toasts)
+ * Rules:
+ *  - only opacity and transform are animated (compositor-only); the header reveal uses clip-path
+ *    on a few short text elements, once;
+ *  - one-shot animations start when the selector starts matching (focus moves, a menu mounts),
+ *    so nothing runs while the UI is idle;
+ *  - motion is quantised with steps() where it suits the era: things snap into place the way
+ *    32-bit-era geometry snapped to whole pixels, instead of gliding;
+ *  - everything is inside `prefers-reduced-motion: no-preference`, and Steam's own LowPerfMode
+ *    turns it off.
+ */
+@media (prefers-reduced-motion: no-preference) {
+
+  @keyframes lp-in-fade   { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes lp-in-up     { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes lp-in-left   { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+  @keyframes lp-in-right  { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+  /* Panels "unfold" like a menu window opening: vertical scale from the centre line */
+  @keyframes lp-unfold    { from { opacity: 0; transform: scaleY(.08); } 60% { opacity: 1; } to { opacity: 1; transform: none; } }
+  @keyframes lp-focus-pop { from { transform: scale(.94); } to { transform: none; } }
+  @keyframes lp-ring-in   { from { opacity: 0; transform: scale(1.06); } to { opacity: 1; transform: none; } }
+
+  /* ── Focus ────────────────────────────────────────────── */
+  /* The focus ring snaps in (3 steps) whenever it appears. */
+  .focusring_FocusRing {
+    animation: lp-ring-in var(--lp-dur) steps(3, end);
+  }
+  /* Lowpoly-styled controls pop as focus lands on them. Steam's own animated items (game covers,
+   * STEAM-menu rows) are left alone so their transforms aren't fought. */
+  .BasicUI :is(.gamepadtabbedpage_Tab, .quickaccessmenu_Tab, .header_HeaderItem,
+               .gamepadpagedsettings_PagedSettingsDialog_PageListItem, button.DialogButton).gpfocus,
+  .BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_Focused {
+    animation: lp-focus-pop var(--lp-dur-fast) steps(3, end);
+  }
+
+  /* ── Selected tab fades up ── */
+  @keyframes lp-tab-select { from { opacity: .55; } to { opacity: 1; } }
+  .BasicUI .gamepadtabbedpage_Tab.gamepadtabbedpage_Selected {
+    animation: lp-tab-select var(--lp-dur-slow) var(--lp-ease);
+  }
+
+  /* ── Panels opening ───────────────────────────────────── */
+  .BasicUI .gamepaddialog_ModalPosition > .gamepaddialog_GamepadDialogContent {
+    animation: lp-unfold var(--lp-dur-slow) var(--lp-ease);
+  }
+  .BasicUI .gamepadcontextmenu_contextMenuContents {
+    animation: lp-unfold var(--lp-dur) var(--lp-ease);
+    transform-origin: 50% 0;
+  }
+  .BasicUI .gamepadpagedsettings_PagedSettingsDialog .gamepadpagedsettings_PagedSettingDialog_ContentColumn {
+    animation: lp-in-fade var(--lp-dur) var(--lp-ease);
+  }
+  .BasicUI .quickaccessmenu_Title {
+    animation: lp-in-left var(--lp-dur-slow) var(--lp-ease);
+  }
+  .BasicUI :is(.gamepadsearch_GamepadSearch, .downloads_DownloadsPage) {
+    animation: lp-in-fade var(--lp-dur-slow) var(--lp-ease);
+  }
+  .BasicUI .virtualkeyboard_Keyboard {
+    animation: lp-in-up var(--lp-dur) var(--lp-ease);
+  }
+  :root :is(.standardtemplates_StandardTemplate, .notificationcontent_StandardTemplate,
+            .standardtemplates_PinnedTemplate, .notificationcontent_PinnedTemplate, .shorttemplates_ShortTemplate) {
+    animation: lp-in-right var(--lp-dur-slow) var(--lp-ease);
+  }
+
+  /* ── Section headers: a quick stepped left-to-right reveal when they appear ── */
+  @keyframes lp-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  .BasicUI :is(.DialogControlsSectionHeader, .homestorecarousel_Header, .downloads_Title) {
+    animation: lp-reveal var(--lp-dur-slow) steps(6, end);
+  }
+}
+
+/* Steam's own low-performance mode wins over everything here */
+.LowPerfMode *,
+.LowPerfMode *::before,
+.LowPerfMode *::after {
+  animation: none !important;
+}

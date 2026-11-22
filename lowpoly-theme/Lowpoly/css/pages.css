@@ -1,0 +1,115 @@
+/* Lowpoly — pages.css  (bigpicture; achievements + volume also MainMenu/QuickAccess)
+ * Downloads, search, media, achievements, volume pop-in. Panels are bevelled gouraud blocks.
+ * Unnamed variants (no CSS Loader stable name) are matched by hash substring and fail safe.
+ */
+
+/* ── Downloads ───────────────────────────────────────────── */
+.BasicUI .downloads_DownloadsPage.downloads_DownloadsPage {
+  background-color: var(--lp-bg-0);
+  background-image: var(--lp-canvas-image);
+  background-size: var(--lp-canvas-size);
+  background-repeat: var(--lp-canvas-repeat);
+}
+.BasicUI .downloads_Section.downloads_Section.downloads_Section {
+  background-color: color-mix(in srgb, var(--lp-bg-1) 92%, transparent);
+}
+.BasicUI .downloads_Rule.downloads_Rule { background-color: var(--lp-line); }
+.BasicUI .downloads_Title {
+  text-transform: uppercase;
+  letter-spacing: var(--lp-tracking);
+}
+.BasicUI .downloads_Title::before {
+  content: "";
+  display: inline-block;
+  width: .5em;
+  height: .62em;
+  margin-right: .5em;
+  vertical-align: .02em;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--lp-data) 55%, white), var(--lp-data) 55%, var(--lp-active));
+}
+.BasicUI .downloads_Count { color: var(--lp-data); }
+.BasicUI .downloads_PatchNotes { color: var(--lp-data); }
+/* Graph: network = partner colour, disk = ok green (Steam: blue / green) */
+.BasicUI .downloadgraph_DownloadGraph .downloadgraph_GraphBarDownload { color: color-mix(in srgb, var(--lp-data) 70%, transparent); }
+.BasicUI .downloadgraph_DownloadGraph .downloadgraph_GraphLine { stroke: var(--lp-ok); }
+.BasicUI .downloadgraph_Network.downloadgraph_Network svg { color: var(--lp-data); }
+.BasicUI .downloadgraph_Disk.downloadgraph_Disk { background-color: var(--lp-ok); }
+.BasicUI .downloadgraph_HeroAndLogo .downloadgraph_HeroContainer .downloadgraph_HeroGradient {
+  background: linear-gradient(90deg, transparent 40%, var(--lp-bg-0) 100%);   /* Steam: blue multiply tint on the art */
+}
+/* Progress bars: grey paused/queued variant (_2Xedpg…) keeps Steam's grey */
+.BasicUI .downloads_ProgressBar.downloads_ProgressBar { border-radius: var(--lp-radius); }
+.BasicUI .downloads_ProgressBar.downloads_ProgressBar:not([class*="_2XedpgsgZ3gMAUuPRtnfld"]) div { background-color: var(--lp-data); background-image: var(--lp-grad-data); }
+.BasicUI .downloads_ProgressBar.downloads_ProgressBar[class*="HifZB5TP6WNuubp1dzyxS"] div { background-color: var(--lp-ok); background-image: none; }
+.BasicUI .downloads_SectionItemStatus .downloads_ProgressBar.downloads_ProgressBar { background-color: var(--lp-bg-2); }
+.BasicUI .downloads_SectionItem { border-radius: var(--lp-radius); }
+.BasicUI .downloads_SectionItem.downloads_Active {
+  background-color: var(--lp-bg-1);
+  box-shadow: inset 0 0 0 1px var(--lp-line), inset 0 2px 0 var(--lp-data);
+}
+.BasicUI .downloads_SectionItemWrapper.downloads_SectionItemWrapper.gpfocus .downloads_SectionItem {
+  background-color: color-mix(in srgb, var(--lp-active) 12%, var(--lp-bg-1));
+}
+.BasicUI .downloads_SectionItem .downloads_Button.DialogButton:enabled {
+  background: var(--lp-bg-2);
+}
+.BasicUI .downloads_SectionList.downloads_DropOption.downloads_DragOver {
+  background: color-mix(in srgb, var(--lp-data) 18%, var(--lp-bg-0));
+}
+
+/* ── Search overlay ──────────────────────────────────────── */
+.BasicUI .gamepadsearch_GamepadSearch {
+  background-color: var(--lp-bg-0);
+  background-image: var(--lp-canvas-image);
+  background-size: var(--lp-canvas-size);
+  background-repeat: var(--lp-canvas-repeat);
+}
+.BasicUI .gamepadsearch_ResultTemplateImage { border-radius: var(--lp-radius); }
+
+/* ── Media (screenshots / recordings grid) ──────────────── */
+.BasicUI .mediapage_MediaPage { background-color: var(--lp-bg-0); }
+.BasicUI [class*="_2-7fqz03LhYHKEBI-HwIPq"],
+.BasicUI [class*="_2-7fqz03LhYHKEBI-HwIPq"] [class*="_2hcrnBEslc1Awh2IFpGA7W"] {
+  border-radius: var(--lp-radius);
+}
+
+/* ── Achievements (game page tab, in-game STEAM menu, full page) ── */
+.BasicUI :is(.achievementspage_AchievementList, .achievementslist_AchievementList) {
+  background-color: color-mix(in srgb, var(--lp-bg-0) 85%, transparent);
+}
+.BasicUI :is(.achievementspage_AchievementListItemBase, .achievementspage_GlobalAchievementListItem,
+             .achievementspage_SortableUserAchievementInner,
+             .achievementslist_AchievementListItemBase, .achievementslist_GlobalAchievementListItem) {
+  background-color: var(--lp-bg-1);
+  background-image: var(--lp-grad-raised);
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-bevel);
+}
+.BasicUI :is(.achievementspage_AchievementListItemBase, .achievementslist_AchievementListItemBase).gpfocus {
+  background-color: color-mix(in srgb, var(--lp-active) 14%, var(--lp-bg-1));
+  border-color: var(--lp-active);
+}
+.BasicUI :is(.achievementspage_AchievementTitle, .achievementslist_AchievementTitle) { color: var(--lp-text-0); }
+.BasicUI :is(.achievementspage_AchievementDescription, .achievementslist_AchievementDescription) { color: var(--lp-text-1); }
+.BasicUI :is(.achievementspage_AchievementGlobalPercentage, .achievementslist_AchievementGlobalPercentage,
+             .achievementspage_UnlockDate, .achievementslist_UnlockDate) {
+  color: var(--lp-data);
+  font-variant-numeric: tabular-nums;
+}
+.BasicUI .achievementsheader_StatsBlock {
+  background: var(--lp-bg-1);
+  border: var(--lp-hairline);
+  border-radius: var(--lp-radius);
+}
+
+/* On-screen keyboard: css/keyboard.css */
+
+/* ── Volume / brightness pop-in ─────────────────────────── */
+.BasicUI :is(.header_VolumePopin, .audio_VolumePopin) {
+  background: var(--lp-grad-panel);
+  box-shadow: var(--lp-bevel);
+  border: 1px solid var(--lp-line);
+  border-radius: var(--lp-radius);
+}

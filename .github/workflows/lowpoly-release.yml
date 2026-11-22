@@ -1,0 +1,73 @@
+# Publishes Lowpoly theme releases. Plugins: plugin-release.yml.
+#
+# Automatic: push a commit that changes a version, on main or a claude/* branch:
+#   lowpoly-theme/Lowpoly/theme.json "version"  → release lowpoly-theme-v<version>
+#   The tag is created on that commit. A version that already has a release is left alone,
+#   so a published release is never rebuilt from different code.
+# Manual (still works): push one of those tags, or publish a release for it in the web UI;
+# the tag must match the version in the file.
+name: Lowpoly release
+
+on:
+  push:
+    branches:
+      - main
+      - "claude/**"
+    tags:
+      - "lowpoly-theme-v*"
+    paths:
+      - "lowpoly-theme/Lowpoly/theme.json"
+      - ".github/workflows/lowpoly-release.yml"
+  release:
+    types: [published]
+
+# Releases are cut one at a time per branch/tag; a later push waits instead of racing.
+concurrency:
+  group: lowpoly-release-${{ github.ref_name }}
+
+permissions:
+  contents: write   # create the tag/release and upload its assets; nothing else
+
+jobs:
+  theme:
+    if: github.ref_type == 'branch' || startsWith(github.ref_name, 'lowpoly-theme-v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          have=$(python3 -c 'import json;print(json.load(open("lowpoly-theme/Lowpoly/theme.json"))["version"])')
+          case "$have" in v[0-9]*.[0-9]*.[0-9]*) ;; *) echo "::error::theme.json version '$have' is not vX.Y.Z"; exit 1;; esac
+          if [ "$GITHUB_REF_TYPE" = branch ]; then
+            tag="lowpoly-theme-$have"
+            if gh release view "$tag" >/dev/null 2>&1; then
+              echo "$tag already released; nothing to do"; echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+          else
+            tag="$GITHUB_REF_NAME"
+            [ "lowpoly-theme-$have" = "$tag" ] || { echo "::error::tag $tag but theme.json says $have"; exit 1; }
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+      - name: Build zip and checksum
+        if: steps.tag.outputs.skip != 'true'
+        run: |
+          lowpoly-theme/package.sh
+          cd lowpoly-theme/out && sha256sum Lowpoly.zip > Lowpoly.zip.sha256 && cat Lowpoly.zip.sha256
+      - name: Publish release
+        if: steps.tag.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          files="lowpoly-theme/out/Lowpoly.zip lowpoly-theme/out/Lowpoly.zip.sha256"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" $files --clobber
+            exit 0
+          fi
+          gh release create "$TAG" $files \
+            --target "$GITHUB_SHA" \
+            --title "Lowpoly theme ${TAG#lowpoly-theme-}" \
+            --notes "Extract Lowpoly.zip into ~/homebrew/themes/ (or run install.sh next to it), then Quick Access → CSS Loader → Refresh and enable Lowpoly."

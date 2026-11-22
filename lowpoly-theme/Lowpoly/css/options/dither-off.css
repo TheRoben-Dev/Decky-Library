@@ -1,0 +1,4 @@
+/* Dither: "Off" — smooth gradients */
+html:root {
+  --lp-dither: none;
+}

@@ -1,0 +1,7 @@
+/* Lowpoly — options/font-all.css  (Font: "Pixel everywhere")
+ * Every piece of UI text in Pixelify Sans. SVG icons are untouched. */
+html,
+body,
+body *:not(svg):not(svg *) {
+  font-family: var(--lp-font-pixel) !important;
+}

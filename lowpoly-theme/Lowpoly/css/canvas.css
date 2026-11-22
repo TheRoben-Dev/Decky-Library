@@ -1,0 +1,61 @@
+/* Lowpoly — canvas.css  (bigpicture)
+ * Night-sky gouraud wash with flat-shaded polygons and an ordered dither on top (tokens.css,
+ * --lp-canvas-*). A static background on the page containers (no fixed overlay, no animation),
+ * so it costs one paint, not one per frame.
+ */
+
+/* Home + every page that uses the shared opaque background (Steam: navy radial gradient).
+ * Only the opaque variant: the black and transparent variants (in-game overlay) stay as they are. */
+.BasicUI .gamepadui_BasicHome.gamepadui_OpaqueBackground,
+.BasicUI .gamepadlibrary_GamepadLibrary,
+.BasicUI .gamepadpage_GamepadPage.gamepadpage_DialogBackground {
+  background-color: var(--lp-bg-0);
+  background-image: var(--lp-canvas-image);
+  background-size: var(--lp-canvas-size);
+  background-repeat: var(--lp-canvas-repeat);
+  background-position: 0 0;
+}
+
+/* Placeholders behind cover art (Steam rgb(14,20,27)) */
+.BasicUI .libraryassetimage_Container,
+.BasicUI .libraryassetimage_GreyBackground.libraryassetimage_GreyBackground {
+  background-color: var(--lp-bg-1);
+}
+
+/* Game details page: flat panel instead of Steam's blue-grey glass */
+.BasicUI .appdetails_ScrollContainer {
+  background: var(--lp-bg-0);
+}
+.BasicUI .appdetails_ScrollContainer.appdetails_Glassy {
+  background-color: var(--lp-bg-0);
+  background-image: var(--lp-canvas-image);
+  background-size: var(--lp-canvas-size);
+  background-repeat: var(--lp-canvas-repeat);
+}
+.BasicUI .basicappdetailssectionstyler_AppDetailsRoot {
+  background: color-mix(in srgb, var(--lp-bg-0) 70%, transparent);
+}
+.BasicUI .appdetailssection_AppDetailsSectionContainer.appdetailssection_RightColumnSection,
+.BasicUI .appdetailssection_Highlight,
+.BasicUI .appdetailscommunityfeed_CommunityItem,
+.BasicUI .appdetailsgameinfopanel_DeckVerifiedInfo {
+  background: var(--lp-grad-raised);
+  border: var(--lp-hairline);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-bevel);
+}
+
+/* Home store rows (Trending among friends …) */
+.BasicUI .homestorecarousel_StoreCarouselCtn .gamecapsule_GameCapsule {
+  background: var(--lp-bg-1);
+  border-radius: var(--lp-radius);
+}
+.BasicUI .homestorecarousel_StoreCarouselCtn .gamecapsule_BottomBar {
+  background: var(--lp-bg-2);
+}
+.BasicUI .recentlycompleted_RecentlyCompletedItem {
+  background: var(--lp-grad-raised);
+  border: var(--lp-hairline);
+  border-radius: var(--lp-radius);
+  box-shadow: var(--lp-bevel);
+}
