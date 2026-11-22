@@ -29,6 +29,8 @@ export const PAGE_CSS = `
 .ga-head { display: flex; align-items: baseline; gap: 12px; padding: 10px 24px 6px; font-family: ${MONO}; }
 .ga-head .t { font-size: 18px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 .ga-head .s { font-size: 12px; color: ${C.text1}; letter-spacing: .08em; text-transform: uppercase; }
+.ga-head .as { font-size: 12px; color: ${C.text1}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.ga-head .as b { color: ${C.accent}; font-weight: 600; }
 .ga-head .tag { margin-left: auto; font-size: 11px; color: ${C.data}; border: 1px solid ${C.data}; padding: 1px 6px; letter-spacing: .1em; }
 .ga-tabs { flex: 1; min-height: 0; }
 .ga-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 0 0 10px; }

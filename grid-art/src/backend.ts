@@ -26,3 +26,6 @@ export const readLocal = callable<[appid: number, slot: string, path: string],
   { ok: true; data?: string; ext?: "png" | "jpg"; path?: string } | Fail>("read_local");
 export const getApplied = callable<[appid: number], Partial<Record<string, number>>>("applied");
 export const markApplied = callable<[appid: number, slot: string, assetId: number | null], Partial<Record<string, number>>>("mark_applied");
+export type Match = { id: number; name: string };
+export const getMatch = callable<[appid: number], Match | null>("match");
+export const setMatch = callable<[appid: number, game: Match | null], Match | null>("set_match");

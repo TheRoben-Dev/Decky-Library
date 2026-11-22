@@ -12,6 +12,8 @@ DEFAULTS = {
     "styles": {"grids": [], "heroes": [], "logos": [], "icons": []},
     # appid -> {kind: sgdb asset id} for the art this plugin applied, so the browser can mark it.
     "applied": {},
+    # appid -> {"id": sgdb game id, "name": str} picked with the custom search; overrides auto-detect.
+    "matches": {},
 }
 
 
@@ -49,7 +51,7 @@ class Store:
 
     def public(self) -> dict:
         """Settings for the frontend; the key itself never leaves the backend."""
-        d = {k: v for k, v in self.data.items() if k not in ("key", "applied")}
+        d = {k: v for k, v in self.data.items() if k not in ("key", "applied", "matches")}
         k = self.data["key"]
         d["hasKey"] = bool(k)
         d["keyHint"] = f"…{k[-4:]}" if len(k) >= 8 else ""
