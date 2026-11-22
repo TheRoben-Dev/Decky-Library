@@ -39,9 +39,6 @@ html.GamepadMode.GamepadMode {
 /* Canvas */
 html.GamepadMode.GamepadMode body {
   background-color: var(--lp-bg-0);
-  background-image: var(--lp-canvas-image);
-  background-size: var(--lp-canvas-size);
-  background-repeat: var(--lp-canvas-repeat);
   color: var(--lp-text-0);
 }
 html.GamepadMode.GamepadMode :is(.page_content.middle_page, .block_content.page_content) {
@@ -66,7 +63,7 @@ html.GamepadMode.GamepadMode [class*="bXqaBMkoZYQ-"] {
   border-color: var(--lp-active) !important;
   outline-color: var(--lp-active) !important;
   border-radius: var(--lp-radius) !important;
-  box-shadow: var(--lp-glow-active) !important;
+  box-shadow: none !important;
 }
 
 /* Capsules and panels: flat dark surfaces with hairlines instead of blue glass */

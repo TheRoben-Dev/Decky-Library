@@ -1,0 +1,4 @@
+/* Backdrop: "Plain" — flat night, no image */
+html:root {
+  --lp-scene: none;
+}

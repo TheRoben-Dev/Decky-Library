@@ -1,14 +1,16 @@
 /* Lowpoly — pages.css  (bigpicture; achievements + volume also MainMenu/QuickAccess)
- * Downloads, search, media, achievements, volume pop-in. Panels are bevelled gouraud blocks.
+ * Downloads, search, media, achievements, volume pop-in. Flat dark panels with thin borders.
  * Unnamed variants (no CSS Loader stable name) are matched by hash substring and fail safe.
  */
 
 /* ── Downloads ───────────────────────────────────────────── */
 .BasicUI .downloads_DownloadsPage.downloads_DownloadsPage {
   background-color: var(--lp-bg-0);
-  background-image: var(--lp-canvas-image);
-  background-size: var(--lp-canvas-size);
-  background-repeat: var(--lp-canvas-repeat);
+  background-image: var(--lp-scene);
+  background-size: cover;
+  background-position: 50% 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
 }
 .BasicUI .downloads_Section.downloads_Section.downloads_Section {
   background-color: color-mix(in srgb, var(--lp-bg-1) 92%, transparent);
@@ -40,8 +42,8 @@
 }
 /* Progress bars: grey paused/queued variant (_2Xedpg…) keeps Steam's grey */
 .BasicUI .downloads_ProgressBar.downloads_ProgressBar { border-radius: var(--lp-radius); }
-.BasicUI .downloads_ProgressBar.downloads_ProgressBar:not([class*="_2XedpgsgZ3gMAUuPRtnfld"]) div { background-color: var(--lp-data); background-image: var(--lp-grad-data); }
-.BasicUI .downloads_ProgressBar.downloads_ProgressBar[class*="HifZB5TP6WNuubp1dzyxS"] div { background-color: var(--lp-ok); background-image: none; }
+.BasicUI .downloads_ProgressBar.downloads_ProgressBar:not([class*="_2XedpgsgZ3gMAUuPRtnfld"]) div { background-color: var(--lp-active); }
+.BasicUI .downloads_ProgressBar.downloads_ProgressBar[class*="HifZB5TP6WNuubp1dzyxS"] div { background-color: var(--lp-ok); }
 .BasicUI .downloads_SectionItemStatus .downloads_ProgressBar.downloads_ProgressBar { background-color: var(--lp-bg-2); }
 .BasicUI .downloads_SectionItem { border-radius: var(--lp-radius); }
 .BasicUI .downloads_SectionItem.downloads_Active {
@@ -58,12 +60,16 @@
   background: color-mix(in srgb, var(--lp-data) 18%, var(--lp-bg-0));
 }
 
+.BasicUI :is(.downloads_DownloadsPage, .gamepadsearch_GamepadSearch) > * { image-rendering: auto; }
+
 /* ── Search overlay ──────────────────────────────────────── */
 .BasicUI .gamepadsearch_GamepadSearch {
   background-color: var(--lp-bg-0);
-  background-image: var(--lp-canvas-image);
-  background-size: var(--lp-canvas-size);
-  background-repeat: var(--lp-canvas-repeat);
+  background-image: var(--lp-scene);
+  background-size: cover;
+  background-position: 50% 100%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
 }
 .BasicUI .gamepadsearch_ResultTemplateImage { border-radius: var(--lp-radius); }
 
@@ -82,13 +88,11 @@
              .achievementspage_SortableUserAchievementInner,
              .achievementslist_AchievementListItemBase, .achievementslist_GlobalAchievementListItem) {
   background-color: var(--lp-bg-1);
-  background-image: var(--lp-grad-raised);
   border: 1px solid var(--lp-line);
   border-radius: var(--lp-radius);
-  box-shadow: var(--lp-bevel);
 }
 .BasicUI :is(.achievementspage_AchievementListItemBase, .achievementslist_AchievementListItemBase).gpfocus {
-  background-color: color-mix(in srgb, var(--lp-active) 14%, var(--lp-bg-1));
+  background-color: var(--lp-sel-fill);
   border-color: var(--lp-active);
 }
 .BasicUI :is(.achievementspage_AchievementTitle, .achievementslist_AchievementTitle) { color: var(--lp-text-0); }
@@ -108,8 +112,7 @@
 
 /* ── Volume / brightness pop-in ─────────────────────────── */
 .BasicUI :is(.header_VolumePopin, .audio_VolumePopin) {
-  background: var(--lp-grad-panel);
-  box-shadow: var(--lp-bevel);
+  background: var(--lp-bg-1);
   border: 1px solid var(--lp-line);
   border-radius: var(--lp-radius);
 }

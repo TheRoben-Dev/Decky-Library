@@ -1,0 +1,4 @@
+/* Backdrop: "Grid only" — the fogged 3D floor without the toys */
+html:root {
+  --lp-scene: url("/themes_custom/Lowpoly/images/grid.png");
+}

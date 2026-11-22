@@ -1,4 +1,0 @@
-/* Polygons: "Off" — gouraud wash only, no flat-shaded facets */
-html:root {
-  --lp-facets: none;
-}

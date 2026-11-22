@@ -6,7 +6,7 @@ Decky Loader plugins and CSS Loader themes for Bazzite / SteamOS handhelds. Each
 | Theme | What it does |
 |---|---|
 | [nightgrid-theme](nightgrid-theme/) | Retro-terminal Game Mode theme based on the Nightgrid app: near-black grid canvas, cyan data accents, magenta outlined selection, uppercase mono labels. Covers Game Mode, Quick Access, friends & chat, the Store and toasts. Palette, custom colors, grid, font, glow and scanline options. |
-| [lowpoly-theme](lowpoly-theme/) | 32-bit-era Game Mode theme inspired by late-90s low-poly 3D: gouraud-shaded night-sky backdrop with flat-shaded polygons and ordered dithering, bevelled blocky controls, bright gouraud selection, a chunky pixel font and optional CRT scanlines. Seven accent pairs plus custom colors; dither, polygon, CRT, font, bloom and animation options. |
+| [lowpoly-theme](lowpoly-theme/) | Late-90s 3D Game Mode theme: a low-res pre-rendered scene (fogged grid floor, pixelated low-poly toys, 15-bit dither) behind dark flat rows with one warm accent. Eight accents plus custom, backdrop, CRT, font and animation options. |
 
 Install a theme by extracting its zip into `~/homebrew/themes/`, then refresh CSS Loader and enable it.
 

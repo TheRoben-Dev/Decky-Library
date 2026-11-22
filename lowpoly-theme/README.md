@@ -1,17 +1,15 @@
 # Lowpoly
 
-A [CSS Loader](https://github.com/DeckThemes/SDH-CssLoader) theme for Steam Game Mode, inspired by the low-poly 3D look of late-90s 32-bit consoles. It's an original design, not a copy of any console's interface, logos or trademarks.
+A [CSS Loader](https://github.com/DeckThemes/SDH-CssLoader) theme for Steam Game Mode, inspired by late-90s 3D consoles. It's an original design, with no console's interface, logos or trademarks.
 
-![Lowpoly in four accents: Cobalt, Jade, Amber, Violet (mock-up preview)](docs/preview.png)
+![Lowpoly in Gold and Cyan (mock-up preview)](docs/preview.png)
 
 ## Look
 
-- **Backdrop:** a night-sky *gouraud* wash (vertex-colour gradients) with a layer of flat-shaded low-poly facets and a 4×4 ordered (Bayer) **dither** on top, like 15-bit colour output.
-- **Controls:** square, **pixel-bevelled** blocks (light top-left edge, dark bottom-right edge) with gouraud fills.
-- **Selection:** a bright gouraud accent polygon with dark text, framed by a chunky sprite-style outline.
-- **Type:** **Pixelify Sans** (bundled, OFL) on labels, tabs and menus. Body text stays Steam's font so it's easy to read.
-- **Headers** get a small gouraud-shaded triangle marker.
-- **CRT:** optional static scanlines, or a "Tube" look with an aperture-grille tint and a vignette.
+- **A real low-res 3D backdrop.** `images/scene.png` is a 384×216 frame from a tiny software renderer (`tools/render_backdrop.py`): a grid floor fading into fog, flat-shaded low-poly toys (a floppy disk, a cartridge, a pocket console, a gold ring, a gem and a cube), vertices snapped to whole pixels, 15-bit colour and ordered dither. Steam scales it up with hard pixels (`image-rendering: pixelated`), so it looks like a 240p-era render on the handheld's screen.
+- **A quiet UI on top:** dark flat rows with thin borders. Settings rows are separate tiles. The selected item gets a warm accent tint and an accent border. Play and primary buttons are solid accent with dark text. There are no gradients and no glow.
+- **Tabs:** the current tab is shown in the accent with an underline.
+- **Covers:** the focused Recent Games cover turns a few degrees in 3D and casts a hard shadow.
 
 It covers Home, Library, game pages, Settings, the STEAM menu, Quick Access (and Decky panels), Friends & Chat, Store, Downloads, Search, Media, Achievements, the on-screen keyboard and notification toasts.
 
@@ -19,34 +17,36 @@ It covers Home, Library, game pages, Settings, the STEAM menu, Quick Access (and
 
 | Option | Values | Default |
 |---|---|---|
-| Accent | Cobalt, Crimson, Jade, Amber, Violet, Teal, Slate, Custom (two color pickers: selection + gradient partner) | Cobalt |
-| Dither | Off, Light, Heavy | Light |
-| Polygons | on / off | on |
-| CRT | Off, Scanlines, Tube | Scanlines |
-| Font | Pixel labels, Pixel everywhere, Steam default | Pixel labels |
-| Bloom | on / off (glow around focus) | on |
-| Animations | Off, Subtle (stepped focus snaps, menu unfold), Full (+ cursor blink, cover wobble, download stripes) | Subtle |
-
-The accent pair tints everything: surfaces, hairlines, backdrop, selection, toggles and bars all come from the two colors.
+| Accent | Gold, Amber, Crimson, Lime, Cyan, Violet, Silver, Custom (color picker) | Gold |
+| Backdrop | 3D scene, Grid only, Plain | 3D scene |
+| CRT | Off, Scanlines, Tube | Off |
+| Font | Steam default, Pixel labels, Pixel everywhere (Pixelify Sans, bundled) | Steam default |
+| Animations | Off, Subtle (stepped focus snaps, menus unfold), Full (+ cursor blink, stepped cover swing, download stripes) | Subtle |
 
 ## Install
 
-1. Download `Lowpoly.zip` from the latest `lowpoly-theme-v*` release.
-2. Extract it into `~/homebrew/themes/`, so that you get `~/homebrew/themes/Lowpoly/theme.json`. You can also run `install.sh` next to the zip.
-3. Go to Quick Access → CSS Loader → Refresh, then enable **Lowpoly**. Turn off other full themes, such as Nightgrid, first.
+The easiest way is **Library Hub** in Quick Access: tap Lowpoly → Install.
 
-The folder must be named `Lowpoly`, because the bundled font is loaded from `/themes_custom/Lowpoly/`.
+To install by hand:
+
+1. Download `Lowpoly.zip` from the latest `lowpoly-theme-v*` release.
+2. Extract it into `~/homebrew/themes/`, or run `install.sh` next to the zip.
+3. Go to CSS Loader → Refresh, then enable **Lowpoly**. Turn off other full themes, such as Nightgrid, first.
+
+The folder must be named `Lowpoly`, because the backdrop and font are loaded from `/themes_custom/Lowpoly/`.
 
 ## Performance
 
-Everything is static except one-shot animations. The backdrop is a background on the page containers: it's painted once, with no fixed overlay. The CRT overlay is one static, non-interactive layer on Home/Library only, and it's never drawn over a running game. Looping animations (Full only) stop while a game runs, and Steam's own Low Performance Mode turns all animation off.
+The backdrop is a small PNG (about 10 KB) used as a static background on the page containers: it's decoded once and painted once. Nothing is drawn on top of it, and nothing animates idle. The CRT overlay is optional: one static layer on Home/Library that's never drawn over a running game. Looping animations (Full only) stop in-game, and Steam's Low Performance Mode turns all animation off.
 
 ## Building
 
-`./package.sh` creates `out/Lowpoly.zip`. Releases are published automatically by `.github/workflows/lowpoly-release.yml` when the `version` in `Lowpoly/theme.json` changes on `main` or a `claude/*` branch.
+- `./package.sh` creates `out/Lowpoly.zip`.
+- `python3 tools/render_backdrop.py Lowpoly/images` re-renders the backdrop (needs numpy and Pillow).
+- `.github/workflows/lowpoly-release.yml` publishes a release automatically when the `version` in `Lowpoly/theme.json` changes.
 
 ## Credits
 
-- Selectors and structure follow this repo's Nightgrid theme. The selectors are CSS Loader stable class names.
-- Font: [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans), SIL Open Font License 1.1 (`Lowpoly/fonts/PixelifySans-OFL.txt`).
+- Selectors follow this repo's Nightgrid theme (CSS Loader stable class names).
+- Font: [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans), SIL OFL 1.1.
 - License: MIT.
