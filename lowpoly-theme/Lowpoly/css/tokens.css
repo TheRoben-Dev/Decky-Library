@@ -1,79 +1,60 @@
 /* Lowpoly — tokens.css
  * Design tokens. Every other file uses only these variables.
- * The whole theme is driven by two accent colors (--lp-c1 selection, --lp-c2 its gouraud partner):
- * surfaces, hairlines and the backdrop are mixed from them, so an Accent option re-tints everything.
- * Accent options (options/accent-*.css) override with `html:root` (0,1,1); custom colors
- * (options/custom-colors.css) with `html:root:root` (0,2,1), so CSS Loader's inject order never matters.
+ * Look: late-90s 3D. A low-resolution pre-rendered scene (fogged grid floor, flat-shaded
+ * low-poly toys, 15-bit colour, ordered dither) shown with hard pixels behind a quiet UI of
+ * dark flat rows, thin borders and one warm accent.
+ * One accent drives every highlight (--lp-c1). Accent options (options/accent-*.css) override it
+ * with `html:root` (0,1,1); the custom picker (options/custom-colors.css) with `html:root:root`
+ * (0,2,1), so CSS Loader's inject order never matters.
  * Selectors everywhere use CSS Loader's stable class names (module_Class), which it rewrites
  * to Steam's current hashed classes when it injects.
  */
 :root {
-  /* Accent pair (default: Cobalt). Options swap these two only. */
-  --lp-c1: #4F8BFF;
-  --lp-c2: #B66BFF;
+  /* Accent (default: Gold) */
+  --lp-c1: #E8B13A;
 
-  /* Roles (the rest of the theme reads these) */
-  --lp-active: var(--lp-c1);   /* selection / focus */
-  --lp-data: var(--lp-c2);     /* values, toggles, progress, counts */
-  --lp-accent: #FFD24A;        /* small highlights (workshop bar, dead keys, demo banner) */
-  --lp-ok: #5BE37D;            /* ready / online / Play */
-  --lp-warn: #FFA43B;
-  --lp-danger: #FF3B55;
+  /* Roles */
+  --lp-active: var(--lp-c1);                                   /* selection, focus, current tab */
+  --lp-data: color-mix(in srgb, var(--lp-c1) 70%, white);      /* values, counts, links */
+  --lp-accent: var(--lp-c1);
+  --lp-ok: #5FD38A;                                            /* ready / online / Play-in-green spots */
+  --lp-warn: #F0A43A;
+  --lp-danger: #F0566A;
 
-  /* Surfaces: deep night tinted with the accent pair */
-  --lp-bg-0: color-mix(in srgb, var(--lp-c1) 9%, #05050B);    /* canvas */
-  --lp-bg-1: color-mix(in srgb, var(--lp-c1) 13%, #0A0A14);   /* panels, menus */
-  --lp-bg-2: color-mix(in srgb, var(--lp-c1) 18%, #12121F);   /* raised controls */
-  --lp-line: color-mix(in srgb, var(--lp-c1) 30%, #1E1F2E);   /* hairlines, borders */
+  /* Surfaces: deep night navy, flat */
+  --lp-bg-0: #0A0A16;         /* canvas / fog */
+  --lp-bg-1: #15162A;         /* rows, panels */
+  --lp-bg-2: #1D1E36;         /* raised / hovered rows */
+  --lp-line: #2C2E4C;         /* row borders, hairlines */
+
+  /* Selected row: warm tint of the accent over the panel colour, accent border */
+  --lp-sel-fill: color-mix(in srgb, var(--lp-c1) 22%, #17142A);
+  --lp-sel-fill-strong: color-mix(in srgb, var(--lp-c1) 32%, #17142A);
 
   /* Text */
-  --lp-text-0: #F1F3FF;
-  --lp-text-1: #A0A6C4;
-  --lp-on-fill: #07070E;      /* text on bright accent fills */
+  --lp-text-0: #E9EAF4;
+  --lp-text-1: #8C8FAE;
+  --lp-on-fill: #141019;      /* text on the solid accent (Play, primary buttons) */
 
-  /* Pixel bevel: 2px light top-left edge, 2px dark bottom-right edge (raised control) */
-  --lp-bevel: inset 2px 2px 0 rgba(255, 255, 255, .13), inset -2px -2px 0 rgba(0, 0, 0, .42);
-  --lp-bevel-lit: inset 2px 2px 0 rgba(255, 255, 255, .42), inset -2px -2px 0 rgba(0, 0, 0, .32);
-  --lp-bevel-sunk: inset 2px 2px 0 rgba(0, 0, 0, .45), inset -2px -2px 0 rgba(255, 255, 255, .08);
+  /* Hard drop shadow, like sprites and 3D-era menu text: no blur */
+  --lp-hard-shadow: 3px 3px 0 rgba(0, 0, 0, .55);
+  --lp-text-shadow: 0 2px 0 rgba(0, 0, 0, .7);
 
-  /* Gouraud fills: vertex-colour gradients, the way 32-bit-era hardware shaded polygons */
-  --lp-grad-raised: linear-gradient(180deg, color-mix(in srgb, var(--lp-c1) 10%, var(--lp-bg-2)) 0%, var(--lp-bg-1) 100%);
-  --lp-grad-panel: linear-gradient(170deg, color-mix(in srgb, var(--lp-c1) 24%, var(--lp-bg-1)) 0%, var(--lp-bg-1) 46%, color-mix(in srgb, var(--lp-c2) 14%, var(--lp-bg-0)) 100%);
-  --lp-grad-fill: linear-gradient(180deg, color-mix(in srgb, var(--lp-c1) 62%, white) 0%, var(--lp-c1) 48%, color-mix(in srgb, var(--lp-c1) 55%, var(--lp-c2)) 100%);
-  --lp-grad-data: linear-gradient(90deg, var(--lp-c1), var(--lp-c2));
-  --lp-grad-row: linear-gradient(90deg, color-mix(in srgb, var(--lp-c1) 34%, transparent) 0%, color-mix(in srgb, var(--lp-c2) 12%, transparent) 70%, transparent 100%);
-
-  /* Effects (Bloom off → options/bloom-off.css sets these to none) */
-  --lp-glow-active: 0 0 12px color-mix(in srgb, var(--lp-active) 50%, transparent);
-  --lp-glow-data: 0 0 10px color-mix(in srgb, var(--lp-data) 40%, transparent);
-  /* Chunky sprite-style outline around the focus ring */
-  --lp-ring-shadow: 0 0 0 5px rgba(0, 0, 0, .55);
-
-  /* Backdrop: ordered dither over flat-shaded polygons over a gouraud wash.
-   * Layer count is fixed (5); options set a layer to `none` instead of removing it.
-   * Static backgrounds on the page containers: one paint, nothing animated, no fixed overlay. */
-  --lp-dither: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' shape-rendering='crispEdges'%3E%3Crect x='2' y='0' width='2' height='2' fill-opacity='.085'/%3E%3Crect x='4' y='0' width='2' height='2' fill-opacity='.021'/%3E%3Crect x='6' y='0' width='2' height='2' fill-opacity='.107'/%3E%3Crect x='0' y='2' width='2' height='2' fill-opacity='.128'/%3E%3Crect x='2' y='2' width='2' height='2' fill-opacity='.043'/%3E%3Crect x='4' y='2' width='2' height='2' fill-opacity='.149'/%3E%3Crect x='6' y='2' width='2' height='2' fill-opacity='.064'/%3E%3Crect x='0' y='4' width='2' height='2' fill-opacity='.032'/%3E%3Crect x='2' y='4' width='2' height='2' fill-opacity='.117'/%3E%3Crect x='4' y='4' width='2' height='2' fill-opacity='.011'/%3E%3Crect x='6' y='4' width='2' height='2' fill-opacity='.096'/%3E%3Crect x='0' y='6' width='2' height='2' fill-opacity='.16'/%3E%3Crect x='2' y='6' width='2' height='2' fill-opacity='.075'/%3E%3Crect x='4' y='6' width='2' height='2' fill-opacity='.139'/%3E%3Crect x='6' y='6' width='2' height='2' fill-opacity='.053'/%3E%3C/svg%3E");
-  --lp-facets: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 1000' preserveAspectRatio='none'%3E%3Cpath d='M0 0L125 0L109 119z' fill='%23fff' fill-opacity='.08'/%3E%3Cpath d='M0 0L109 119L0 224z' fill='%23fff' fill-opacity='.017'/%3E%3Cpath d='M125 0L369 0L109 119z' fill='%23fff' fill-opacity='.068'/%3E%3Cpath d='M369 0L273 124L109 119z' fill='%23000' fill-opacity='.264'/%3E%3Cpath d='M369 0L507 0L425 108z' fill='%23000' fill-opacity='.276'/%3E%3Cpath d='M369 0L425 108L273 124z' fill='%23000' fill-opacity='.201'/%3E%3Cpath d='M507 0L641 0L425 108z' fill='%23fff' fill-opacity='.092'/%3E%3Cpath d='M641 0L599 143L425 108z' fill='%23fff' fill-opacity='.043'/%3E%3Cpath d='M641 0L803 0L760 206z' fill='%23000' fill-opacity='.127'/%3E%3Cpath d='M641 0L760 206L599 143z' fill='%23000' fill-opacity='.135'/%3E%3Cpath d='M803 0L1006 0L760 206z' fill='%23000' fill-opacity='.27'/%3E%3Cpath d='M1006 0L968 176L760 206z' fill='%23fff' fill-opacity='.031'/%3E%3Cpath d='M1006 0L1059 0L1131 132z' fill='%23000' fill-opacity='.28'/%3E%3Cpath d='M1006 0L1131 132L968 176z' fill='%23000' fill-opacity='.102'/%3E%3Cpath d='M1059 0L1235 0L1131 132z' fill='%23000' fill-opacity='.28'/%3E%3Cpath d='M1235 0L1249 154L1131 132z' fill='%23fff' fill-opacity='.084'/%3E%3Cpath d='M1235 0L1468 0L1431 112z' fill='%23000' fill-opacity='.143'/%3E%3Cpath d='M1235 0L1431 112L1249 154z' fill='%23fff' fill-opacity='.031'/%3E%3Cpath d='M1468 0L1600 0L1431 112z' fill='%23000' fill-opacity='.283'/%3E%3Cpath d='M1600 0L1600 206L1431 112z' fill='%23000' fill-opacity='.196'/%3E%3Cpath d='M0 224L109 119L0 359z' fill='%23000' fill-opacity='.015'/%3E%3Cpath d='M109 119L107 354L0 359z' fill='%23000' fill-opacity='.182'/%3E%3Cpath d='M109 119L273 124L296 319z' fill='%23000' fill-opacity='.219'/%3E%3Cpath d='M109 119L296 319L107 354z' fill='%23000' fill-opacity='.187'/%3E%3Cpath d='M273 124L425 108L296 319z' fill='%23fff' fill-opacity='.016'/%3E%3Cpath d='M425 108L424 271L296 319z' fill='%23fff' fill-opacity='.048'/%3E%3Cpath d='M425 108L599 143L663 391z' fill='%23000' fill-opacity='.143'/%3E%3Cpath d='M425 108L663 391L424 271z' fill='%23000' fill-opacity='.091'/%3E%3Cpath d='M599 143L760 206L663 391z' fill='%23000' fill-opacity='.186'/%3E%3Cpath d='M760 206L855 379L663 391z' fill='%23000' fill-opacity='.086'/%3E%3Cpath d='M760 206L968 176L963 334z' fill='%23000' fill-opacity='.198'/%3E%3Cpath d='M760 206L963 334L855 379z' fill='%23000' fill-opacity='.141'/%3E%3Cpath d='M968 176L1131 132L963 334z' fill='%23000' fill-opacity='.208'/%3E%3Cpath d='M1131 132L1105 362L963 334z' fill='%23000' fill-opacity='.095'/%3E%3Cpath d='M1131 132L1249 154L1323 335z' fill='%23000' fill-opacity='.211'/%3E%3Cpath d='M1131 132L1323 335L1105 362z' fill='%23000' fill-opacity='.024'/%3E%3Cpath d='M1249 154L1431 112L1323 335z' fill='%23000' fill-opacity='.213'/%3E%3Cpath d='M1431 112L1479 352L1323 335z' fill='%23000' fill-opacity='.186'/%3E%3Cpath d='M1431 112L1600 206L1600 301z' fill='%23000' fill-opacity='.211'/%3E%3Cpath d='M1431 112L1600 301L1479 352z' fill='%23000' fill-opacity='.191'/%3E%3Cpath d='M0 359L107 354L171 559z' fill='%23fff' fill-opacity='.017'/%3E%3Cpath d='M0 359L171 559L0 440z' fill='%23000' fill-opacity='.086'/%3E%3Cpath d='M107 354L296 319L171 559z' fill='%23fff' fill-opacity='.028'/%3E%3Cpath d='M296 319L298 559L171 559z' fill='%23fff' fill-opacity='.021'/%3E%3Cpath d='M296 319L424 271L475 447z' fill='%23000' fill-opacity='.155'/%3E%3Cpath d='M424 271L663 391L475 447z' fill='%23000' fill-opacity='.146'/%3E%3Cpath d='M663 391L599 483L475 447z' fill='%23000' fill-opacity='.12'/%3E%3Cpath d='M663 391L855 379L826 561z' fill='%23000' fill-opacity='.109'/%3E%3Cpath d='M663 391L826 561L599 483z' fill='%23000' fill-opacity='.106'/%3E%3Cpath d='M855 379L963 334L826 561z' fill='%23000' fill-opacity='.126'/%3E%3Cpath d='M963 334L994 511L826 561z' fill='%23fff' fill-opacity='.012'/%3E%3Cpath d='M963 334L1105 362L1170 484z' fill='%23fff' fill-opacity='.015'/%3E%3Cpath d='M963 334L1170 484L994 511z' fill='%23fff' fill-opacity='.013'/%3E%3Cpath d='M1105 362L1323 335L1170 484z' fill='%23fff' fill-opacity='.037'/%3E%3Cpath d='M1323 335L1223 559L1170 484z' fill='%23000' fill-opacity='.113'/%3E%3Cpath d='M1323 335L1479 352L1380 548z' fill='%23000' fill-opacity='.096'/%3E%3Cpath d='M1479 352L1600 301L1380 548z' fill='%23fff' fill-opacity='.019'/%3E%3Cpath d='M1600 301L1600 522L1380 548z' fill='%23fff' fill-opacity='.021'/%3E%3Cpath d='M0 440L171 559L0 651z' fill='%23000' fill-opacity='.082'/%3E%3Cpath d='M171 559L138 724L0 651z' fill='%23fff' fill-opacity='.011'/%3E%3Cpath d='M171 559L298 559L287 659z' fill='%23000' fill-opacity='.068'/%3E%3Cpath d='M171 559L287 659L138 724z' fill='%23000' fill-opacity='.05'/%3E%3Cpath d='M298 559L475 447L287 659z' fill='%23000' fill-opacity='.08'/%3E%3Cpath d='M475 447L529 604L287 659z' fill='%23fff' fill-opacity='.016'/%3E%3Cpath d='M475 447L599 483L610 673z' fill='%23000' fill-opacity='.06'/%3E%3Cpath d='M475 447L610 673L529 604z' fill='%23000' fill-opacity='.074'/%3E%3Cpath d='M599 483L826 561L610 673z' fill='%23000' fill-opacity='.012'/%3E%3Cpath d='M826 561L749 715L610 673z' fill='%23fff' fill-opacity='.011'/%3E%3Cpath d='M826 561L994 511L1017 713z' fill='%23fff' fill-opacity='.007'/%3E%3Cpath d='M826 561L1017 713L749 715z' fill='%23fff' fill-opacity='.007'/%3E%3Cpath d='M994 511L1170 484L1017 713z' fill='%23fff' fill-opacity='.008'/%3E%3Cpath d='M1170 484L1068 678L1017 713z' fill='%23fff' fill-opacity='.015'/%3E%3Cpath d='M1170 484L1223 559L1280 612z' fill='%23000' fill-opacity='.081'/%3E%3Cpath d='M1170 484L1280 612L1068 678z' fill='%23000' fill-opacity='.068'/%3E%3Cpath d='M1223 559L1380 548L1280 612z' fill='%23000' fill-opacity='.07'/%3E%3Cpath d='M1380 548L1499 727L1280 612z' fill='%23000' fill-opacity='.056'/%3E%3Cpath d='M1380 548L1600 522L1600 644z' fill='%23000' fill-opacity='.031'/%3E%3Cpath d='M1380 548L1600 644L1499 727z' fill='%23000' fill-opacity='.053'/%3E%3Cpath d='M0 651L138 724L219 849z' fill='%23000' fill-opacity='.025'/%3E%3Cpath d='M138 724L287 659L219 849z' fill='%23000' fill-opacity='.024'/%3E%3Cpath d='M529 604L610 673L441 781z' fill='%23000' fill-opacity='.04'/%3E%3Cpath d='M610 673L749 715L817 836z' fill='%23000' fill-opacity='.025'/%3E%3Cpath d='M749 715L1017 713L817 836z' fill='%23000' fill-opacity='.022'/%3E%3Cpath d='M1017 713L933 796L817 836z' fill='%23000' fill-opacity='.015'/%3E%3Cpath d='M1017 713L1068 678L1070 820z' fill='%23000' fill-opacity='.026'/%3E%3Cpath d='M1017 713L1070 820L933 796z' fill='%23000' fill-opacity='.016'/%3E%3Cpath d='M1068 678L1280 612L1070 820z' fill='%23000' fill-opacity='.035'/%3E%3Cpath d='M1280 612L1322 811L1070 820z' fill='%23fff' fill-opacity='.006'/%3E%3Cpath d='M1280 612L1499 727L1478 804z' fill='%23000' fill-opacity='.015'/%3E%3Cpath d='M1280 612L1478 804L1322 811z' fill='%23000' fill-opacity='.015'/%3E%3C/svg%3E");
-  --lp-wash:
-    radial-gradient(70% 65% at 12% 0%, color-mix(in srgb, var(--lp-c1) 34%, transparent) 0%, transparent 100%),
-    radial-gradient(60% 60% at 92% 8%, color-mix(in srgb, var(--lp-c2) 26%, transparent) 0%, transparent 100%),
-    radial-gradient(80% 50% at 50% 100%, color-mix(in srgb, var(--lp-c1) 12%, transparent) 0%, transparent 100%);
-  --lp-canvas-image: var(--lp-dither), var(--lp-facets), var(--lp-wash);
-  --lp-canvas-size: 8px 8px, 100vw 100vh, 100vw 100vh, 100vw 100vh, 100vw 100vh;
-  --lp-canvas-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  /* Backdrop (Backdrop option swaps the image). Shown with hard pixels: image-rendering pixelated. */
+  --lp-scene: url("/themes_custom/Lowpoly/images/scene.png");
 
   /* Type */
   --lp-font-pixel: "Lowpoly Pixel", "Pixelify Sans", ui-monospace, monospace;
-  --lp-tracking: 0.08em;
-  --lp-tracking-tight: 0.03em;  /* long labels in narrow columns */
+  --lp-tracking: 0.06em;
+  --lp-tracking-tight: 0.02em;
 
-  /* Motion: short, slightly snappy */
+  /* Motion: short; 3D-era things snap rather than glide */
   --lp-dur-fast: 100ms;
   --lp-dur: 150ms;
   --lp-dur-slow: 220ms;
   --lp-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* Shape */
-  --lp-radius: 0px;           /* square, pixel-bevelled */
+  --lp-radius: 3px;
   --lp-hairline: 1px solid var(--lp-line);
 }

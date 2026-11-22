@@ -1,5 +1,0 @@
-/* Bloom: off — flat outlines and fills, no glow */
-html:root {
-  --lp-glow-active: 0 0 0 transparent;
-  --lp-glow-data: 0 0 0 transparent;
-}

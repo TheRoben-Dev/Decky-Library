@@ -1,60 +1,27 @@
 /* Lowpoly — labels.css  (all pages)
- * Labels: uppercase, lightly tracked, like a 32-bit-era menu. Body text (descriptions, game
- * names, chat) keeps normal case so it stays readable at handheld distance.
+ * Small uppercase captions for section headers and the footer; tabs and buttons keep their
+ * case like the reference menus. Body text stays as Steam writes it.
  */
-.BasicUI .gamepadtabbedpage_Tab,
-.BasicUI .footer_BasicFooter,
-.BasicUI .footer_QuickAccessFooter,
-.BasicUI .quickaccessmenu_Title,
-.BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem,
-.BasicUI .gamepaddialog_GamepadDialogContent .DialogHeader,
 .BasicUI .DialogControlsSectionHeader,
 .BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_MenuSectionHeader,
 .BasicUI .homestorecarousel_Header,
-.BasicUI .header_Clock,
-.BasicUI button.DialogButton {
+.BasicUI .footer_BasicFooter,
+.BasicUI .footer_QuickAccessFooter {
   text-transform: uppercase;
   letter-spacing: var(--lp-tracking);
 }
-/* Long labels in narrow places (Settings sidebar, buttons) */
+.BasicUI .DialogControlsSectionHeader,
+.BasicUI .homestorecarousel_Header {
+  color: var(--lp-text-1);
+}
+.BasicUI .gamepadtabbedpage_Tab,
 .BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem,
 .BasicUI button.DialogButton {
   letter-spacing: var(--lp-tracking-tight);
 }
-/* Big headers get a small gouraud-shaded triangle (one polygon, two vertex colours):
- * page titles in the selection colour, section headers in the partner colour. */
-.BasicUI .quickaccessmenu_Title::before,
-.BasicUI .gamepaddialog_GamepadDialogContent .DialogHeader::before,
-.BasicUI .DialogControlsSectionHeader::before,
-.BasicUI .homestorecarousel_Header::before {
-  content: "";
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-  margin-right: .5em;
-  vertical-align: .02em;
-}
-.BasicUI .quickaccessmenu_Title::before,
-.BasicUI .gamepaddialog_GamepadDialogContent .DialogHeader::before {
-  background-image: linear-gradient(160deg, color-mix(in srgb, var(--lp-active) 55%, white), var(--lp-active) 55%, var(--lp-data)) !important;
-}
-.BasicUI .DialogControlsSectionHeader::before,
-.BasicUI .homestorecarousel_Header::before {
-  background-image: linear-gradient(160deg, color-mix(in srgb, var(--lp-data) 55%, white), var(--lp-data) 55%, var(--lp-active)) !important;
-}
-/* Steam may already use these pseudo-elements for its own decoration (absolute strips,
- * gradients). Pin ours to a plain inline box so they can't inherit that geometry. */
-.BasicUI .quickaccessmenu_Title::before,
-.BasicUI .gamepaddialog_GamepadDialogContent .DialogHeader::before,
-.BasicUI .DialogControlsSectionHeader::before,
-.BasicUI .homestorecarousel_Header::before {
-  position: static !important;
-  display: inline-block !important;
-  width: .5em !important;
-  height: .62em !important;
-  background-color: transparent !important;
-  background-size: 100% 100% !important;
-  background-repeat: no-repeat !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  opacity: 1 !important;
-  transform: none !important;
+/* Page titles: accent, with the hard drop shadow of 3D-era menu text */
+.BasicUI .quickaccessmenu_Title,
+.BasicUI .gamepaddialog_GamepadDialogContent .DialogHeader {
+  color: var(--lp-text-0);
+  text-shadow: var(--lp-text-shadow);
 }

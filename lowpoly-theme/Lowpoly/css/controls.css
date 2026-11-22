@@ -1,20 +1,20 @@
 /* Lowpoly — controls.css  (bigpicture, MainMenu, QuickAccess)
  * Buttons, toggles, sliders, dropdowns, dialogs, context menus, settings rows.
- * Look: bevelled, gouraud-shaded blocks; the selection is a bright accent polygon with dark text.
+ * Look: dark flat rows with a thin border; the selected row gets a warm accent tint and a 2px
+ * accent border; primary actions are solid accent with dark text. No gradients, no glow.
  * MainMenu/QuickAccess load Steam's stylesheets after CSS Loader's, so equal specificity
  * loses there: every rule carries `.BasicUI` (+1 class) and focus states use !important.
  */
 
 /* ── Focus ring ──────────────────────────────────────────── */
 /* Steam draws focus for most rows/buttons/cards with one overlay element that follows the
- * focused element, on every page (also Quick Access, where Decky's plugin panels live).
- * Lowpoly: a chunky accent outline inside a black pixel border, like a sprite outline. */
+ * focused element. Lowpoly: a crisp 2px accent border, no blur. */
 .BasicUI .focusring_FocusRing,
 .focusring_FocusRing {
   border-radius: var(--lp-radius) !important;
-  outline: 3px solid var(--lp-active) !important;
+  outline: 2px solid var(--lp-active) !important;
   outline-offset: 1px !important;
-  box-shadow: var(--lp-ring-shadow), var(--lp-glow-active) !important;
+  box-shadow: none !important;
 }
 .focusring_FocusRing::before,
 .focusring_FocusRing::after {
@@ -24,53 +24,54 @@
 /* ── Buttons ─────────────────────────────────────────────── */
 .BasicUI button.DialogButton,
 .BasicUI button.DialogButton:enabled {
-  background: var(--lp-grad-raised);
+  background: var(--lp-bg-1);
   color: var(--lp-text-0);
-  border: 1px solid rgba(0, 0, 0, .6);
+  border: 1px solid var(--lp-line);
   border-radius: var(--lp-radius);
-  box-shadow: var(--lp-bevel);
+  box-shadow: none;
 }
 .BasicUI button.DialogButton:enabled.gpfocus,
 .BasicUI button.DialogButton:enabled:focus,
 .BasicUI button.DialogButton:enabled:hover {
-  background: var(--lp-grad-fill) !important;
-  color: var(--lp-on-fill) !important;
-  border-color: rgba(0, 0, 0, .7) !important;
-  box-shadow: var(--lp-bevel-lit), var(--lp-glow-active) !important;
+  background: var(--lp-sel-fill) !important;
+  color: var(--lp-text-0) !important;
+  border-color: var(--lp-active) !important;
+  box-shadow: inset 0 0 0 1px var(--lp-active) !important;
 }
 .BasicUI button.DialogButton:enabled:is(.gpfocus, :focus, :hover) :is(svg, .gamepaddialog_DropDownControlButtonContents, .dropdownlabel_DropDownLabelTitle) {
-  color: var(--lp-on-fill) !important;
-}
-.BasicUI button.DialogButton:enabled:active {
-  box-shadow: var(--lp-bevel-sunk) !important;
+  color: var(--lp-text-0) !important;
 }
 .BasicUI button.DialogButton[disabled].gpfocus {
-  background: var(--lp-bg-2) !important;
+  background: var(--lp-bg-1) !important;
   color: var(--lp-text-1) !important;
   border-color: var(--lp-active) !important;
 }
 .BasicUI button.DialogButton:enabled.Primary {
-  color: color-mix(in srgb, var(--lp-data) 55%, white);
-  box-shadow: var(--lp-bevel), inset 0 -2px 0 var(--lp-data);
+  border-color: color-mix(in srgb, var(--lp-active) 55%, var(--lp-line));
+  color: var(--lp-data);
 }
 .BasicUI button.DialogButton:enabled.gpfocus.Primary,
 .BasicUI button.DialogButton:enabled:focus.Primary {
-  background: var(--lp-grad-fill) !important;
+  background: var(--lp-active) !important;
   color: var(--lp-on-fill) !important;
-  box-shadow: var(--lp-bevel-lit), var(--lp-glow-active) !important;
+  border-color: var(--lp-active) !important;
+  box-shadow: var(--lp-hard-shadow) !important;
+}
+.BasicUI button.DialogButton:enabled.gpfocus.Primary :is(svg, .gamepaddialog_DropDownControlButtonContents) {
+  color: var(--lp-on-fill) !important;
 }
 .BasicUI button.DialogButton:enabled.gpfocus.gamepadcontextmenu_Destructive {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--lp-danger) 60%, white), var(--lp-danger) 50%, color-mix(in srgb, var(--lp-danger) 70%, black)) !important;
+  background: var(--lp-danger) !important;
+  border-color: var(--lp-danger) !important;
   color: #fff !important;
 }
 .BasicUI button.DialogButton[disabled] {
   opacity: .45;
 }
 .BasicUI button.gamepaddropdown_DropDownControlButton.DialogButton {
-  background: var(--lp-bg-1);
-  border: 1px solid rgba(0, 0, 0, .6);
+  background: var(--lp-bg-0);
+  border: 1px solid var(--lp-line);
   border-radius: var(--lp-radius);
-  box-shadow: var(--lp-bevel-sunk);
 }
 
 /* ── Rows (Settings, Quick Access, Decky plugin panels) ──── */
@@ -89,30 +90,27 @@
 }
 .BasicUI .gamepaddialog_Toggle.gpfocus::after {
   border-color: var(--lp-active) !important;
-  box-shadow: var(--lp-glow-active);
 }
 .BasicUI .DialogCheckbox_Container.gpfocus .DialogCheckbox {
   background: var(--lp-active);
 }
 
-/* ── Toggles: sunk rail, gouraud fill when on, bevelled square knob ── */
+/* ── Toggles: dark rail, accent when on, square knob ─────── */
 .BasicUI .gamepaddialog_ToggleRail {
   background: var(--lp-bg-0);
-  border: 1px solid rgba(0, 0, 0, .6);
+  border: 1px solid var(--lp-line);
   border-radius: var(--lp-radius);
-  box-shadow: var(--lp-bevel-sunk);
 }
 .BasicUI .gamepaddialog_ToggleRail::before {
-  background: var(--lp-grad-data);
+  background: var(--lp-active);
   border-radius: var(--lp-radius);
 }
 .BasicUI .gamepaddialog_ToggleSwitch {
-  border-radius: var(--lp-radius);
-  background: linear-gradient(180deg, #FFFFFF, #C9CEE4);
-  box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25);
+  border-radius: 2px;
 }
 .BasicUI .gamepaddialog_Toggle.gamepaddialog_On .gamepaddialog_ToggleSwitch {
-  background: linear-gradient(180deg, #FFFFFF, color-mix(in srgb, var(--lp-data) 30%, #DDE1F2));
+  background: var(--lp-on-fill);
+  box-shadow: inset 0 0 0 2px var(--lp-active);
 }
 .BasicUI .gamepaddialog_Field.gpfocuswithin .gamepaddialog_ToggleRail {
   border-color: var(--lp-active);
@@ -121,26 +119,25 @@
 /* ── Sliders: Steam sets --left-track-color on the track itself ── */
 .BasicUI,
 .BasicUI .gamepadslider_SliderTrack {
-  --left-track-color: var(--lp-data);
+  --left-track-color: var(--lp-active);
 }
 .BasicUI .gamepadslider_SliderTrack {
   border-radius: var(--lp-radius);
 }
 .BasicUI .gamepadslider_SliderHandle {
-  border-radius: var(--lp-radius);
-  background: linear-gradient(180deg, #FFFFFF, #C9CEE4);
-  box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25), 0 0 0 1px rgba(0, 0, 0, .6);
+  border-radius: 2px;
+  background: var(--lp-text-0);
 }
 .BasicUI .gamepaddialog_Field.gpfocuswithin .gamepadslider_SliderControlAndNotches.gpfocus .gamepadslider_SliderHandle {
-  background: var(--lp-grad-fill) !important;
-  box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25), 0 0 0 1px rgba(0, 0, 0, .7), var(--lp-glow-active) !important;
+  background: var(--lp-active) !important;
+  box-shadow: var(--lp-hard-shadow) !important;
 }
 .BasicUI .gamepadslider_SliderNotchTick.gamepadslider_TickActive {
-  background-color: var(--lp-data);
+  background-color: var(--lp-active);
 }
 .BasicUI .gamepadslider_DescriptionValue,
 .BasicUI .gamepadslider_EditableValue {
-  color: color-mix(in srgb, var(--lp-data) 60%, white);
+  color: var(--lp-data);
   font-variant-numeric: tabular-nums;
 }
 
@@ -149,7 +146,7 @@
   border-radius: var(--lp-radius);
 }
 
-/* ── Settings rows ───────────────────────────────────────── */
+/* ── Settings rows: each row is its own dark panel with a thin border, like the reference ── */
 .BasicUI .gamepaddialog_Field.gamepaddialog_WithBottomSeparatorThick::after {
   background: var(--lp-line);
 }
@@ -160,23 +157,37 @@
   color: var(--lp-text-1);
 }
 .BasicUI .gamepaddialog_FieldDescription a {
-  color: color-mix(in srgb, var(--lp-data) 60%, white);
+  color: var(--lp-data);
 }
-/* Focused row: a gouraud highlight bar fading out to the right, accent edge on the left.
- * Steam colors it with a static #3d4450 and a forwards fade animation
- * (ItemFocusAnim-darkGreySettings); animations beat normal declarations, so swap the animation. */
+/* Focused row: warm accent tint + 2px accent border. Steam colors it with a static #3d4450 and a
+ * forwards fade animation (ItemFocusAnim-darkGreySettings); animations beat normal declarations,
+ * so swap the animation. */
 @keyframes lp-row-focus {
-  0%   { background-color: transparent; }
-  100% { background-color: color-mix(in srgb, var(--lp-active) 8%, var(--lp-bg-1)); }
+  0%   { background-color: var(--lp-bg-1); }
+  100% { background-color: var(--lp-sel-fill); }
 }
 .BasicUI .gamepaddialog_Field.gamepaddialog_Field.gamepaddialog_HighlightOnFocus:is(.gpfocus, .gpfocuswithin) {
-  background-color: color-mix(in srgb, var(--lp-active) 8%, var(--lp-bg-1));
-  background-image: var(--lp-grad-row);
+  background: var(--lp-sel-fill);
   animation-name: lp-row-focus;
-  box-shadow: inset 3px 0 0 var(--lp-active);
+  box-shadow: inset 0 0 0 2px var(--lp-active);
+}
+/* Settings pages: every top-level row is its own dark tile, like the reference menus.
+ * (Quick Access and Decky panels keep Steam's continuous list; nested rows stay plain.) */
+.BasicUI .gamepadpagedsettings_PagedSettingDialog_ContentColumn .gamepaddialog_Field.gamepaddialog_HighlightOnFocus:not(.gamepaddialog_Field .gamepaddialog_Field) {
+  background-color: color-mix(in srgb, var(--lp-bg-1) 90%, transparent);
+  box-shadow: inset 0 0 0 1px var(--lp-line);
+  border-radius: var(--lp-radius);
+  margin-bottom: 6px;
+}
+.BasicUI .gamepadpagedsettings_PagedSettingDialog_ContentColumn .gamepaddialog_Field.gamepaddialog_HighlightOnFocus:not(.gamepaddialog_Field .gamepaddialog_Field)::after {
+  display: none;
+}
+.BasicUI .gamepadpagedsettings_PagedSettingDialog_ContentColumn .gamepaddialog_Field.gamepaddialog_HighlightOnFocus:not(.gamepaddialog_Field .gamepaddialog_Field):is(.gpfocus, .gpfocuswithin) {
+  background-color: var(--lp-sel-fill);
+  box-shadow: inset 0 0 0 2px var(--lp-active);
 }
 /* Rows nested inside rows (Decky panels, Game Properties): only the outer one gets the focus
- * fill and bar, otherwise the inner row draws a second, offset highlight. */
+ * fill and border, otherwise the inner row draws a second, offset highlight. */
 .BasicUI .gamepaddialog_Field.gamepaddialog_HighlightOnFocus .gamepaddialog_Field.gamepaddialog_Field.gamepaddialog_HighlightOnFocus:is(.gpfocus, .gpfocuswithin) {
   background: transparent;
   box-shadow: none;
@@ -184,9 +195,8 @@
 }
 .BasicUI .gamepaddialog_BasicTextInput {
   background: var(--lp-bg-0);
-  border: 1px solid rgba(0, 0, 0, .6);
+  border: 1px solid var(--lp-line);
   border-radius: var(--lp-radius);
-  box-shadow: var(--lp-bevel-sunk);
   color: var(--lp-text-0);
 }
 .BasicUI .gamepaddialog_BasicTextInput.gpfocus {
@@ -194,85 +204,85 @@
 }
 
 /* ── Settings page (Settings, Game Properties, Notes) ────── */
-.BasicUI .gamepadpagedsettings_PagedSettingsDialog,
+/* The dialog itself carries the scene (canvas.css); its columns stay see-through. */
 .BasicUI .gamepadpagedsettings_PagedSettingsDialog .gamepadpagedsettings_PagedSettingDialog_ContentColumn {
-  background: var(--lp-bg-0);
+  background: transparent;
 }
 .BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListColumn {
-  background: var(--lp-grad-panel);
-  box-shadow: inset -2px 0 0 rgba(0, 0, 0, .45), inset -3px 0 0 var(--lp-line);
+  background: transparent;
 }
+/* Sidebar entries: dark tiles with a thin border; current page = accent text on the warm tint */
 .BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem {
   color: var(--lp-text-1);
+  background: color-mix(in srgb, var(--lp-bg-1) 88%, transparent);
+  box-shadow: inset 0 0 0 1px var(--lp-line);
+  border-radius: var(--lp-radius);
 }
-/* Active page: highlight bar + accent edge. Focus becomes the full accent polygon. */
 .BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem.gamepadpagedsettings_Active {
-  background: var(--lp-grad-row);
-  color: var(--lp-text-0);
-  box-shadow: inset 3px 0 0 var(--lp-active);
+  background: var(--lp-sel-fill);
+  color: var(--lp-active);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lp-active) 45%, var(--lp-line));
 }
 .BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem:is(:focus, .gpfocus) {
-  background: var(--lp-grad-fill) !important;
-  color: var(--lp-on-fill) !important;
-  box-shadow: var(--lp-bevel-lit) !important;
+  background: var(--lp-sel-fill-strong) !important;
+  color: var(--lp-active) !important;
+  box-shadow: inset 0 0 0 2px var(--lp-active) !important;
 }
-.BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem:is(:focus, .gpfocus) svg {
-  color: var(--lp-on-fill) !important;
+.BasicUI .gamepadpagedsettings_PagedSettingsDialog_PageListItem:is(:focus, .gpfocus, .gamepadpagedsettings_Active) svg {
+  color: var(--lp-active) !important;
 }
 
 /* Storage bars */
-.BasicUI .contentmanagement_DriveUsageGames { background-color: var(--lp-data); }
-.BasicUI .contentmanagement_DriveUsageWorkshop { background-color: var(--lp-accent); }
+.BasicUI .contentmanagement_DriveUsageGames { background-color: var(--lp-active); }
+.BasicUI .contentmanagement_DriveUsageWorkshop { background-color: var(--lp-data); }
 .BasicUI .contentmanagement_DriveUsageFreeSpace { background-color: var(--lp-bg-2); }
 .BasicUI .contentmanagement_AppBody { border-radius: var(--lp-radius); }
 
-/* ── Dialogs: a bevelled gouraud window ──────────────────── */
+/* ── Dialogs ─────────────────────────────────────────────── */
 .BasicUI .gamepaddialog_ModalPosition > .gamepaddialog_GamepadDialogContent {
-  background: var(--lp-grad-panel);
-  border: 1px solid rgba(0, 0, 0, .7);
+  background: var(--lp-bg-1);
+  border: 1px solid var(--lp-line);
   border-radius: var(--lp-radius);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--lp-active) 45%, var(--lp-line)), inset 3px 3px 0 1px rgba(255, 255, 255, .1), 0 20px 50px rgba(0, 0, 0, .6);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .6);
 }
 .BasicUI .gamepadui_GamepadDialogOverlay .ModalOverlayBackground {
-  background: color-mix(in srgb, var(--lp-bg-0) 84%, transparent);
+  background: color-mix(in srgb, var(--lp-bg-0) 80%, transparent);
 }
 
 /* ── Context menus (game ≡ menu, power menu) ─────────────── */
 .BasicUI .gamepadcontextmenu_contextMenuContents {
-  background: var(--lp-grad-panel);
-  border: 1px solid rgba(0, 0, 0, .7);
+  background: var(--lp-bg-1);
+  border: 1px solid var(--lp-line);
   border-radius: var(--lp-radius);
-  box-shadow: inset 0 0 0 2px var(--lp-line), 0 14px 36px rgba(0, 0, 0, .55);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .55);
 }
 .BasicUI .gamepadcontextmenu_contextMenuItem:not(.gamepadcontextmenu_Focused):not(.gamepadcontextmenu_active):not(.gamepadcontextmenu_Selected) {
   background: transparent;
   color: var(--lp-text-0);
 }
 .BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_Selected:not(.gamepadcontextmenu_Focused) {
-  background: var(--lp-grad-row);
+  background: var(--lp-bg-2);
 }
 .BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_Focused {
-  background: var(--lp-grad-fill) !important;
-  color: var(--lp-on-fill) !important;
-  box-shadow: var(--lp-bevel-lit);
+  background: var(--lp-sel-fill) !important;
+  color: var(--lp-text-0) !important;
+  box-shadow: inset 0 0 0 2px var(--lp-active);
 }
-/* Play / Launch / Resume keep their meaning as "ready" (ok green), installs as the partner colour.
- * Class names Play/Launch/Pause are CSS Loader translation names, so they're matched by
+/* Play / Launch / Resume and installs: the solid accent block with dark text, like the
+ * reference's Play button. Play/Launch are CSS Loader translation names, so they're matched by
  * a partial-word substring CSS Loader leaves alone (see Slate's docs/selectors.md). */
-.BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_Focused:is(.gamepadcontextmenu_Positive, [class^="Pla"], [class*=" Pla"], [class^="Launc"], [class*=" Launc"], .Resume) {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--lp-ok) 60%, white), var(--lp-ok) 50%, color-mix(in srgb, var(--lp-ok) 70%, black)) !important;
+.BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_Focused:is(.gamepadcontextmenu_Positive, [class^="Pla"], [class*=" Pla"], [class^="Launc"], [class*=" Launc"], .Resume, .gamepadcontextmenu_Emphasis, .Download, .Update, .Install) {
+  background: var(--lp-active) !important;
   color: var(--lp-on-fill) !important;
-}
-.BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_Focused:is(.gamepadcontextmenu_Emphasis, .Download, .Update, .Install) {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--lp-data) 60%, white), var(--lp-data) 50%, color-mix(in srgb, var(--lp-data) 70%, black)) !important;
-  color: var(--lp-on-fill) !important;
+  box-shadow: none;
 }
 .BasicUI .gamepadcontextmenu_contextMenuItem.gamepadcontextmenu_Focused.gamepadcontextmenu_Destructive {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--lp-danger) 60%, white), var(--lp-danger) 50%, color-mix(in srgb, var(--lp-danger) 70%, black)) !important;
+  background: var(--lp-danger) !important;
   color: #fff !important;
+  box-shadow: none;
 }
 .BasicUI .gamepadcontextmenu_contextMenuItem.menuChecked {
-  color: color-mix(in srgb, var(--lp-data) 60%, white);
+  color: var(--lp-active);
 }
 .BasicUI .gamepadcontextmenu_ContextMenuSeparator {
   background-color: var(--lp-line);

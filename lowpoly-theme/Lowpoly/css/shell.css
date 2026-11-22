@@ -1,95 +1,80 @@
 /* Lowpoly — shell.css  (bigpicture)
- * Top bar, bottom button bar, tab strips, focus treatment, cards. Bevelled, gouraud-shaded.
- * `.BasicUI` prefix on every rule: +1 class over Steam's equivalents, and it keeps the
- * rules inside Gaming Mode's root.
+ * Top bar, bottom button bar, tab strips, focus treatment, cards.
+ * Tabs: plain text, the current one in the accent with a 2px underline (like the reference).
+ * `.BasicUI` prefix on every rule: +1 class over Steam's equivalents.
  */
 
 /* ── Top bar ─────────────────────────────────────────────── */
 .BasicUI .header_Header.header_HeaderOpaque {
-  background-color: var(--lp-bg-0);
-  background-image: linear-gradient(180deg, color-mix(in srgb, var(--lp-active) 12%, var(--lp-bg-1)), var(--lp-bg-0));
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .5), inset 0 -3px 0 var(--lp-line);
+  background-color: color-mix(in srgb, var(--lp-bg-0) 92%, transparent);
+  box-shadow: inset 0 -1px 0 var(--lp-line);
 }
 .BasicUI .header_HeaderItem {
   border-radius: var(--lp-radius);
 }
 .BasicUI .header_HeaderItem.gpfocus,
 .BasicUI .header_HeaderItem.gpfocuswithin {
-  background: var(--lp-grad-fill) !important;
-  box-shadow: var(--lp-bevel-lit), var(--lp-glow-active);
-  color: var(--lp-on-fill) !important;
+  background: var(--lp-sel-fill) !important;
+  box-shadow: inset 0 0 0 2px var(--lp-active);
+  color: var(--lp-text-0) !important;
 }
 .BasicUI .header_Clock {
-  color: color-mix(in srgb, var(--lp-data) 45%, white);
-  text-shadow: 0 2px 0 rgba(0, 0, 0, .6);
+  color: var(--lp-text-1);
   font-variant-numeric: tabular-nums;
 }
 .BasicUI .header_HeaderDownloadContainer .header_HeaderDownloadProgressBar {
-  background-color: var(--lp-data);
+  background-color: var(--lp-active);
 }
 
-/* ── Bottom button bar (STEAM Menu … B Back) ── */
+/* ── Bottom button bar ── */
 .BasicUI .footer_BasicFooter {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--lp-bg-1) 94%, transparent), color-mix(in srgb, var(--lp-bg-0) 94%, transparent));
-  border-top: 1px solid var(--lp-line);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  background: color-mix(in srgb, var(--lp-bg-0) 88%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--lp-line) 60%, transparent);
   color: var(--lp-text-1);
 }
 
 /* ── Tab strips (Home / Library / game page tabs) ────────── */
 .BasicUI .gamepadtabbedpage_TabsRowScroll {
-  background: linear-gradient(180deg, var(--lp-bg-0), color-mix(in srgb, var(--lp-active) 6%, var(--lp-bg-0)));
-  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, .45);
+  background: transparent;
 }
 .BasicUI .gamepadtabbedpage_Tab {
   border-radius: var(--lp-radius) !important;
   color: var(--lp-text-1);
   background: transparent;
 }
-/* Selected tab: raised bevelled block with an accent base line, bright label.
- * Focused tab: the full gouraud accent polygon with dark text. */
 .BasicUI .gamepadtabbedpage_Tab.gamepadtabbedpage_Selected {
-  color: var(--lp-text-0) !important;
-  background: var(--lp-grad-raised) !important;
-  box-shadow: var(--lp-bevel), inset 0 -3px 0 var(--lp-active);
+  color: var(--lp-active) !important;
+  background: transparent !important;
+  box-shadow: inset 0 -2px 0 var(--lp-active);
 }
 .BasicUI .gamepadtabbedpage_Tab.gpfocus {
-  color: var(--lp-on-fill) !important;
-  background: var(--lp-grad-fill) !important;
-  box-shadow: var(--lp-bevel-lit), var(--lp-glow-active);
+  color: var(--lp-active) !important;
+  background: var(--lp-sel-fill) !important;
+  box-shadow: inset 0 0 0 2px var(--lp-active);
 }
-.BasicUI .gamepadtabbedpage_TabCount {
-  color: color-mix(in srgb, var(--lp-data) 55%, white);
-}
-/* Steam darkens the count on the selected/focused tab (it expects a white tab). Keep it a
- * readable chip in every state; on the bright focused tab it turns dark. */
+/* Steam darkens the count on the selected/focused tab (it expects a white tab): keep it readable */
 .BasicUI .gamepadtabbedpage_Tab .gamepadtabbedpage_TabCount,
 .BasicUI .gamepadtabbedpage_Tab.gamepadtabbedpage_Selected .gamepadtabbedpage_TabCount,
 .BasicUI .gamepadtabbedpage_Tab.gpfocus .gamepadtabbedpage_TabCount {
-  color: color-mix(in srgb, var(--lp-data) 55%, white) !important;
-  background: color-mix(in srgb, var(--lp-data) 16%, transparent) !important;
+  color: var(--lp-text-1) !important;
+  background: var(--lp-bg-2) !important;
   border-radius: var(--lp-radius) !important;
   opacity: 1 !important;
-}
-.BasicUI .gamepadtabbedpage_Tab.gpfocus .gamepadtabbedpage_TabCount.gamepadtabbedpage_TabCount {
-  color: var(--lp-on-fill) !important;
-  background: rgba(255, 255, 255, .35) !important;
 }
 .BasicUI .gamepadtabbedpage_Tab :is(svg, img) {
   color: currentColor;
 }
 .BasicUI .gamepadtabbedpage_TabBadge {
   background-color: var(--lp-active);
-  color: var(--lp-text-0);
+  color: var(--lp-on-fill);
   border-radius: var(--lp-radius);
 }
 
-/* ── Focus ─ (global focus ring lives in controls.css) ── */
-/* Game covers (Home Recent Games + Library grid): Steam paints its own white outline on the card. */
+/* ── Game covers (Home Recent Games + Library grid): Steam paints its own white outline ── */
 .BasicUI .appportrait_LibraryItemBox.appportrait_LibraryItemBox.gpfocus,
 .BasicUI .appportrait_LibraryItemBox.appportrait_LibraryItemBox.Focusable:focus {
   outline-color: var(--lp-active) !important;
-  box-shadow: 0 0 0 6px rgba(0, 0, 0, .6), var(--lp-glow-active), 0 4px 14px rgba(0, 0, 0, .5) !important;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, .45) !important;
 }
 .BasicUI .appportrait_LibraryItemBox,
 .BasicUI .appportrait_LibraryItemBox .libraryassetimage_Container,
@@ -97,23 +82,17 @@
   border-radius: var(--lp-radius);
 }
 
-/* ── Primary game action button (Play / Install / Update) ── */
-/* Steam: blue #1a9fff (Install) or green #59bf40 (Play) with white text when focused.
- * Lowpoly: bright gouraud fills with dark text (bright accents need dark text for contrast). */
+/* ── Primary game action button (Play / Install / Update): solid accent, dark text ── */
 .BasicUI .basicappdetailssectionstyler_AppActionButton {
   border-radius: var(--lp-radius);
 }
 .BasicUI .appactionbutton_ButtonChild.Focusable:focus,
-.BasicUI .appactionbutton_ButtonChild.gpfocus {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--lp-data) 60%, white), var(--lp-data) 50%, color-mix(in srgb, var(--lp-data) 70%, black)) !important;
-  color: var(--lp-on-fill) !important;
-  box-shadow: var(--lp-bevel-lit), var(--lp-glow-data);
-}
+.BasicUI .appactionbutton_ButtonChild.gpfocus,
 .BasicUI .appactionbutton_Green .appactionbutton_ButtonChild.Focusable:focus,
 .BasicUI .appactionbutton_Green .appactionbutton_ButtonChild.gpfocus {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--lp-ok) 60%, white), var(--lp-ok) 50%, color-mix(in srgb, var(--lp-ok) 70%, black)) !important;
+  background: var(--lp-active) !important;
   color: var(--lp-on-fill) !important;
-  box-shadow: var(--lp-bevel-lit), 0 0 12px color-mix(in srgb, var(--lp-ok) 35%, transparent);
+  box-shadow: var(--lp-hard-shadow);
 }
 .BasicUI .appactionbutton_ButtonChild.Focusable:focus svg,
 .BasicUI .appactionbutton_ButtonChild.gpfocus svg {
@@ -123,10 +102,10 @@
 
 /* Small status labels */
 .BasicUI .appdetailsheader_DemoBanner {
-  background-color: var(--lp-accent);
+  background-color: var(--lp-active);
   color: var(--lp-on-fill);
 }
 .BasicUI .homestorecarousel_StoreCarouselCtn .gamecapsule_InLibrary {
-  background: var(--lp-data);
+  background: var(--lp-active);
   color: var(--lp-on-fill);
 }
