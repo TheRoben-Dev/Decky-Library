@@ -15,6 +15,7 @@ export interface Light {
   swapSides?: boolean;
   hwEffect?: string;
   hwSpeed?: number;
+  prevMode?: LightMode;   // restored by the "Rings on" toggle
 }
 
 export interface GameLight { name: string; light: Light }

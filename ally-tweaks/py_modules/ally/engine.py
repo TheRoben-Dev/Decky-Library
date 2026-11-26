@@ -118,6 +118,13 @@ class Engine:
         on_battery = snap.get("present") and not snap.get("ac")
         cap = snap.get("capacity")
 
+        appid = (self.game or {}).get("appid")
+        game = r["perGame"].get(appid) if appid else None
+        if (game["light"] if game else base).get("mode") == "off":
+            # "Rings on" switched off: stay dark, even for the low-battery pulse.
+            self.reason = "Off"
+            return {"mode": "off"}
+
         if r["lowBattery"] and on_battery and cap is not None and cap <= int(r["lowBatteryAt"]):
             self.reason = f"Low battery ({cap}%)"
             return {"mode": "pulse", "hue": 0, "saturation": 100,
