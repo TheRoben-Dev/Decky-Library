@@ -48,7 +48,6 @@ const MODES_SYSFS: { data: LightMode; label: string }[] = [
   { data: "solid", label: "Solid" },
   { data: "split", label: "Left / right colors" },
   { data: "zones", label: "Four zones" },
-  { data: "off", label: "Off" },
 ];
 const MODES_HHD: { data: LightMode; label: string }[] = [
   { data: "solid", label: "Solid" },
@@ -56,7 +55,6 @@ const MODES_HHD: { data: LightMode; label: string }[] = [
   { data: "duality", label: "Two colors" },
   { data: "rainbow", label: "Rainbow" },
   { data: "spiral", label: "Spiral" },
-  { data: "off", label: "Off" },
 ];
 const SPEEDS: { data: Speed; label: string }[] = [
   { data: "low", label: "Slow" },
@@ -89,17 +87,40 @@ const PADDLES: Record<string, string> = {
 };
 const LIMITS = [70, 80, 85, 90, 95, 100];
 
-function Swatches({ onPick }: { onPick: (hue: number, sat: number) => void }) {
+const ACCENT = "#00E5FF"; // Nightgrid cyan
+
+/** Big, controller-friendly colour picker: the focused swatch gets a thick
+ *  Nightgrid-cyan ring, grows, and its name shows under the row; the colour in
+ *  use gets a white check ring. */
+function Swatches({ onPick, hue, sat }: { onPick: (hue: number, sat: number) => void; hue: number; sat: number }) {
+  const [focus, setFocus] = useState<number | null>(null);
+  const current = QUICK.findIndex((q) => q.saturation === sat && (sat === 0 || q.hue === hue));
+  const label = focus != null ? QUICK[focus].label : current >= 0 ? QUICK[current].label : "Custom color";
   return (
     <PanelSectionRow>
-      <Focusable style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "4px 0" }} flow-children="horizontal">
-        {QUICK.map((q) => (
-          <Focusable key={q.label} onActivate={() => onPick(q.hue, q.saturation)} onClick={() => onPick(q.hue, q.saturation)}
-            focusClassName="gpfocus" style={{ borderRadius: 14, padding: 2 }}>
-            <Swatch h={q.hue} s={q.saturation} />
-          </Focusable>
-        ))}
+      <Focusable style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "6px 0 2px" }} flow-children="horizontal">
+        {QUICK.map((q, i) => {
+          const f = focus === i, on = current === i;
+          return (
+            <Focusable key={q.label}
+              onActivate={() => onPick(q.hue, q.saturation)} onClick={() => onPick(q.hue, q.saturation)}
+              onGamepadFocus={() => setFocus(i)} onGamepadBlur={() => setFocus((x) => (x === i ? null : x))}
+              noFocusRing
+              style={{
+                width: 34, height: 34, borderRadius: 17, boxSizing: "border-box", padding: 3,
+                border: `3px solid ${f ? ACCENT : on ? "#ffffffcc" : "transparent"}`,
+                boxShadow: f ? `0 0 10px ${ACCENT}` : "none",
+                transform: f ? "scale(1.15)" : "none", transition: "transform 80ms, box-shadow 80ms",
+              }}>
+              <div style={{ width: "100%", height: "100%", borderRadius: "50%", background: hsl(q.hue, q.saturation),
+                border: "1px solid #ffffff40", boxSizing: "border-box" }} />
+            </Focusable>
+          );
+        })}
       </Focusable>
+      <div style={{ fontSize: 12, lineHeight: "16px", marginTop: 2, color: focus != null ? ACCENT : "#8B98A9" }}>
+        {focus != null ? `Ⓐ Set ${label}` : `Current: ${label}`}
+      </div>
     </PanelSectionRow>
   );
 }
@@ -113,9 +134,8 @@ function LightEditor({ light }: { light: Light }) {
   const hhdMode = st?.rgbBackend === "hhd";
   const hwEffects = !hhdMode && !st?.leds.hidFallback ? st?.leds.effects ?? [] : [];
   const modes = hhdMode ? MODES_HHD : [
-    ...MODES_SYSFS.filter((m) => m.data !== "off"),
+    ...MODES_SYSFS,
     ...(hwEffects.length ? [{ data: "hw" as LightMode, label: "Animated (controller effect)" }] : []),
-    { data: "off" as LightMode, label: "Off" },
   ];
   const [zone, setZone] = useState(0);
   // A light saved under the other backend falls back to Solid here.
@@ -176,7 +196,7 @@ function LightEditor({ light }: { light: Light }) {
       )}
       {colored && (
         <>
-          <Swatches onPick={(h, sat) => setColor(h, sat)} />
+          <Swatches onPick={(h, sat) => setColor(h, sat)} hue={editHue} sat={editSat} />
           <PanelSectionRow>
             <SliderField label={shown === "split" ? "Left ring hue" : "Hue"} value={editHue} min={0} max={360} step={5} showValue
               onChange={(v) => setColor(v, null)} />
@@ -278,6 +298,14 @@ function Lighting() {
       </PanelSectionRow>
       {s.managed && (
         <>
+          <PanelSectionRow>
+            <ToggleField label={gameLight ? "Rings on in this game" : "Rings on"} checked={light.mode !== "off"}
+              description={light.mode === "off" ? "Rings are off. Your color is kept for when you turn them back on." : undefined}
+              onChange={(v) => c.editLight((l) => {
+                if (v) { l.mode = l.prevMode && l.prevMode !== "off" ? l.prevMode : "solid"; }
+                else { if (l.mode !== "off") l.prevMode = l.mode; l.mode = "off"; }
+              })} />
+          </PanelSectionRow>
           {st.lightReason && <Note>Now showing: {st.lightReason}</Note>}
           {c.appid && (
             <PanelSectionRow>
@@ -286,7 +314,7 @@ function Lighting() {
             </PanelSectionRow>
           )}
           <Note>{gameLight ? "Editing this game's lighting." : "Editing the default lighting."}</Note>
-          <LightEditor light={light} />
+          {light.mode !== "off" && <LightEditor light={light} />}
         </>
       )}
     </PanelSection>
